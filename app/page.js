@@ -6,9 +6,9 @@ const LOGO_HUB_CART = 'https://i.postimg.cc/4Y3TK6bN/5707.png';
 const LOGO_BKASH = 'https://logos-world.net/wp-content/uploads/2024/10/Bkash-Logo.png';
 const LOGO_NAGAD = 'https://download.logo.wine/logo/Nagad/Nagad-Logo.wine.png';
 
-// Supabase ক্রেডেনশিয়াল
+// Supabase ক্রেডেনশিয়াল (ছোট হাতের sb_ দিয়ে ফিক্সড)
 const SUPABASE_URL = 'https://mieygzqgoekinxppdepb.supabase.co';
-const SUPABASE_KEY = 'Sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
+const SUPABASE_KEY = 'sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
 
 const CATEGORIES = [
   { id: 'all', name: 'All Services', icon: '⚡' },
@@ -39,20 +39,25 @@ export default function Home() {
   const BKASH_NUMBER = '01812087109';
   const NAGAD_NUMBER = '01812080943';
 
-  // Supabase থেকে লাইভ প্রোডাক্ট ফেচ করা
+  // ডাটাবেজ থেকে লাইভ প্রোডাক্ট লোড করা (No-Cache)
   useEffect(() => {
     async function loadProducts() {
       try {
         const res = await fetch(`${SUPABASE_URL}/rest/v1/products?select=*&order=id.desc`, {
+          cache: 'no-store',
           headers: {
             apikey: SUPABASE_KEY,
             Authorization: `Bearer ${SUPABASE_KEY}`,
           },
         });
         const data = await res.json();
-        if (Array.isArray(data)) setProducts(data);
+        if (Array.isArray(data)) {
+          setProducts(data);
+        } else {
+          console.error('API Error:', data);
+        }
       } catch (err) {
-        console.error('Failed to load products');
+        console.error('Fetch failed:', err);
       } finally {
         setLoadingProducts(false);
       }
@@ -174,13 +179,18 @@ export default function Home() {
           <div style={{ textAlign: 'center', padding: '40px 0', color: '#64748b' }}>প্রোডাক্ট লোড হচ্ছে...</div>
         ) : filteredProducts.length === 0 ? (
           <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '30px 16px', textAlign: 'center', color: '#64748b' }}>
-            এই ক্যাটাগরিতে এখনো কোনো প্রোডাক্ট নেই। অ্যাডমিন প্যানেল থেকে প্রোডাক্ট যোগ করুন।
+            এই ক্যাটাগরিতে এখনো কোনো প্রোডাক্ট নেই।
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
             {filteredProducts.map((prod) => (
               <div key={prod.id} style={{ background: '#ffffff', borderRadius: '14px', border: '1px solid #e2e8f0', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                <img src={prod.image} alt={prod.title} style={{ width: '100%', height: '130px', objectFit: 'cover' }} />
+                <img 
+                  src={prod.image || 'https://i.postimg.cc/4Y3TK6bN/5707.png'} 
+                  alt={prod.title} 
+                  onError={(e) => { e.target.src = 'https://i.postimg.cc/4Y3TK6bN/5707.png'; }}
+                  style={{ width: '100%', height: '130px', objectFit: 'cover' }} 
+                />
                 <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
                   <h4 style={{ fontSize: '12px', fontWeight: '600', margin: '0 0 8px', color: '#1e293b', minHeight: '32px', lineHeight: 1.3 }}>{prod.title}</h4>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
