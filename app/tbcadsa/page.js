@@ -21,6 +21,10 @@ export default function SecretAdminPage() {
 
   const [activeTab, setActiveTab] = useState('orders');
 
+  // নোটিশ স্টেট
+  const [noticeText, setNoticeText] = useState('');
+  const [savingNotice, setSavingNotice] = useState(false);
+
   // প্রোডাক্ট স্টেট
   const [products, setProducts] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
@@ -60,6 +64,7 @@ export default function SecretAdminPage() {
         setIsAuthenticated(true);
         fetchOrders();
         fetchProducts();
+        fetchNotice();
       } else {
         setPinError(true);
       }
@@ -67,6 +72,56 @@ export default function SecretAdminPage() {
       alert('ভেরিফিকেশন সার্ভারে সমস্যা হয়েছে!');
     } finally {
       setVerifying(false);
+    }
+  };
+
+  // নোটিশ ফেচ
+  const fetchNotice = async () => {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/site_settings?key=eq.announcement&select=value`, {
+        cache: 'no-store',
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+        },
+      });
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        setNoticeText(data[0].value);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // নোটিশ সেভ
+  const handleSaveNotice = async (e) => {
+    e.preventDefault();
+    setSavingNotice(true);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/site_settings`, {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json',
+          Prefer: 'resolution=merge-duplicates',
+        },
+        body: JSON.stringify({
+          key: 'announcement',
+          value: noticeText.trim(),
+        }),
+      });
+
+      if (res.ok) {
+        alert('📢 হোমপেজ নোটিশ সফলভাবে আপডেট হয়েছে!');
+      } else {
+        alert('নোটিশ আপডেট করা যায়নি!');
+      }
+    } catch (err) {
+      alert('নেটওয়ার্ক এরর!');
+    } finally {
+      setSavingNotice(false);
     }
   };
 
@@ -110,7 +165,7 @@ export default function SecretAdminPage() {
     }
   };
 
-  // অর্ডার স্ট্যাটাস আপডেট (Cancel সহ)
+  // অর্ডার স্ট্যাটাস আপডেট
   const handleUpdateOrderStatus = async (orderDbId, newStatus) => {
     try {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${orderDbId}`, {
@@ -136,7 +191,7 @@ export default function SecretAdminPage() {
     }
   };
 
-  // সম্পূর্ণ অর্ডার ডিলিট
+  // অর্ডার স্থায়ীভাবে ডিলিট
   const handleDeleteOrder = async (orderDbId, orderIdText) => {
     if (!confirm(`আপনি কি নিশ্চিত অর্ডার "${orderIdText}" পুরোপুরি ডিলিট করতে চান?`)) return;
 
@@ -151,7 +206,7 @@ export default function SecretAdminPage() {
 
       if (res.ok) {
         setOrders(orders.filter((ord) => ord.id !== orderDbId));
-        alert('🗑️ অর্ডার তালিকা থেকে মুছে ফেলা হয়েছে!');
+        alert('🗑️ অর্ডার ডিলিট করা হয়েছে!');
       } else {
         alert('অর্ডার ডিলিট করা যায়নি!');
       }
@@ -214,7 +269,7 @@ export default function SecretAdminPage() {
 
       if (uploadMode === 'file') {
         if (!imageFile) {
-          alert('অনুগ্রহ করে একটি ছবি নির্বাচন করুন!');
+          alert('অনুগ্রহ করে ছবি নির্বাচন করুন!');
           setSubmitting(false);
           return;
         }
@@ -370,7 +425,7 @@ export default function SecretAdminPage() {
   return (
     <div style={{ maxWidth: '720px', margin: '14px auto', padding: '0 14px 100px' }}>
       
-      {/* হেডার */}
+      {/* ড্যাশবোর্ড হেডার */}
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
@@ -407,6 +462,46 @@ export default function SecretAdminPage() {
         </Link>
       </div>
 
+      {/* নোটিশ কন্ট্রোল বক্স */}
+      <div style={{
+        background: 'rgba(15, 23, 42, 0.8)',
+        backdropFilter: 'blur(16px)',
+        border: '1px solid rgba(56, 189, 248, 0.25)',
+        borderRadius: '18px',
+        padding: '16px',
+        marginBottom: '16px',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+          <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#38bdf8' }}>📢 হোমপেজ নোটিশ ব্যানার</span>
+        </div>
+        <form onSubmit={handleSaveNotice} style={{ display: 'flex', gap: '8px' }}>
+          <input
+            type="text"
+            placeholder="হোমপেজে দেখানোর নোটিশ টেক্সট লিখুন..."
+            value={noticeText}
+            onChange={(e) => setNoticeText(e.target.value)}
+            style={{ ...inputStyle, flex: 1 }}
+          />
+          <button
+            type="submit"
+            disabled={savingNotice}
+            style={{
+              padding: '10px 16px',
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+              color: '#fff',
+              border: 'none',
+              fontWeight: 'bold',
+              fontSize: '12px',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {savingNotice ? 'সেভ হচ্ছে...' : 'আপডেট'}
+          </button>
+        </form>
+      </div>
+
       {/* ট্যাব সিলেকশন */}
       <div style={{ display: 'flex', gap: '8px', background: 'rgba(15, 23, 42, 0.7)', padding: '6px', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.06)', marginBottom: '20px' }}>
         <button
@@ -422,7 +517,6 @@ export default function SecretAdminPage() {
             fontWeight: 'bold',
             fontSize: '13px',
             cursor: 'pointer',
-            transition: 'all 0.2s',
           }}
         >
           🛒 লাইভ অর্ডার ({orders.length})
@@ -440,7 +534,6 @@ export default function SecretAdminPage() {
             fontWeight: 'bold',
             fontSize: '13px',
             cursor: 'pointer',
-            transition: 'all 0.2s',
           }}
         >
           📦 প্রোডাক্ট লিস্ট ({products.length})
@@ -495,7 +588,6 @@ export default function SecretAdminPage() {
                     <div>🔢 <strong>TrxID:</strong> <code style={{ color: '#f8fafc', background: '#0b0f19', padding: '2px 6px', borderRadius: '4px' }}>{ord.trx_id}</code></div>
                   </div>
 
-                  {/* স্ট্যাটাস চেঞ্জার ও অর্ডার ডিলিট বাটন */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 'bold' }}>স্ট্যাটাস:</span>
@@ -522,7 +614,6 @@ export default function SecretAdminPage() {
                       </select>
                     </div>
 
-                    {/* অর্ডার স্থায়ীভাবে ডিলিট বাটন */}
                     <button
                       onClick={() => handleDeleteOrder(ord.id, ord.order_id)}
                       style={{
