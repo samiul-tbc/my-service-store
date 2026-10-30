@@ -6,7 +6,6 @@ import Link from 'next/link';
 const LOGO_HUB_CART = 'https://i.postimg.cc/4Y3TK6bN/5707.png';
 const SUPABASE_URL = 'https://mieygzqgoekinxppdepb.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
-const WHATSAPP_NUMBER = '8801893432478'; // আপনার WhatsApp নম্বর
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -15,21 +14,14 @@ export default function ProductDetailPage() {
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  // অর্ডার মডাল ও ফর্মের স্টেট
   const [showOrderModal, setShowOrderModal] = useState(false);
-  const [orderSubmitting, setOrderSubmitting] = useState(false);
-  const [orderSuccess, setOrderSuccess] = useState(false);
 
-  // ফর্ম ডাটা
+  // ইনপুট স্টেট (কোনো হার্ডকোডেড নাম নেই)
   const [customerName, setCustomerName] = useState('');
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [telegramUsername, setTelegramUsername] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('bKash');
-  const [trxId, setTrxId] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
-  // প্রোডাক্ট ও ইউজার ডাটা ফেচ
   useEffect(() => {
     if (!id) return;
     async function fetchProduct() {
@@ -53,7 +45,7 @@ export default function ProductDetailPage() {
     }
     fetchProduct();
 
-    // ইউজার লগইন থাকলে নাম ও নম্বর অটোমেটিক বসানো
+    // ইউজার আগে লগইন থাকলে তার ডেটা ইনপুটে অটোমেটিক বসবে
     const savedUser = localStorage.getItem('hubcart_user');
     if (savedUser) {
       try {
@@ -66,39 +58,25 @@ export default function ProductDetailPage() {
     }
   }, [id]);
 
-  // Telegram API-তে অর্ডার পাঠানোর হ্যান্ডলার
-  const handleTelegramOrder = async (e) => {
+  // "অর্ডার Confirm করুন" চাপলে ডেটা সেভ করে processedorder পেজে পাঠানো
+  const handleProceedToPayment = (e) => {
     e.preventDefault();
-    setOrderSubmitting(true);
-    setErrorMsg('');
-
-    try {
-      const res = await fetch('/api/order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          serviceName: product.title,
-          price: product.price,
-          customerName: customerName.trim(),
-          whatsappNumber: whatsappNumber.trim(),
-          telegramUsername: telegramUsername.trim() || 'দেওয়া হয়নি',
-          paymentMethod: paymentMethod,
-          trxId: trxId.trim() || 'N/A',
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'অর্ডার পাঠাতে সমস্যা হয়েছে');
-      }
-
-      setOrderSuccess(true);
-    } catch (err) {
-      setErrorMsg(err.message);
-    } finally {
-      setOrderSubmitting(false);
+    if (!customerName.trim() || !whatsappNumber.trim()) {
+      setErrorMsg('দয়া করে নাম ও WhatsApp নম্বর পূরণ করুন');
+      return;
     }
+
+    const orderData = {
+      productId: product.id,
+      serviceName: product.title,
+      price: product.price,
+      customerName: customerName.trim(),
+      whatsappNumber: whatsappNumber.trim(),
+      telegramUsername: telegramUsername.trim() || 'নেই',
+    };
+
+    localStorage.setItem('hubcart_current_order', JSON.stringify(orderData));
+    router.push('/processedorder');
   };
 
   if (loading) {
@@ -114,14 +92,11 @@ export default function ProductDetailPage() {
     );
   }
 
-  const whatsappMsg = encodeURIComponent(`হ্যালো, আমি Hub Cart থেকে এই সার্ভিসটি নিতে চাই:\nসার্ভিস: ${product.title}\nমূল্য: ৳${product.price}`);
-  const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${whatsappMsg}`;
-
   const inputStyle = {
     width: '100%',
     boxSizing: 'border-box',
-    padding: '10px 12px',
-    borderRadius: '10px',
+    padding: '12px 14px',
+    borderRadius: '12px',
     background: 'rgba(30, 41, 59, 0.7)',
     border: '1px solid rgba(255, 255, 255, 0.1)',
     color: '#ffffff',
@@ -132,7 +107,6 @@ export default function ProductDetailPage() {
   return (
     <div style={{ maxWidth: '600px', margin: '0 auto', padding: '14px 14px 100px' }}>
       
-      {/* ব্যাক বাটন */}
       <button
         onClick={() => router.back()}
         style={{ border: 'none', background: 'none', color: '#94a3b8', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', padding: '4px 0', marginBottom: '12px' }}
@@ -159,7 +133,7 @@ export default function ProductDetailPage() {
         </div>
 
         <div style={{ padding: '20px' }}>
-          <span style={{ fontSize: '10px', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '4px 10px', borderRadius: '14px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          <span style={{ fontSize: '10px', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '4px 10px', borderRadius: '14px', fontWeight: 'bold', textTransform: 'uppercase' }}>
             {product.category || 'Service'}
           </span>
 
@@ -183,7 +157,7 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
-      {/* নিচের ফিক্সড অর্ডার বার */}
+      {/* নিচের ফিক্সড বার */}
       <div style={{
         position: 'fixed',
         bottom: 60,
@@ -199,53 +173,30 @@ export default function ProductDetailPage() {
         maxWidth: '600px',
         margin: '0 auto',
       }}>
-        <a
-          href={whatsappUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            flex: 1,
-            textDecoration: 'none',
-            background: '#16a34a',
-            color: '#ffffff',
-            textAlign: 'center',
-            padding: '12px',
-            borderRadius: '12px',
-            fontWeight: 'bold',
-            fontSize: '13px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '6px'
-          }}
-        >
-          <span>💬</span> WhatsApp অর্ডার
-        </a>
-
         <button
-          onClick={() => { setShowOrderModal(true); setOrderSuccess(false); setErrorMsg(''); }}
+          onClick={() => { setShowOrderModal(true); setErrorMsg(''); }}
           style={{
-            flex: 1,
+            width: '100%',
             border: 'none',
             background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
             color: '#ffffff',
-            padding: '12px',
-            borderRadius: '12px',
+            padding: '14px',
+            borderRadius: '14px',
             fontWeight: 'bold',
-            fontSize: '13px',
+            fontSize: '14px',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '6px',
-            boxShadow: '0 4px 12px rgba(37, 99, 235, 0.35)'
+            gap: '8px',
+            boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)'
           }}
         >
           <span>⚡</span> এখনই কিনুন
         </button>
       </div>
 
-      {/* সাইবার-গ্লাস অর্ডার মডাল (Telegram Bot Integrated) */}
+      {/* ইনফো মডাল (নাম, হোয়াটসঅ্যাপ, টেলিগ্রাম) */}
       {showOrderModal && (
         <div style={{
           position: 'fixed',
@@ -253,132 +204,78 @@ export default function ProductDetailPage() {
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(0, 0, 0, 0.75)',
-          backdropFilter: 'blur(8px)',
+          background: 'rgba(0, 0, 0, 0.8)',
+          backdropFilter: 'blur(10px)',
           zIndex: 1000,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '16px'
+          padding: '14px'
         }}>
           <div style={{
             width: '100%',
-            maxWidth: '420px',
+            maxWidth: '400px',
             background: '#0f172a',
             border: '1px solid rgba(59, 130, 246, 0.3)',
             borderRadius: '24px',
-            padding: '20px',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
+            padding: '24px',
             position: 'relative',
-            maxHeight: '90vh',
-            overflowY: 'auto'
           }}>
-            {/* ক্লোজ বাটন */}
             <button
               onClick={() => setShowOrderModal(false)}
-              style={{
-                position: 'absolute',
-                top: '16px',
-                right: '16px',
-                background: 'rgba(255,255,255,0.05)',
-                border: 'none',
-                color: '#94a3b8',
-                width: '30px',
-                height: '30px',
-                borderRadius: '50%',
-                cursor: 'pointer',
-                fontSize: '16px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
+              style={{ position: 'absolute', top: '16px', right: '16px', background: 'rgba(255,255,255,0.06)', border: 'none', color: '#94a3b8', width: '30px', height: '30px', borderRadius: '50%', cursor: 'pointer', fontSize: '14px' }}
             >
               ✕
             </button>
 
-            {orderSuccess ? (
-              <div style={{ textAlign: 'center', padding: '30px 10px' }}>
-                <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(34, 197, 94, 0.15)', border: '1px solid #22c55e', color: '#4ade80', fontSize: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                  ✓
-                </div>
-                <h3 style={{ color: '#f8fafc', margin: '0 0 8px', fontSize: '18px' }}>অর্ডার সফল হয়েছে!</h3>
-                <p style={{ color: '#94a3b8', fontSize: '13px', margin: '0 0 20px', lineHeight: 1.5 }}>
-                  আপনার অর্ডার বিবরণ সরাসরি আমাদের টেলিগ্রাম সিস্টেমে জমা পড়েছে। খুব দ্রুত আপনার সাথে যোগাযোগ করা হবে।
-                </p>
-                <button
-                  onClick={() => setShowOrderModal(false)}
-                  style={{ width: '100%', padding: '12px', background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer' }}
-                >
-                  ঠিক আছে
-                </button>
-              </div>
-            ) : (
-              <div>
-                <div style={{ marginBottom: '16px' }}>
-                  <h3 style={{ margin: '0 0 4px', fontSize: '17px', color: '#f8fafc', fontWeight: 'bold' }}>অর্ডার কনফার্মেশন</h3>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(30, 41, 59, 0.5)', padding: '8px 12px', borderRadius: '10px', marginTop: '8px' }}>
-                    <span style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: 'bold' }}>{product.title}</span>
-                    <span style={{ fontSize: '14px', color: '#38bdf8', fontWeight: '900' }}>৳{product.price}</span>
-                  </div>
-                </div>
+            <h3 style={{ margin: '0 0 4px', fontSize: '18px', color: '#f8fafc', fontWeight: 'bold' }}>অর্ডার কনফার্মেশন</h3>
+            <p style={{ margin: '0 0 16px', fontSize: '12px', color: '#64748b' }}>অর্ডারের জন্য প্রয়োজনীয় তথ্য দিন</p>
 
-                {errorMsg && (
-                  <div style={{ padding: '8px 12px', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#f87171', borderRadius: '8px', fontSize: '12px', marginBottom: '12px', textAlign: 'center' }}>
-                    {errorMsg}
-                  </div>
-                )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(30, 41, 59, 0.6)', padding: '10px 14px', borderRadius: '12px', marginBottom: '16px' }}>
+              <span style={{ fontSize: '13px', color: '#cbd5e1', fontWeight: 'bold' }}>{product.title}</span>
+              <span style={{ fontSize: '16px', color: '#38bdf8', fontWeight: '900' }}>৳{product.price}</span>
+            </div>
 
-                <form onSubmit={handleTelegramOrder}>
-                  <div style={{ marginBottom: '10px' }}>
-                    <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '4px', fontWeight: 'bold' }}>আপনার নাম *</label>
-                    <input required type="text" placeholder="যেমন: Samiul Islam" value={customerName} onChange={(e) => setCustomerName(e.target.value)} style={inputStyle} />
-                  </div>
-
-                  <div style={{ marginBottom: '10px' }}>
-                    <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '4px', fontWeight: 'bold' }}>WhatsApp নম্বর *</label>
-                    <input required type="text" maxLength={11} placeholder="017XXXXXXXX" value={whatsappNumber} onChange={(e) => setWhatsappNumber(e.target.value)} style={inputStyle} />
-                  </div>
-
-                  <div style={{ marginBottom: '10px' }}>
-                    <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '4px', fontWeight: 'bold' }}>Telegram ইউজারনেম (@username)</label>
-                    <input type="text" placeholder="@yourusername (যদি থাকে)" value={telegramUsername} onChange={(e) => setTelegramUsername(e.target.value)} style={inputStyle} />
-                  </div>
-
-                  <div style={{ marginBottom: '10px' }}>
-                    <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '4px', fontWeight: 'bold' }}>পেমেন্ট মেথড *</label>
-                    <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} style={inputStyle}>
-                      <option value="bKash">bKash (বিকাশ)</option>
-                      <option value="Nagad">Nagad (নগদ)</option>
-                      <option value="Rocket">Rocket (রকেট)</option>
-                    </select>
-                  </div>
-
-                  <div style={{ marginBottom: '16px' }}>
-                    <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '4px', fontWeight: 'bold' }}>ট্রানজেকশন আইডি (TrxID) / পেমেন্ট নম্বর</label>
-                    <input type="text" placeholder="টাকা পাঠিয়ে TrxID লিখুন" value={trxId} onChange={(e) => setTrxId(e.target.value)} style={inputStyle} />
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={orderSubmitting}
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
-                      color: '#ffffff',
-                      border: 'none',
-                      borderRadius: '12px',
-                      fontWeight: 'bold',
-                      fontSize: '13px',
-                      cursor: 'pointer',
-                      boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)'
-                    }}
-                  >
-                    {orderSubmitting ? 'অর্ডার পাঠানো হচ্ছে...' : '✈️ অর্ডার সাবমিট করুন'}
-                  </button>
-                </form>
+            {errorMsg && (
+              <div style={{ padding: '8px', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#f87171', borderRadius: '8px', fontSize: '12px', marginBottom: '12px', textAlign: 'center' }}>
+                {errorMsg}
               </div>
             )}
+
+            <form onSubmit={handleProceedToPayment}>
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '4px', fontWeight: 'bold' }}>আপনার নাম *</label>
+                <input required type="text" placeholder="আপনার নাম লিখুন" value={customerName} onChange={(e) => setCustomerName(e.target.value)} style={inputStyle} />
+              </div>
+
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '4px', fontWeight: 'bold' }}>WhatsApp নম্বর *</label>
+                <input required type="text" maxLength={11} placeholder="01XXXXXXXXX" value={whatsappNumber} onChange={(e) => setWhatsappNumber(e.target.value)} style={inputStyle} />
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '4px', fontWeight: 'bold' }}>Telegram ইউজারনেম (@username)</label>
+                <input type="text" placeholder="@username (যদি থাকে)" value={telegramUsername} onChange={(e) => setTelegramUsername(e.target.value)} style={inputStyle} />
+              </div>
+
+              <button
+                type="submit"
+                style={{
+                  width: '100%',
+                  padding: '13px',
+                  background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '12px',
+                  fontWeight: 'bold',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)'
+                }}
+              >
+                অর্ডার Confirm করুন →
+              </button>
+            </form>
           </div>
         </div>
       )}
