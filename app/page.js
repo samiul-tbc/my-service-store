@@ -1,7 +1,12 @@
 'use client';
 import { useState } from 'react';
 
-// প্রোডাক্টের তালিকা (এখানে ছবি, নাম, বিবরণ ও দাম পরিবর্তন করতে পারবেন)
+// লোগোর সরাসরি ইমেজ লিংকসমূহ
+const LOGO_HUB_CART = 'https://i.postimg.cc/4Y3TK6bN/5707.png'; // PostImg Direct Link
+const LOGO_BKASH = 'https://logos-world.net/wp-content/uploads/2024/10/Bkash-Logo.png';
+const LOGO_NAGAD = 'https://download.logo.wine/logo/Nagad/Nagad-Logo.wine.png';
+
+// প্রোডাক্ট লিস্ট
 const PRODUCTS = [
   {
     id: 1,
@@ -26,66 +31,36 @@ const PRODUCTS = [
   },
 ];
 
-// বিকাশ ও নগদের আসল ভেক্টর লোগো
-const BkashLogo = ({ width = 90 }) => (
-  <svg width={width} viewBox="0 0 160 55" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M125 8L152 24L127 34L125 8Z" fill="#E2136E"/>
-    <path d="M127 34L137 49L146 36L127 34Z" fill="#B31258"/>
-    <path d="M127 34L110 40L125 8L127 34Z" fill="#E2136E"/>
-    <text x="5" y="38" fontFamily="Arial, Helvetica, sans-serif" fontWeight="900" fontSize="38" fill="#E2136E" letterSpacing="-1">bKash</text>
-  </svg>
-);
-
-const NagadLogo = ({ width = 90 }) => (
-  <svg width={width} viewBox="0 0 160 55" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="26" cy="27" r="20" fill="#E52D27"/>
-    <path d="M26 12C21 12 17 18 19 23L31 39C32 40 35 39 35 37L31 22C30 18 28 12 26 12Z" fill="#F8B133"/>
-    <circle cx="28" cy="18" r="3" fill="#FFF"/>
-    <text x="55" y="38" fontFamily="Arial, sans-serif" fontWeight="bold" fontSize="32" fill="#E52D27">নগদ</text>
-  </svg>
-);
-
-// Hub Cart ব্র্যান্ড লোগো
-const HubCartLogo = ({ size = 65 }) => (
-  <svg width={size} height={size} viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="200" height="200" rx="30" fill="#000000"/>
-    <path d="M45 45H75V85H125V45H155V155H125V115H75V155H45V45Z" fill="#FFFFFF"/>
-    <path d="M110 50C150 50 175 75 175 110C175 145 150 170 110 170" stroke="#0099FF" strokeWidth="18" strokeLinecap="round"/>
-    <circle cx="120" cy="155" r="9" fill="#00C8FF"/>
-    <circle cx="150" cy="155" r="9" fill="#00C8FF"/>
-  </svg>
-);
-
 export default function Home() {
   const [selectedProduct, setSelectedProduct] = useState(null);
-  
-  // পেজ ভিউ স্টেট: 'home' | 'info_page' | 'gateway_methods' | 'gateway_verify' | 'success'
+
+  // পেজ ভিউ নিয়ন্ত্রণ: 'home' | 'info_page' | 'gateway_methods' | 'gateway_verify' | 'success'
   const [currentView, setCurrentView] = useState('home');
   const [paymentOption, setPaymentOption] = useState('Instant Pay'); // 'TBC Pay' | 'Instant Pay'
   const [activeGateway, setActiveGateway] = useState('bKash');       // 'bKash' | 'Nagad'
-  
-  // ফর্ম ডেটা
+
+  // ফর্মের ফিল্ডসমূহ
   const [customerName, setCustomerName] = useState('');
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [telegramUsername, setTelegramUsername] = useState('');
   const [phoneError, setPhoneError] = useState('');
-  
+
   const [trxId, setTrxId] = useState('');
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // আপনার পেমেন্ট নম্বর
+  // বিকাশ ও নগদ নম্বর
   const BKASH_NUMBER = '01812087109';
   const NAGAD_NUMBER = '01812080943';
 
-  // বাংলাদেশি মোবাইল নম্বর ভ্যালিডেশন
+  // বাংলাদেশি ১১ ডিজিট ভ্যালিডেশন (013, 014, 015, 016, 017, 018, 019)
   const validateBdNumber = (phone) => {
     const regex = /^(013|014|015|016|017|018|019)\d{8}$/;
     return regex.test(phone.trim());
   };
 
-  const handleCopy = (text) => {
-    navigator.clipboard.writeText(text);
+  const handleCopy = (num) => {
+    navigator.clipboard.writeText(num);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -105,10 +80,10 @@ export default function Home() {
     setPhoneError('');
 
     if (paymentOption === 'TBC Pay') {
-      // TBC Pay: কোনো টাকা লাগবে না, সরাসরি অর্ডারে যাবে
+      // TBC Pay সিলেক্ট করলে টাকা লাগবে না, সরাসরি বটে অর্ডার চলে যাবে
       sendOrderToTelegram('TBC Pay (Manual Pay)', 'N/A (TBC Pay)');
     } else {
-      // Instant Pay: ২য় ইন্টারফেসে নিয়ে যাবে
+      // Instant Pay সিলেক্ট করলে ২য় পেজে মোবাইল ব্যাংকিং ইন্টারফেস খুলবে
       setCurrentView('gateway_methods');
     }
   };
@@ -137,7 +112,7 @@ export default function Home() {
         alert(data.error || 'অর্ডার পাঠাতে সমস্যা হয়েছে। আবার চেষ্টা করুন।');
       }
     } catch (err) {
-      alert('নেটওয়ার্ক সমস্যা। আপনার ইন্টারনেট সংযোগ পরীক্ষা করুন।');
+      alert('নেটওয়ার্ক সমস্যা। আবার চেষ্টা করুন।');
     } finally {
       setLoading(false);
     }
@@ -160,14 +135,18 @@ export default function Home() {
     <main style={{ minHeight: '100vh', background: '#0a0d16', color: '#f1f5f9', fontFamily: 'sans-serif', padding: '20px 14px' }}>
       <div style={{ maxWidth: '940px', margin: '0 auto' }}>
 
-        {/* ================= 1. HOME PRODUCT CATALOG ================= */}
+        {/* ================= ১. হোম পেজ (প্রোডাক্ট ক্যাটালগ) ================= */}
         {currentView === 'home' && (
           <div>
-            <header style={{ textAlign: 'center', marginBottom: '35px', marginTop: '15px' }}>
-              <div style={{ display: 'inline-block', marginBottom: '10px' }}>
-                <HubCartLogo size={70} />
-              </div>
-              <h1 style={{ fontSize: '28px', color: '#38bdf8', margin: '0 0 6px', fontWeight: 'bold' }}>Hub Cart</h1>
+            <header style={{ textAlign: 'center', marginBottom: '35px', marginTop: '10px' }}>
+              <img
+                src={LOGO_HUB_CART}
+                alt="Hub Cart"
+                referrerPolicy="no-referrer"
+                style={{ width: '80px', height: '80px', objectFit: 'contain', borderRadius: '14px', marginBottom: '10px' }}
+                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+              />
+              <h1 style={{ fontSize: '28px', color: '#38bdf8', margin: '0 0 4px', fontWeight: 'bold' }}>Hub Cart</h1>
               <p style={{ color: '#94a3b8', margin: 0, fontSize: '14px' }}>SHOP SMART • LIVE BETTER</p>
             </header>
 
@@ -196,19 +175,17 @@ export default function Home() {
           </div>
         )}
 
-        {/* ================= 2. CUSTOMER INFO & OPTION PAGE ================= */}
+        {/* ================= ২. কাস্টমার ইনফো পেজ ================= */}
         {currentView === 'info_page' && selectedProduct && (
           <div style={{ maxWidth: '460px', margin: '15px auto', background: '#ffffff', borderRadius: '16px', color: '#1e293b', overflow: 'hidden', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)' }}>
             
-            {/* Header Bar */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid #e2e8f0' }}>
-              <button onClick={() => setCurrentView('home')} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '15px', cursor: 'pointer', fontWeight: 'bold' }}>← ফিরে যান</button>
-              <span style={{ fontWeight: 'bold', color: '#0f172a', fontSize: '16px' }}>অর্ডার ফর্ম</span>
+              <button onClick={() => setCurrentView('home')} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '15px', cursor: 'pointer', fontWeight: 'bold' }}>← ব্যাকে যান</button>
+              <span style={{ fontWeight: 'bold', color: '#0f172a', fontSize: '16px' }}>অর্ডার বিবরণ</span>
               <button onClick={resetFlow} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '18px', cursor: 'pointer' }}>✕</button>
             </div>
 
             <div style={{ padding: '20px' }}>
-              {/* Product Info Banner */}
               <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px 14px', marginBottom: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#0f172a' }}>{selectedProduct.title}</div>
@@ -218,7 +195,7 @@ export default function Home() {
               </div>
 
               <form onSubmit={handleInfoFormSubmit}>
-                {/* Name */}
+                {/* নাম ফিল্ড */}
                 <div style={{ marginBottom: '14px' }}>
                   <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', marginBottom: '5px', color: '#334155' }}>আপনার নাম *</label>
                   <input
@@ -231,7 +208,7 @@ export default function Home() {
                   />
                 </div>
 
-                {/* WhatsApp */}
+                {/* WhatsApp নম্বর */}
                 <div style={{ marginBottom: '14px' }}>
                   <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', marginBottom: '5px', color: '#334155' }}>WhatsApp Number *</label>
                   <input
@@ -263,7 +240,7 @@ export default function Home() {
                   />
                 </div>
 
-                {/* Option Selector (TBC Pay vs Instant Pay) */}
+                {/* মেথড অপশন (TBC Pay vs Instant Pay) */}
                 <div style={{ marginBottom: '20px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                     <span style={{ background: '#ea580c', color: '#fff', width: '22px', height: '22px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold' }}>3</span>
@@ -272,7 +249,7 @@ export default function Home() {
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     
-                    {/* 1st Option: TBC Pay (with Hub Cart 1st Pic Logo) */}
+                    {/* অপশন ১: TBC Pay (Hub Cart লোগো সহ) */}
                     <div
                       onClick={() => setPaymentOption('TBC Pay')}
                       style={{
@@ -287,9 +264,15 @@ export default function Home() {
                       {paymentOption === 'TBC Pay' && (
                         <div style={{ position: 'absolute', top: 0, left: 0, background: '#ea580c', color: '#fff', fontSize: '10px', padding: '2px 7px', borderBottomRightRadius: '8px', fontWeight: 'bold' }}>✓</div>
                       )}
-                      <div style={{ padding: '14px 10px 10px', textAlign: 'center' }}>
-                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '4px' }}>
-                          <HubCartLogo size={48} />
+                      <div style={{ padding: '12px 10px 10px', textAlign: 'center' }}>
+                        <div style={{ height: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '6px' }}>
+                          <img
+                            src={LOGO_HUB_CART}
+                            alt="Hub Cart"
+                            referrerPolicy="no-referrer"
+                            style={{ height: '42px', width: '42px', objectFit: 'contain' }}
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          />
                         </div>
                         <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#0f172a' }}>TBC Pay</div>
                       </div>
@@ -298,7 +281,7 @@ export default function Home() {
                       </div>
                     </div>
 
-                    {/* 2nd Option: Instant Pay (bKash & Nagad Apps Logo) */}
+                    {/* অপশন ২: Instant Pay (বিকাশ ও নগদ লোগো সহ) */}
                     <div
                       onClick={() => setPaymentOption('Instant Pay')}
                       style={{
@@ -313,10 +296,20 @@ export default function Home() {
                       {paymentOption === 'Instant Pay' && (
                         <div style={{ position: 'absolute', top: 0, left: 0, background: '#ea580c', color: '#fff', fontSize: '10px', padding: '2px 7px', borderBottomRightRadius: '8px', fontWeight: 'bold' }}>✓</div>
                       )}
-                      <div style={{ padding: '14px 8px 10px', textAlign: 'center' }}>
-                        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '4px', marginBottom: '8px', height: '40px' }}>
-                          <BkashLogo width={46} />
-                          <NagadLogo width={46} />
+                      <div style={{ padding: '12px 8px 10px', textAlign: 'center' }}>
+                        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px', height: '45px', marginBottom: '6px' }}>
+                          <img
+                            src={LOGO_BKASH}
+                            alt="bKash"
+                            referrerPolicy="no-referrer"
+                            style={{ height: '24px', maxWidth: '48px', objectFit: 'contain' }}
+                          />
+                          <img
+                            src={LOGO_NAGAD}
+                            alt="Nagad"
+                            referrerPolicy="no-referrer"
+                            style={{ height: '26px', maxWidth: '48px', objectFit: 'contain' }}
+                          />
                         </div>
                         <div style={{ fontWeight: 'bold', fontSize: '12px', color: '#0284c7' }}>Auto Payment</div>
                       </div>
@@ -330,7 +323,7 @@ export default function Home() {
 
                 {paymentOption === 'TBC Pay' && (
                   <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: '10px 12px', borderRadius: '8px', marginBottom: '18px', fontSize: '12px', color: '#1e40af', lineHeight: 1.5 }}>
-                    ℹ️ <b>TBC Pay:</b> কোনো টাকা দেওয়া লাগবে না। Buy Now চাপলে অর্ডার সম্পন্ন হবে এবং আমরা পরবর্তীতে যোগাযোগ করে পেমেন্ট গ্রহণ করব।
+                    ℹ️ <b>TBC Pay:</b> কোনো টাকা দেওয়া লাগবে না। Buy Now চাপলে অর্ডার জমা হবে এবং আমরা পরবর্তীতে আপনার সাথে যোগাযোগ করে পেমেন্ট গ্রহণ করব।
                   </div>
                 )}
 
@@ -347,34 +340,35 @@ export default function Home() {
           </div>
         )}
 
-        {/* ================= 3. INSTANT PAY GATEWAY INTERFACE (Pic 2) ================= */}
+        {/* ================= ৩. INSTANT PAY মেথড ইন্টারফেস ================= */}
         {currentView === 'gateway_methods' && selectedProduct && (
-          <div style={{ maxWidth: '440px', margin: '20px auto', background: '#f8fafc', borderRadius: '16px', color: '#1e293b', overflow: 'hidden', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)', minHeight: '440px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div style={{ maxWidth: '440px', margin: '20px auto', background: '#f8fafc', borderRadius: '16px', color: '#1e293b', overflow: 'hidden', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)', minHeight: '450px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
             
             <div>
-              {/* Top Icons */}
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid #e2e8f0', background: '#ffffff' }}>
                 <span onClick={() => setCurrentView('info_page')} style={{ cursor: 'pointer', fontSize: '18px', color: '#64748b' }}>🏠</span>
                 <span onClick={resetFlow} style={{ cursor: 'pointer', fontSize: '18px', color: '#64748b' }}>✕</span>
               </div>
 
-              {/* Shop Logo & Name */}
+              {/* Hub Cart ব্র্যান্ড লোগো ও নাম */}
               <div style={{ textAlign: 'center', padding: '24px 16px 14px' }}>
-                <div style={{ display: 'inline-block', marginBottom: '6px' }}>
-                  <HubCartLogo size={68} />
-                </div>
+                <img
+                  src={LOGO_HUB_CART}
+                  alt="Hub Cart"
+                  referrerPolicy="no-referrer"
+                  style={{ width: '70px', height: '70px', objectFit: 'contain', margin: '0 auto 8px', display: 'block', borderRadius: '12px' }}
+                />
                 <div style={{ fontSize: '19px', fontWeight: 'bold', color: '#0f172a' }}>Hub Cart</div>
               </div>
 
-              {/* Mobile Banking Blue Ribbon */}
-              <div style={{ background: '#0284c7', color: '#fff', textAlign: 'center', padding: '8px', fontWeight: 'bold', fontSize: '13px', margin: '8px 18px', borderRadius: '4px' }}>
+              <div style={{ background: '#0284c7', color: '#fff', textAlign: 'center', padding: '9px', fontWeight: 'bold', fontSize: '14px', margin: '8px 18px', borderRadius: '5px' }}>
                 মোবাইল ব্যাংকিং
               </div>
 
-              {/* bKash & Nagad Select Buttons with Original Logos */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', padding: '12px 18px' }}>
+              {/* বিকাশ ও নগদ বাটন */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', padding: '14px 18px' }}>
                 
-                {/* bKash Button */}
+                {/* bKash Selection */}
                 <div
                   onClick={() => {
                     setActiveGateway('bKash');
@@ -383,19 +377,20 @@ export default function Home() {
                   style={{
                     background: '#ffffff',
                     border: '1px solid #cbd5e1',
-                    borderRadius: '8px',
-                    padding: '16px 8px',
+                    borderRadius: '10px',
+                    padding: '16px 10px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     cursor: 'pointer',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.06)'
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                    height: '55px',
                   }}
                 >
-                  <BkashLogo width={85} />
+                  <img src={LOGO_BKASH} alt="bKash" referrerPolicy="no-referrer" style={{ height: '32px', maxWidth: '100%', objectFit: 'contain' }} />
                 </div>
 
-                {/* Nagad Button */}
+                {/* Nagad Selection */}
                 <div
                   onClick={() => {
                     setActiveGateway('Nagad');
@@ -404,26 +399,26 @@ export default function Home() {
                   style={{
                     background: '#ffffff',
                     border: '1px solid #cbd5e1',
-                    borderRadius: '8px',
-                    padding: '16px 8px',
+                    borderRadius: '10px',
+                    padding: '16px 10px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     cursor: 'pointer',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.06)'
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                    height: '55px',
                   }}
                 >
-                  <NagadLogo width={85} />
+                  <img src={LOGO_NAGAD} alt="Nagad" referrerPolicy="no-referrer" style={{ height: '34px', maxWidth: '100%', objectFit: 'contain' }} />
                 </div>
 
               </div>
             </div>
 
-            {/* Bottom Pay Action */}
             <div style={{ padding: '18px' }}>
               <button
                 onClick={() => setCurrentView('gateway_verify')}
-                style={{ width: '100%', padding: '13px', background: '#0284c7', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '15px', fontWeight: 'bold', cursor: 'pointer' }}
+                style={{ width: '100%', padding: '14px', background: '#0284c7', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '15px', fontWeight: 'bold', cursor: 'pointer' }}
               >
                 পে করুন {selectedProduct.price}.00
               </button>
@@ -432,23 +427,27 @@ export default function Home() {
           </div>
         )}
 
-        {/* ================= 4. GATEWAY VERIFY INTERFACE (Pic 3 & 4) ================= */}
+        {/* ================= ৪. গেটওয়ে ভেরিফাই ইন্টারফেস ================= */}
         {currentView === 'gateway_verify' && selectedProduct && (
           <div style={{ maxWidth: '440px', margin: '20px auto', background: '#f8fafc', borderRadius: '16px', color: '#1e293b', overflow: 'hidden', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)' }}>
             
-            {/* Top Gateway Navbar */}
             <div style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#ffffff', borderBottom: '1px solid #e2e8f0' }}>
               <span onClick={() => setCurrentView('gateway_methods')} style={{ cursor: 'pointer', color: '#64748b', fontSize: '14px', fontWeight: 'bold' }}>← Back</span>
-              <div>
-                {activeGateway === 'bKash' ? <BkashLogo width={80} /> : <NagadLogo width={80} />}
+              <div style={{ height: '30px', display: 'flex', alignItems: 'center' }}>
+                <img
+                  src={activeGateway === 'bKash' ? LOGO_BKASH : LOGO_NAGAD}
+                  alt={activeGateway}
+                  referrerPolicy="no-referrer"
+                  style={{ height: '28px', objectFit: 'contain' }}
+                />
               </div>
               <span onClick={resetFlow} style={{ cursor: 'pointer', color: '#64748b', fontSize: '18px' }}>✕</span>
             </div>
 
-            {/* Hub Cart & Price Summary Box */}
+            {/* Hub Cart & Price Summary */}
             <div style={{ padding: '14px 18px', background: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <HubCartLogo size={36} />
+                <img src={LOGO_HUB_CART} alt="Hub Cart" referrerPolicy="no-referrer" style={{ width: '38px', height: '38px', objectFit: 'contain', borderRadius: '8px' }} />
                 <div>
                   <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#0f172a' }}>Hub Cart</div>
                   <div style={{ fontSize: '12px', color: '#64748b' }}>{selectedProduct.title}</div>
@@ -459,7 +458,7 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Instruction Box: Pink for bKash / Red for Nagad */}
+            {/* লাল বা গোলাপি ইনস্ট্রাকশন বক্স */}
             <div style={{ margin: '16px', padding: '18px', borderRadius: '12px', color: '#ffffff', background: activeGateway === 'bKash' ? '#e2136e' : '#e52d27' }}>
               
               <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '8px' }}>ট্রানজেকশন আইডি দিন</label>
@@ -471,7 +470,6 @@ export default function Home() {
                 style={{ width: '100%', boxSizing: 'border-box', padding: '11px', borderRadius: '6px', border: 'none', fontSize: '15px', color: '#1e293b', fontWeight: 'bold', marginBottom: '14px' }}
               />
 
-              {/* Instructions */}
               <div style={{ fontSize: '12px', lineHeight: 1.8, opacity: 0.95 }}>
                 <div>• {activeGateway === 'bKash' ? '*247# ডায়াল করে আপনার bKash মোবাইল মেনুতে যান অথবা bKash অ্যাপ খুলুন।' : '*167# ডায়াল করে আপনার NAGAD মোবাইল মেনুতে যান অথবা NAGAD অ্যাপে যান।'}</div>
                 <div>• <b>Send Money</b> -এ ক্লিক করুন।</div>
@@ -493,7 +491,6 @@ export default function Home() {
 
             </div>
 
-            {/* Verify Action Button */}
             <div style={{ padding: '0 16px 18px' }}>
               <button
                 type="button"
@@ -508,7 +505,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* ================= 5. SUCCESS SCREEN ================= */}
+        {/* ================= ৫. সাকসেস স্ক্রিন ================= */}
         {currentView === 'success' && (
           <div style={{ maxWidth: '440px', margin: '30px auto', background: '#ffffff', borderRadius: '16px', color: '#1e293b', padding: '36px 20px', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)' }}>
             <div style={{ fontSize: '50px', marginBottom: '10px' }}>✅</div>
