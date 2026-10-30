@@ -2,12 +2,10 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
-// Supabase ক্রেডেনশিয়াল (ছোট হাতের sb_ দিয়ে ফিক্স করা)
 const SUPABASE_URL = 'https://mieygzqgoekinxppdepb.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
 
-// আপনার গোপন পিন
-const ADMIN_PIN = '614592';
+const ADMIN_PIN = '1234';
 
 const CATEGORIES = [
   { id: 'android-root', name: 'Android Root' },
@@ -21,14 +19,15 @@ export default function SecretAdminPage() {
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState(false);
 
-  // প্রোডাক্ট ও লোডিং স্টেট
+  // প্রোডাক্ট স্টেট
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // ইনপুট ফর্ম স্টেট
+  // ফর্ম স্টেট
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('android-root');
-  const [image, setImage] = useState('');
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [originalPrice, setOriginalPrice] = useState('');
@@ -48,6 +47,7 @@ export default function SecretAdminPage() {
     setLoading(true);
     try {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/products?select=*&order=id.desc`, {
+        cache: 'no-store',
         headers: {
           apikey: SUPABASE_KEY,
           Authorization: `Bearer ${SUPABASE_KEY}`,
@@ -62,11 +62,53 @@ export default function SecretAdminPage() {
     }
   };
 
+  // মোবাইল থেকে সরাসরি ফাইল সিলেক্ট
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  // Supabase Storage-এ ছবি আপলোড ফাংশন
+  const uploadImageToStorage = async (file) => {
+    const fileExt = file.name.split('.').pop();
+    const cleanFileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const uploadUrl = `${SUPABASE_URL}/storage/v1/object/products/${cleanFileName}`;
+
+    const res = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': file.type,
+      },
+      body: file,
+    });
+
+    if (!res.ok) {
+      throw new Error('ছবি স্টোরেজে আপলোড হতে সমস্যা হয়েছে। Bucket তৈরি করা আছে কি না যাচাই করুন।');
+    }
+
+    // পাবলিক লিংক রিটার্ন করা
+    return `${SUPABASE_URL}/storage/v1/object/public/products/${cleanFileName}`;
+  };
+
   const handleAddProduct = async (e) => {
     e.preventDefault();
+    if (!imageFile) {
+      alert('অনুগ্রহ করে মোবাইল থেকে একটি প্রোডাক্টের ছবি নির্বাচন করুন!');
+      return;
+    }
+
     setSubmitting(true);
 
     try {
+      // ১. প্রথমে ছবি আপলোড হবে
+      const publicImageUrl = await uploadImageToStorage(imageFile);
+
+      // ২. ডাটাবেজে প্রোডাক্টের তথ্য সেভ হবে
       const res = await fetch(`${SUPABASE_URL}/rest/v1/products`, {
         method: 'POST',
         headers: {
@@ -78,36 +120,35 @@ export default function SecretAdminPage() {
         body: JSON.stringify({
           title,
           category,
-          image,
+          image: publicImageUrl,
           description: description || '',
           price: Number(price),
           original_price: originalPrice ? Number(originalPrice) : null,
         }),
       });
 
-      const result = await res.json().catch(() => null);
-
       if (res.ok) {
-        alert('✅ Product successfully add hoyeche!');
+        alert('✅ প্রোডাক্ট ও ছবি সফলভাবে আপলোড হয়েছে!');
         setTitle('');
-        setImage('');
+        setImageFile(null);
+        setImagePreview('');
         setDescription('');
         setPrice('');
         setOriginalPrice('');
         fetchProducts();
       } else {
-        // সুপাবেস থেকে আসা সঠিক এরর মেসেজটি দেখাবে
-        alert(`❌ Error (${res.status}): ${result?.message || result?.hint || JSON.stringify(result)}`);
+        const errorData = await res.json().catch(() => null);
+        alert(`❌ ডাটাবেজ সমস্যা: ${errorData?.message || 'তথ্য সেভ করা যায়নি'}`);
       }
     } catch (err) {
-      alert('Network / Server Error: ' + err.message);
+      alert('Error: ' + err.message);
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDeleteProduct = async (id, prodTitle) => {
-    if (!confirm(`Apni ki confirm "${prodTitle}" delete korte chan?`)) return;
+    if (!confirm(`আপনি কি "${prodTitle}" ডিলিট করতে চান?`)) return;
 
     try {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/products?id=eq.${id}`, {
@@ -120,13 +161,12 @@ export default function SecretAdminPage() {
 
       if (res.ok) {
         setProducts(products.filter((p) => p.id !== id));
-        alert('🗑️ Product delete kora hoyeche!');
+        alert('🗑️ প্রোডাক্ট ডিলিট করা হয়েছে!');
       } else {
-        const errData = await res.json().catch(() => null);
-        alert(`Delete korte problem: ${errData?.message || res.statusText}`);
+        alert('ডিলিট করা যায়নি!');
       }
     } catch (err) {
-      alert('Network error!');
+      alert('নেটওয়ার্ক সমস্যা!');
     }
   };
 
@@ -135,7 +175,7 @@ export default function SecretAdminPage() {
       <div style={{ maxWidth: '360px', margin: '60px auto', padding: '24px', background: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', textAlign: 'center', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
         <div style={{ fontSize: '42px', marginBottom: '8px' }}>🔐</div>
         <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 6px', color: '#0f172a' }}>Secret Access</h2>
-        <p style={{ fontSize: '13px', color: '#64748b', margin: '0 0 18px' }}>Access pete PIN enter korun</p>
+        <p style={{ fontSize: '13px', color: '#64748b', margin: '0 0 18px' }}>অ্যাডমিন পিন দিন</p>
 
         <form onSubmit={handlePinSubmit}>
           <input
@@ -146,7 +186,7 @@ export default function SecretAdminPage() {
             onChange={(e) => { setPinInput(e.target.value); setPinError(false); }}
             style={{ width: '100%', boxSizing: 'border-box', padding: '12px', textAlign: 'center', fontSize: '18px', letterSpacing: '4px', borderRadius: '8px', border: pinError ? '1px solid #ef4444' : '1px solid #cbd5e1', marginBottom: '12px' }}
           />
-          {pinError && <div style={{ color: '#ef4444', fontSize: '12px', marginBottom: '12px' }}>Bhul PIN code!</div>}
+          {pinError && <div style={{ color: '#ef4444', fontSize: '12px', marginBottom: '12px' }}>ভুল পিন கோড!</div>}
           <button type="submit" style={{ width: '100%', padding: '11px', background: '#0f172a', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
             Enter
           </button>
@@ -160,7 +200,7 @@ export default function SecretAdminPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#ffffff', padding: '14px 18px', borderRadius: '14px', border: '1px solid #e2e8f0', marginBottom: '20px' }}>
         <div>
           <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: '#0f172a' }}>⚙️ Hub Cart Manager (tbcadsa)</h2>
-          <span style={{ fontSize: '12px', color: '#10b981', fontWeight: 'bold' }}>● Database Connected</span>
+          <span style={{ fontSize: '12px', color: '#10b981', fontWeight: 'bold' }}>● Direct Upload Mode</span>
         </div>
         <Link href="/" style={{ textDecoration: 'none', background: '#f1f5f9', color: '#0f172a', padding: '8px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }}>
           Live Store ↗
@@ -168,17 +208,17 @@ export default function SecretAdminPage() {
       </div>
 
       <div style={{ background: '#ffffff', padding: '20px', borderRadius: '16px', border: '1px solid #e2e8f0', marginBottom: '25px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-        <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: '0 0 16px', color: '#0f172a' }}>+ Notun Product Add Korun</h3>
+        <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: '0 0 16px', color: '#0f172a' }}>+ নতুন প্রোডাক্ট যোগ করুন</h3>
 
         <form onSubmit={handleAddProduct}>
           <div style={{ marginBottom: '12px' }}>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>Product-er Name *</label>
-            <input required type="text" placeholder="Jemon: Android Mobile Root" value={title} onChange={(e) => setTitle(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px' }} />
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>প্রোডাক্টের নাম *</label>
+            <input required type="text" placeholder="যেমন: Android Mobile Root" value={title} onChange={(e) => setTitle(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px' }} />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>Category *</label>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>ক্যাটাগরি *</label>
               <select value={category} onChange={(e) => setCategory(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', background: '#fff' }}>
                 {CATEGORIES.map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
@@ -187,44 +227,56 @@ export default function SecretAdminPage() {
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>Price (BDT) *</label>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>বিক্রয় মূল্য (টাকা) *</label>
               <input required type="number" placeholder="1550" value={price} onChange={(e) => setPrice(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px' }} />
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>Image URL (Direct link) *</label>
-              <input required type="url" placeholder="https://i.postimg.cc/.../image.png" value={image} onChange={(e) => setImage(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px' }} />
-            </div>
+          {/* মোবাইল থেকে ছবি সিলেক্ট করার ইনপুট */}
+          <div style={{ marginBottom: '14px' }}>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>প্রোডাক্টের ছবি আপলোড করুন *</label>
+            <input
+              required
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              style={{ width: '100%', boxSizing: 'border-box', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', background: '#f8fafc' }}
+            />
+            {imagePreview && (
+              <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <img src={imagePreview} alt="Preview" style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e2e8f0' }} />
+                <span style={{ fontSize: '12px', color: '#10b981' }}>ছবি সিলেক্ট হয়েছে</span>
+              </div>
+            )}
+          </div>
 
-            <div>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>Original Price (Kata daag-er jonno)</label>
-              <input type="number" placeholder="1800 (Optional)" value={originalPrice} onChange={(e) => setOriginalPrice(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px' }} />
-            </div>
+          <div style={{ marginBottom: '12px' }}>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>আগের মূল্য (ঐচ্ছিক - ডিসকাউন্ট দেখানোর জন্য)</label>
+            <input type="number" placeholder="1800" value={originalPrice} onChange={(e) => setOriginalPrice(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px' }} />
           </div>
 
           <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>Description</label>
-            <textarea rows={2} placeholder="Service-er details..." value={description} onChange={(e) => setDescription(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px' }} />
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>বিবরণ / বিস্তারিত বিবরণ</label>
+            <textarea rows={2} placeholder="সার্ভিস বা প্রোডাক্ট সম্পর্কিত বিস্তারিত লিখুন..." value={description} onChange={(e) => setDescription(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px' }} />
           </div>
 
           <button type="submit" disabled={submitting} style={{ width: '100%', padding: '12px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' }}>
-            {submitting ? 'Add hocche...' : 'Add Product'}
+            {submitting ? 'ছবি আপলোড ও প্রসেসিং হচ্ছে...' : 'Add Product'}
           </button>
         </form>
       </div>
 
+      {/* প্রোডাক্ট তালিকা */}
       <div style={{ background: '#ffffff', padding: '20px', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-          <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: 0, color: '#0f172a' }}>Current Products ({products.length})</h3>
-          <button onClick={fetchProducts} style={{ background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}>🔄 Refresh</button>
+          <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: 0, color: '#0f172a' }}>বর্তমান প্রোডাক্ট তালিকা ({products.length})</h3>
+          <button onClick={fetchProducts} style={{ background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}>🔄 রিফ্রেশ</button>
         </div>
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '20px', color: '#64748b' }}>Loading...</div>
+          <div style={{ textAlign: 'center', padding: '20px', color: '#64748b' }}>লোড হচ্ছে...</div>
         ) : products.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>Kono product add kora hoyni. Uporer form theke add korun.</div>
+          <div style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>কোনো প্রোডাক্ট নেই।</div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {products.map((prod) => (
@@ -232,7 +284,7 @@ export default function SecretAdminPage() {
                 <img src={prod.image} alt={prod.title} style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '8px' }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#0f172a' }}>{prod.title}</div>
-                  <div style={{ fontSize: '11px', color: '#64748b' }}>Category: {prod.category} | ৳{prod.price}</div>
+                  <div style={{ fontSize: '11px', color: '#64748b' }}>৳{prod.price} | {prod.category}</div>
                 </div>
                 <button
                   onClick={() => handleDeleteProduct(prod.id, prod.title)}
