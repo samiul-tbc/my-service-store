@@ -3,9 +3,11 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-const LOGO_HUB_CART = 'https://i.postimg.cc/4Y3TK6bN/5707.png';
+const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
+const LOGO_WHATSAPP = 'https://download.logo.wine/logo/WhatsApp/WhatsApp-Logo.wine.png';
 const SUPABASE_URL = 'https://mieygzqgoekinxppdepb.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
+const WHATSAPP_NUMBER = '8801893432478'; // আপনার WhatsApp নম্বর
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -16,7 +18,7 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [showOrderModal, setShowOrderModal] = useState(false);
 
-  // ইনপুট স্টেট (কোনো হার্ডকোডেড নাম নেই)
+  // ইনপুট স্টেট
   const [customerName, setCustomerName] = useState('');
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [telegramUsername, setTelegramUsername] = useState('');
@@ -45,7 +47,6 @@ export default function ProductDetailPage() {
     }
     fetchProduct();
 
-    // ইউজার আগে লগইন থাকলে তার ডেটা ইনপুটে অটোমেটিক বসবে
     const savedUser = localStorage.getItem('hubcart_user');
     if (savedUser) {
       try {
@@ -58,7 +59,6 @@ export default function ProductDetailPage() {
     }
   }, [id]);
 
-  // "অর্ডার Confirm করুন" চাপলে ডেটা সেভ করে processedorder পেজে পাঠানো
   const handleProceedToPayment = (e) => {
     e.preventDefault();
     if (!customerName.trim() || !whatsappNumber.trim()) {
@@ -92,6 +92,11 @@ export default function ProductDetailPage() {
     );
   }
 
+  const whatsappMsg = encodeURIComponent(
+    `হ্যালো, আমি Hub Cart থেকে সার্ভিস নিতে চাই:\n\nসার্ভিস: ${product.title}\nমূল্য: ৳${product.price}\nলিংক: ${typeof window !== 'undefined' ? window.location.href : ''}`
+  );
+  const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${whatsappMsg}`;
+
   const inputStyle = {
     width: '100%',
     boxSizing: 'border-box',
@@ -105,8 +110,9 @@ export default function ProductDetailPage() {
   };
 
   return (
-    <div style={{ maxWidth: '600px', margin: '0 auto', padding: '14px 14px 100px' }}>
+    <div style={{ maxWidth: '600px', margin: '0 auto', padding: '14px 14px 110px' }}>
       
+      {/* ব্যাক বাটন */}
       <button
         onClick={() => router.back()}
         style={{ border: 'none', background: 'none', color: '#94a3b8', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', padding: '4px 0', marginBottom: '12px' }}
@@ -157,46 +163,79 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
-      {/* নিচের ফিক্সড বার */}
+      {/* নিচের ফিক্সড অর্ডার বার: WhatsApp Order + এখনই কিনুন */}
       <div style={{
         position: 'fixed',
         bottom: 60,
         left: 0,
         right: 0,
-        background: 'rgba(11, 15, 25, 0.92)',
+        background: 'rgba(11, 15, 25, 0.94)',
         backdropFilter: 'blur(16px)',
         borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-        padding: '10px 16px',
+        padding: '10px 14px',
         display: 'flex',
         gap: '10px',
         zIndex: 90,
         maxWidth: '600px',
         margin: '0 auto',
       }}>
+        {/* ১. বাম পাশে WhatsApp Order বাটন */}
+        <a
+          href={whatsappUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            flex: 1,
+            textDecoration: 'none',
+            background: 'rgba(34, 197, 94, 0.15)',
+            border: '1.5px solid rgba(34, 197, 94, 0.5)',
+            color: '#4ade80',
+            textAlign: 'center',
+            padding: '12px 8px',
+            borderRadius: '14px',
+            fontWeight: 'bold',
+            fontSize: '13px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px',
+            boxShadow: '0 4px 12px rgba(34, 197, 94, 0.15)',
+          }}
+        >
+          <img
+            src={LOGO_WHATSAPP}
+            alt="WhatsApp"
+            style={{ width: '22px', height: '22px', objectFit: 'contain' }}
+          />
+          <span>WhatsApp Order</span>
+        </a>
+
+        {/* ২. ডান পাশে এখনই কিনুন বাটন */}
         <button
           onClick={() => { setShowOrderModal(true); setErrorMsg(''); }}
           style={{
-            width: '100%',
+            flex: 1,
             border: 'none',
             background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
             color: '#ffffff',
-            padding: '14px',
+            padding: '12px 8px',
             borderRadius: '14px',
             fontWeight: 'bold',
-            fontSize: '14px',
+            fontSize: '13px',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '8px',
-            boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)'
+            gap: '6px',
+            boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)',
           }}
         >
-          <span>⚡</span> এখনই কিনুন
+          <span>⚡</span>
+          <span>এখনই কিনুন</span>
         </button>
       </div>
 
-      {/* ইনফো মডাল (নাম, হোয়াটসঅ্যাপ, টেলিগ্রাম) */}
+      {/* ইনফো মডাল */}
       {showOrderModal && (
         <div style={{
           position: 'fixed',
