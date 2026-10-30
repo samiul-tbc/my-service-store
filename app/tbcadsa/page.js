@@ -5,8 +5,6 @@ import Link from 'next/link';
 const SUPABASE_URL = 'https://mieygzqgoekinxppdepb.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
 
-const ADMIN_PIN = '614592';
-
 const CATEGORIES = [
   { id: 'android-root', name: 'Android Root' },
   { id: 'android-panel', name: 'Android Panel' },
@@ -18,15 +16,16 @@ export default function SecretAdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState(false);
+  const [verifying, setVerifying] = useState(false);
 
-  // প্রোডাক্ট ও লোডিং স্টেট
+  // প্রোডাক্ট স্টেট
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
 
   // ইনপুট স্টেট
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('android-root');
-  const [uploadMode, setUploadMode] = useState('file'); // 'file' অথবা 'url'
+  const [uploadMode, setUploadMode] = useState('file');
   const [imageUrl, setImageUrl] = useState('');
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
@@ -35,13 +34,31 @@ export default function SecretAdminPage() {
   const [originalPrice, setOriginalPrice] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const handlePinSubmit = (e) => {
+  // সার্ভারের মাধ্যমে নিরাপদ পিন যাচাই
+  const handlePinSubmit = async (e) => {
     e.preventDefault();
-    if (pinInput === ADMIN_PIN) {
-      setIsAuthenticated(true);
-      fetchProducts();
-    } else {
-      setPinError(true);
+    setPinError(false);
+    setVerifying(true);
+
+    try {
+      const res = await fetch('/api/verify-pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: pinInput }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setIsAuthenticated(true);
+        fetchProducts();
+      } else {
+        setPinError(true);
+      }
+    } catch (err) {
+      alert('ভেরিফিকেশন সার্ভারে সমস্যা হয়েছে!');
+    } finally {
+      setVerifying(false);
     }
   };
 
@@ -64,7 +81,6 @@ export default function SecretAdminPage() {
     }
   };
 
-  // মোবাইল থেকে ছবি নেওয়া
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -73,7 +89,6 @@ export default function SecretAdminPage() {
     }
   };
 
-  // মোবাইল-ফ্রেন্ডলি মেমোরি-সেফ ছবি কম্প্রেসর
   const compressImage = (file) => {
     return new Promise((resolve, reject) => {
       const blobUrl = URL.createObjectURL(file);
@@ -83,7 +98,7 @@ export default function SecretAdminPage() {
         URL.revokeObjectURL(blobUrl);
         try {
           const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 400; // মোবাইল উপযোগী সাইজ
+          const MAX_WIDTH = 400;
           let width = img.width;
           let height = img.height;
 
@@ -96,18 +111,15 @@ export default function SecretAdminPage() {
           canvas.height = height;
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, width, height);
-
-          // হালকা সাইজের JPEG তৈরি
-          const base64 = canvas.toDataURL('image/jpeg', 0.6);
-          resolve(base64);
+          resolve(canvas.toDataURL('image/jpeg', 0.6));
         } catch (e) {
-          reject(new Error('ছবি প্রসেস করতে সমস্যা হয়েছে।'));
+          reject(new Error('ছবি প্রসেস করা যায়নি'));
         }
       };
 
       img.onerror = () => {
         URL.revokeObjectURL(blobUrl);
-        reject(new Error('এই ফরম্যাটের ছবি সাপোর্ট করেনি। সাধারণ JPG বা PNG ছবি দিন।'));
+        reject(new Error('ছবি লোড করা যায়নি'));
       };
 
       img.src = blobUrl;
@@ -123,7 +135,7 @@ export default function SecretAdminPage() {
 
       if (uploadMode === 'file') {
         if (!imageFile) {
-          alert('অনুগ্রহ করে গ্যালারি থেকে ছবি সিলেক্ট করুন!');
+          alert('অনুগ্রহ করে ছবি নির্বাচন করুন!');
           setSubmitting(false);
           return;
         }
@@ -167,17 +179,10 @@ export default function SecretAdminPage() {
         fetchProducts();
       } else {
         const errText = await res.text();
-        let errMsg = 'ডাটাবেজে সেভ হয়নি';
-        try {
-          const parsed = JSON.parse(errText);
-          errMsg = parsed.message || parsed.hint || errText;
-        } catch (e) {
-          errMsg = errText || `সার্ভার এরর (${res.status})`;
-        }
-        alert('❌ এরর: ' + errMsg);
+        alert('❌ এরর: ' + errText);
       }
     } catch (err) {
-      alert('❌ এরর: ' + (err?.message || 'ছবি আপলোডে সমস্যা হয়েছে'));
+      alert('এরর: ' + err.message);
     } finally {
       setSubmitting(false);
     }
@@ -211,7 +216,7 @@ export default function SecretAdminPage() {
       <div style={{ maxWidth: '360px', margin: '60px auto', padding: '24px', background: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', textAlign: 'center', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
         <div style={{ fontSize: '42px', marginBottom: '8px' }}>🔐</div>
         <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 6px', color: '#0f172a' }}>Secret Access</h2>
-        <p style={{ fontSize: '13px', color: '#64748b', margin: '0 0 18px' }}>অ্যাডমিন পিন দিন</p>
+        <p style={{ fontSize: '13px', color: '#64748b', margin: '0 0 18px' }}>Vercel-এ সেট করা পিন দিয়ে প্রবেশ করুন</p>
 
         <form onSubmit={handlePinSubmit}>
           <input
@@ -223,8 +228,8 @@ export default function SecretAdminPage() {
             style={{ width: '100%', boxSizing: 'border-box', padding: '12px', textAlign: 'center', fontSize: '18px', letterSpacing: '4px', borderRadius: '8px', border: pinError ? '1px solid #ef4444' : '1px solid #cbd5e1', marginBottom: '12px' }}
           />
           {pinError && <div style={{ color: '#ef4444', fontSize: '12px', marginBottom: '12px' }}>ভুল পিন কোড!</div>}
-          <button type="submit" style={{ width: '100%', padding: '11px', background: '#0f172a', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
-            Enter
+          <button type="submit" disabled={verifying} style={{ width: '100%', padding: '11px', background: '#0f172a', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
+            {verifying ? 'যাচাই হচ্ছে...' : 'Enter'}
           </button>
         </form>
       </div>
@@ -236,7 +241,7 @@ export default function SecretAdminPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#ffffff', padding: '14px 18px', borderRadius: '14px', border: '1px solid #e2e8f0', marginBottom: '20px' }}>
         <div>
           <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: '#0f172a' }}>⚙️ Hub Cart Manager (tbcadsa)</h2>
-          <span style={{ fontSize: '12px', color: '#10b981', fontWeight: 'bold' }}>● Database Connected</span>
+          <span style={{ fontSize: '12px', color: '#10b981', fontWeight: 'bold' }}>● Secure Server Protected</span>
         </div>
         <Link href="/" style={{ textDecoration: 'none', background: '#f1f5f9', color: '#0f172a', padding: '8px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }}>
           Live Store ↗
@@ -268,7 +273,6 @@ export default function SecretAdminPage() {
             </div>
           </div>
 
-          {/* ছবি সিলেক্ট বা লিংক অপশন ট্যাব */}
           <div style={{ marginBottom: '14px', background: '#f8fafc', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
             <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
               <button
