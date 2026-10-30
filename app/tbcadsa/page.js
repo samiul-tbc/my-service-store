@@ -5,7 +5,7 @@ import Link from 'next/link';
 const SUPABASE_URL = 'https://mieygzqgoekinxppdepb.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
 
-const ADMIN_PIN = '1234';
+const ADMIN_PIN = '614592';
 
 const CATEGORIES = [
   { id: 'android-root', name: 'Android Root' },
