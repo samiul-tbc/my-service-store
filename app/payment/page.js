@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 // আপনার নতুন লোগোর ডিরেক্ট লিংকটি এখানে বসান
-const LOGO_HUB_CART = 'https://i.postimg.cc/43tnkXMF/file-00000000b9b48211aeecd64684782d91.png'; // আপনার Postimg Direct Link দিন
+const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png'; // আপনার Postimg Direct Link দিন
 const LOGO_BKASH = 'https://1000logos.net/wp-content/uploads/2021/02/Bkash-logo.png';
 const LOGO_NAGAD = 'https://download.logo.wine/logo/Nagad/Nagad-Logo.wine.png';
 
