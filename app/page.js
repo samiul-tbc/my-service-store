@@ -6,63 +6,92 @@ const LOGO_HUB_CART = 'https://i.postimg.cc/4Y3TK6bN/5707.png';
 const SUPABASE_URL = 'https://mieygzqgoekinxppdepb.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
 
+// প্রিমিয়াম ভেক্টর SVG আইকন সম্বলিত ক্যাটাগরি তালিকা
 const CATEGORIES = [
-  { id: 'all', name: 'All Services', icon: '⚡' },
-  { id: 'android-root', name: 'Android Root', icon: '⚡' },
-  { id: 'android-panel', name: 'Android Panel', icon: '📱' },
-  { id: 'social-package', name: 'Social Package', icon: '🚀' },
-  { id: 'subscriptions', name: 'Subscriptions', icon: '💎' },
+  {
+    id: 'all',
+    name: 'All Services',
+    svg: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="7" height="7"></rect>
+        <rect x="14" y="3" width="7" height="7"></rect>
+        <rect x="14" y="14" width="7" height="7"></rect>
+        <rect x="3" y="14" width="7" height="7"></rect>
+      </svg>
+    ),
+  },
+  {
+    id: 'android-root',
+    name: 'Android Root',
+    svg: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+      </svg>
+    ),
+  },
+  {
+    id: 'android-panel',
+    name: 'Android Panel',
+    svg: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+        <line x1="12" y1="18" x2="12.01" y2="18"></line>
+      </svg>
+    ),
+  },
+  {
+    id: 'social-package',
+    name: 'Social Boost',
+    svg: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path>
+        <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path>
+      </svg>
+    ),
+  },
+  {
+    id: 'subscriptions',
+    name: 'VIP Subs',
+    svg: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path>
+      </svg>
+    ),
+  },
 ];
 
 export default function Home() {
   const [products, setProducts] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 7000); // ৭ সেকেন্ডের বেশি আটকে থাকলে অটো রিলিজ
-
     async function loadProducts() {
       try {
-        setLoadingProducts(true);
-        setHasError(false);
-
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/products?select=id,title,price,original_price,category,image&order=id.desc`, {
-          signal: controller.signal,
-          headers: {
-            apikey: SUPABASE_KEY,
-            Authorization: `Bearer ${SUPABASE_KEY}`,
-          },
-        });
-
-        if (!res.ok) throw new Error('ডাটাবেজ কানেকশন সমস্যা');
-
+        const res = await fetch(
+          `${SUPABASE_URL}/rest/v1/products?select=id,title,price,original_price,category,image&order=id.desc`,
+          {
+            cache: 'no-store',
+            headers: {
+              apikey: SUPABASE_KEY,
+              Authorization: `Bearer ${SUPABASE_KEY}`,
+            },
+          }
+        );
         const data = await res.json();
         if (isMounted && Array.isArray(data)) {
           setProducts(data);
         }
       } catch (err) {
-        if (isMounted) {
-          console.error('Fetch error:', err);
-          setHasError(true);
-        }
+        console.error('Fetch error:', err);
       } finally {
-        clearTimeout(timeoutId);
-        if (isMounted) {
-          setLoadingProducts(false);
-        }
+        if (isMounted) setLoadingProducts(false);
       }
     }
-
     loadProducts();
-
     return () => {
       isMounted = false;
-      controller.abort();
-      clearTimeout(timeoutId);
     };
   }, []);
 
@@ -71,69 +100,117 @@ export default function Home() {
   );
 
   return (
-    <main style={{ maxWidth: '650px', margin: '0 auto' }}>
-      {/* ব্যানার */}
-      <section style={{ margin: '12px 14px', background: 'radial-gradient(circle at center, #1e3a8a 0%, #030712 100%)', borderRadius: '16px', padding: '22px 16px', textAlign: 'center', color: '#ffffff' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '4px' }}>
-          <img src={LOGO_HUB_CART} alt="Logo" style={{ width: '38px', height: '38px', objectFit: 'contain' }} />
-          <h2 style={{ fontSize: '22px', fontWeight: '900', margin: 0, letterSpacing: '0.5px' }}>Hub Cart</h2>
+    <main style={{ maxWidth: '640px', margin: '0 auto', paddingBottom: '90px' }}>
+      
+      {/* ১. হিরো ব্যানার (Cyber-Glass Gradient Glow) */}
+      <section style={{
+        margin: '12px 14px 20px',
+        padding: '24px 18px',
+        borderRadius: '24px',
+        background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.95) 100%)',
+        border: '1px solid rgba(59, 130, 246, 0.25)',
+        boxShadow: '0 12px 30px -10px rgba(37, 99, 235, 0.35)',
+        position: 'relative',
+        overflow: 'hidden',
+        textAlign: 'center'
+      }}>
+        {/* ব্যাকগ্রাউন্ড অরা লাইটিং */}
+        <div style={{
+          position: 'absolute',
+          top: '-40px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '180px',
+          height: '100px',
+          background: 'radial-gradient(circle, rgba(59, 130, 246, 0.45) 0%, transparent 70%)',
+          filter: 'blur(20px)',
+          pointerEvents: 'none'
+        }} />
+
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(59, 130, 246, 0.12)', border: '1px solid rgba(96, 165, 250, 0.3)', padding: '4px 12px', borderRadius: '30px', marginBottom: '14px' }}>
+          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#38bdf8', boxShadow: '0 0 8px #38bdf8' }}></span>
+          <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#93c5fd', letterSpacing: '1px' }}>INSTANT DELIVERY • 24/7 SUPPORT</span>
         </div>
-        <p style={{ margin: 0, fontSize: '11px', color: '#93c5fd', letterSpacing: '1px', fontWeight: 'bold' }}>SHOP SMART • LIVE BETTER</p>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '6px' }}>
+          <img
+            src={LOGO_HUB_CART}
+            alt="Hub Cart"
+            style={{ width: '42px', height: '42px', objectFit: 'contain', filter: 'drop-shadow(0 4px 10px rgba(59, 130, 246, 0.5))' }}
+          />
+          <h1 style={{ fontSize: '26px', fontWeight: '900', margin: 0, letterSpacing: '-0.5px', background: 'linear-gradient(180deg, #ffffff 0%, #94a3b8 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            Hub Cart
+          </h1>
+        </div>
+        <p style={{ margin: 0, fontSize: '12px', color: '#64748b', fontWeight: '500' }}>
+          Next-Gen Digital Tools & Premium Services
+        </p>
       </section>
 
-      {/* ক্যাটাগরি বার */}
-      <section style={{ padding: '0 14px', marginBottom: '18px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <h3 style={{ fontSize: '15px', fontWeight: 'bold', margin: 0, color: '#0f172a' }}>Categories</h3>
-          <Link href="/categories" style={{ textDecoration: 'none', fontSize: '12px', color: '#2563eb', fontWeight: 'bold' }}>সব দেখুন →</Link>
+      {/* ২. ক্যাটাগরি পিলস (Horizontal Glass Selector) */}
+      <section style={{ padding: '0 14px', marginBottom: '22px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+            Explore Services
+          </span>
+          <Link href="/categories" style={{ textDecoration: 'none', fontSize: '11px', color: '#38bdf8', fontWeight: '600' }}>
+            View All →
+          </Link>
         </div>
-        <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px', scrollbarWidth: 'none' }}>
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat.id}
-              type="button"
-              onClick={() => setSelectedCategory(cat.id)}
-              style={{
-                minWidth: '95px',
-                background: selectedCategory === cat.id ? '#2563eb' : '#ffffff',
-                color: selectedCategory === cat.id ? '#ffffff' : '#475569',
-                border: '1px solid #e2e8f0',
-                borderRadius: '12px',
-                padding: '10px 8px',
-                textAlign: 'center',
-                cursor: 'pointer',
-                flexShrink: 0,
-              }}
-            >
-              <div style={{ fontSize: '18px' }}>{cat.icon}</div>
-              <div style={{ fontSize: '11px', fontWeight: 'bold', marginTop: '4px' }}>{cat.name}</div>
-            </button>
-          ))}
+
+        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '6px', scrollbarWidth: 'none' }}>
+          {CATEGORIES.map((cat) => {
+            const isSelected = selectedCategory === cat.id;
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setSelectedCategory(cat.id)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '9px 14px',
+                  borderRadius: '14px',
+                  background: isSelected ? 'linear-gradient(135deg, #2563eb, #1d4ed8)' : 'rgba(30, 41, 59, 0.6)',
+                  color: isSelected ? '#ffffff' : '#94a3b8',
+                  border: isSelected ? '1px solid #60a5fa' : '1px solid rgba(255, 255, 255, 0.06)',
+                  fontSize: '12px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  boxShadow: isSelected ? '0 4px 14px rgba(37, 99, 235, 0.4)' : 'none',
+                  transition: 'all 0.2s ease',
+                  flexShrink: 0
+                }}
+              >
+                <span style={{ display: 'flex', alignItems: 'center' }}>{cat.svg}</span>
+                {cat.name}
+              </button>
+            );
+          })}
         </div>
       </section>
 
-      {/* প্রোডাক্ট গ্রিড */}
+      {/* ৩. প্রোডাক্ট গ্রিড (Ultra-Glass Card) */}
       <section style={{ padding: '0 14px' }}>
-        <h3 style={{ fontSize: '15px', fontWeight: 'bold', margin: '0 0 12px', color: '#0f172a' }}>All Products</h3>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+          <h2 style={{ fontSize: '15px', fontWeight: 'bold', margin: 0, color: '#f1f5f9' }}>
+            {selectedCategory === 'all' ? 'Featured Packages' : 'Category Results'}
+          </h2>
+          <span style={{ fontSize: '11px', background: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa', padding: '2px 8px', borderRadius: '12px', fontWeight: 'bold' }}>
+            {filteredProducts.length}
+          </span>
+        </div>
 
         {loadingProducts ? (
-          <div style={{ textAlign: 'center', padding: '40px 0', color: '#64748b' }}>
-            <div style={{ fontSize: '24px', marginBottom: '8px' }}>⏳</div>
-            প্রোডাক্ট লোড হচ্ছে...
-          </div>
-        ) : hasError ? (
-          <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '12px', padding: '24px 16px', textAlign: 'center', color: '#dc2626' }}>
-            <p style={{ margin: '0 0 10px', fontSize: '13px' }}>ডাটা লোড করতে সমস্যা হয়েছে।</p>
-            <button
-              onClick={() => window.location.reload()}
-              style={{ background: '#dc2626', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
-            >
-              আবার চেষ্টা করুন
-            </button>
+          <div style={{ textAlign: 'center', padding: '50px 0', color: '#64748b' }}>
+            <div style={{ width: '28px', height: '28px', border: '3px solid rgba(59, 130, 246, 0.2)', borderTopColor: '#3b82f6', borderRadius: '50%', margin: '0 auto 12px', animation: 'spin 0.8s linear infinite' }} />
+            <span style={{ fontSize: '12px', letterSpacing: '0.5px' }}>Loading Services...</span>
           </div>
         ) : filteredProducts.length === 0 ? (
-          <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '30px 16px', textAlign: 'center', color: '#64748b' }}>
-            এই ক্যাটাগরিতে কোনো প্রোডাক্ট নেই।
+          <div style={{ background: 'rgba(30, 41, 59, 0.5)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '18px', padding: '40px 16px', textAlign: 'center', color: '#64748b' }}>
+            <p style={{ margin: 0, fontSize: '13px' }}>এই ক্যাটাগরিতে কোনো প্যাকেজ পাওয়া যায়নি।</p>
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
@@ -143,55 +220,86 @@ export default function Home() {
                 href={`/product/${prod.id}`}
                 style={{
                   textDecoration: 'none',
-                  background: '#ffffff',
-                  borderRadius: '14px',
-                  border: '1px solid #e2e8f0',
+                  background: 'rgba(15, 23, 42, 0.75)',
+                  backdropFilter: 'blur(12px)',
+                  borderRadius: '18px',
+                  border: '1px solid rgba(255, 255, 255, 0.07)',
                   overflow: 'hidden',
                   display: 'flex',
                   flexDirection: 'column',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+                  position: 'relative',
+                  boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
+                  transition: 'transform 0.2s ease, border-color 0.2s ease',
                   color: 'inherit'
                 }}
               >
-                <div style={{ width: '100%', height: '125px', background: '#f8fafc', overflow: 'hidden' }}>
-                  <img 
-                    src={prod.image || LOGO_HUB_CART} 
-                    alt={prod.title || 'Product'} 
+                {/* ইমেজ কন্টেইনার */}
+                <div style={{ width: '100%', height: '125px', background: '#0b0f19', position: 'relative', overflow: 'hidden' }}>
+                  <img
+                    src={prod.image || LOGO_HUB_CART}
+                    alt={prod.title || 'Product'}
                     loading="lazy"
-                    onError={(e) => {
-                      if (e.currentTarget.src !== LOGO_HUB_CART) {
-                        e.currentTarget.src = LOGO_HUB_CART;
-                      }
-                    }}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                    onError={(e) => { e.currentTarget.src = LOGO_HUB_CART; }}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />
+                  {prod.original_price && (
+                    <span style={{
+                      position: 'absolute',
+                      top: '8px',
+                      left: '8px',
+                      background: 'rgba(239, 68, 68, 0.9)',
+                      color: '#ffffff',
+                      fontSize: '9px',
+                      fontWeight: '800',
+                      padding: '2px 6px',
+                      borderRadius: '6px',
+                      backdropFilter: 'blur(4px)'
+                    }}>
+                      SALE
+                    </span>
+                  )}
                 </div>
-                <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
-                  <h4 style={{ fontSize: '12px', fontWeight: '600', margin: '0 0 8px', color: '#1e293b', minHeight: '30px', lineHeight: 1.3 }}>
-                    {prod.title}
-                  </h4>
-                  
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '6px' }}>
+
+                {/* কন্টেন্ট বক্স */}
+                <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
+                  <div>
+                    <span style={{ fontSize: '9px', fontWeight: 'bold', color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      {prod.category || 'Service'}
+                    </span>
+                    <h3 style={{ fontSize: '13px', fontWeight: '600', margin: '4px 0 10px', color: '#f8fafc', lineHeight: 1.35, minHeight: '34px' }}>
+                      {prod.title}
+                    </h3>
+                  </div>
+
+                  {/* মূল্য ও বাটন */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '6px', borderTop: '1px solid rgba(255, 255, 255, 0.05)' }}>
                     <div>
-                      <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#dc2626' }}>৳{prod.price}</span>
+                      <div style={{ fontSize: '15px', fontWeight: '900', color: '#38bdf8' }}>
+                        ৳{prod.price}
+                      </div>
                       {prod.original_price && (
-                        <span style={{ fontSize: '10px', color: '#94a3b8', textDecoration: 'line-through', marginLeft: '4px' }}>
+                        <span style={{ fontSize: '10px', color: '#64748b', textDecoration: 'line-through' }}>
                           ৳{prod.original_price}
                         </span>
                       )}
                     </div>
-                    <span
-                      style={{
-                        padding: '5px 9px',
-                        borderRadius: '6px',
-                        background: '#2563eb',
-                        color: '#ffffff',
-                        fontSize: '11px',
-                        fontWeight: 'bold'
-                      }}
-                    >
-                      Buy Now
-                    </span>
+
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '10px',
+                      background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#ffffff',
+                      boxShadow: '0 2px 8px rgba(37, 99, 235, 0.4)'
+                    }}>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                      </svg>
+                    </div>
                   </div>
                 </div>
               </Link>
