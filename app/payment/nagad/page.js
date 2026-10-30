@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-const LOGO_HUB_CART = 'https://i.postimg.cc/4Y3TK6bN/5707.png';
+const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
 const LOGO_NAGAD = 'https://download.logo.wine/logo/Nagad/Nagad-Logo.wine.png';
 const NAGAD_NUMBER = '01893432478';
 
