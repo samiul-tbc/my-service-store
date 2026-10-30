@@ -1,261 +1,139 @@
 'use client';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 const LOGO_HUB_CART = 'https://i.postimg.cc/4Y3TK6bN/5707.png';
-
 const SUPABASE_URL = 'https://mieygzqgoekinxppdepb.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
 
-export default function LoginPage() {
+export default function ProductDetailPage() {
+  const params = useParams();
   const router = useRouter();
-  const [isLoginMode, setIsLoginMode] = useState(true);
+  const id = params?.id;
 
-  // ইনপুট স্টেট
-  const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // প্রসেসিং স্টেট
-  const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
+  useEffect(() => {
+    if (!id) return;
 
-  // ১. সাইন-আপ সাবমিট
-  const handleSignUp = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setErrorMsg('');
-    setSuccessMsg('');
-
-    try {
-      const res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
-        method: 'POST',
-        headers: {
-          apikey: SUPABASE_KEY,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: email.trim(),
-          password: password,
-          data: {
-            full_name: fullName.trim(),
-            phone: phone.trim(),
+    async function fetchProduct() {
+      try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/products?id=eq.${id}&select=*`, {
+          cache: 'no-store',
+          headers: {
+            apikey: SUPABASE_KEY,
+            Authorization: `Bearer ${SUPABASE_KEY}`,
           },
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error_description || data.msg || data.message || 'রেজিস্ট্রেশন ব্যর্থ হয়েছে');
+        });
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          setProduct(data[0]);
+        }
+      } catch (err) {
+        console.error('Error fetching product:', err);
+      } finally {
+        setLoading(false);
       }
-
-      setSuccessMsg('অ্যাকাউন্ট তৈরি সফল হয়েছে! এখন লগইন করুন।');
-      setIsLoginMode(true);
-      setPassword('');
-    } catch (err) {
-      setErrorMsg(err.message);
-    } finally {
-      setLoading(false);
     }
-  };
 
-  // ২. লগইন সাবমিট
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setErrorMsg('');
-    setSuccessMsg('');
+    fetchProduct();
+  }, [id]);
 
-    try {
-      const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
-        method: 'POST',
-        headers: {
-          apikey: SUPABASE_KEY,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: email.trim(),
-          password: password,
-        }),
-      });
+  if (loading) {
+    return (
+      <div style={{ padding: '60px 20px', textAlign: 'center', color: '#64748b' }}>
+        প্রোডাক্ট বিবরণ লোড হচ্ছে...
+      </div>
+    );
+  }
 
-      const data = await res.json();
+  if (!product) {
+    return (
+      <div style={{ padding: '60px 20px', textAlign: 'center' }}>
+        <h3 style={{ color: '#0f172a' }}>প্রোডাক্টটি পাওয়া যায়নি!</h3>
+        <Link href="/" style={{ color: '#2563eb', fontWeight: 'bold', textDecoration: 'none' }}>
+          ← হোমপেজে ফিরে যান
+        </Link>
+      </div>
+    );
+  }
 
-      if (!res.ok) {
-        throw new Error(data.error_description || data.msg || data.message || 'ইমেইল অথবা পাসওয়ার্ড ভুল');
-      }
-
-      // লোকাল স্টোরেজে ইউজার সেশন সেভ করা
-      const userData = {
-        token: data.access_token,
-        email: data.user?.email,
-        name: data.user?.user_metadata?.full_name || 'Customer',
-        phone: data.user?.user_metadata?.phone || '',
-      };
-      localStorage.setItem('hubcart_user', JSON.stringify(userData));
-
-      setSuccessMsg('লগইন সফল! হোমপেজে নেওয়া হচ্ছে...');
-      setTimeout(() => {
-        router.push('/');
-      }, 1000);
-    } catch (err) {
-      setErrorMsg(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // সরাসরি WhatsApp-এ অর্ডার মেসেজ লিংক
+  const whatsappMsg = encodeURIComponent(`হ্যালো, আমি Hub Cart থেকে এই সার্ভিসটি নিতে চাই:\n\nপ্রোডাক্ট: ${product.title}\nমূল্য: ৳${product.price}\nলিংক: ${typeof window !== 'undefined' ? window.location.href : ''}`);
+  const whatsappUrl = `https://wa.me/8801700000000?text=${whatsappMsg}`; // আপনার WhatsApp নম্বর দিন
 
   return (
-    <div style={{ minHeight: '90vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-      <div style={{ width: '100%', maxWidth: '380px', background: '#ffffff', borderRadius: '18px', border: '1px solid #e2e8f0', padding: '24px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+    <div style={{ maxWidth: '600px', margin: '0 auto', padding: '16px 16px 90px', background: '#f8fafc' }}>
+      
+      {/* ব্যাক বাটন */}
+      <button
+        onClick={() => router.back()}
+        style={{ border: 'none', background: 'none', color: '#475569', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer', padding: '6px 0', marginBottom: '10px' }}
+      >
+        ← পেছনে যান
+      </button>
+
+      {/* প্রোডাক্ট কার্ড */}
+      <div style={{ background: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
         
-        {/* লোগো ও হেডার */}
-        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-          <img src={LOGO_HUB_CART} alt="Hub Cart" style={{ width: '50px', height: '50px', objectFit: 'contain', margin: '0 auto 6px' }} />
-          <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 4px', color: '#0f172a' }}>Hub Cart</h2>
-          <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>
-            {isLoginMode ? 'আপনার অ্যাকাউন্টে লগইন করুন' : 'নতুন অ্যাকাউন্ট তৈরি করুন'}
-          </p>
+        {/* ছবি */}
+        <div style={{ width: '100%', height: '260px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <img
+            src={product.image || LOGO_HUB_CART}
+            alt={product.title}
+            onError={(e) => { e.currentTarget.src = LOGO_HUB_CART; }}
+            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+          />
         </div>
 
-        {/* ট্যাব সুইচ (Login / Sign Up) */}
-        <div style={{ display: 'flex', background: '#f1f5f9', padding: '4px', borderRadius: '10px', marginBottom: '20px' }}>
-          <button
-            type="button"
-            onClick={() => { setIsLoginMode(true); setErrorMsg(''); setSuccessMsg(''); }}
-            style={{
-              flex: 1,
-              padding: '8px',
-              border: 'none',
-              borderRadius: '7px',
-              fontWeight: 'bold',
-              fontSize: '13px',
-              cursor: 'pointer',
-              background: isLoginMode ? '#ffffff' : 'transparent',
-              color: isLoginMode ? '#0f172a' : '#64748b',
-              boxShadow: isLoginMode ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-            }}
-          >
-            লগইন
-          </button>
-          <button
-            type="button"
-            onClick={() => { setIsLoginMode(false); setErrorMsg(''); setSuccessMsg(''); }}
-            style={{
-              flex: 1,
-              padding: '8px',
-              border: 'none',
-              borderRadius: '7px',
-              fontWeight: 'bold',
-              fontSize: '13px',
-              cursor: 'pointer',
-              background: !isLoginMode ? '#ffffff' : 'transparent',
-              color: !isLoginMode ? '#0f172a' : '#64748b',
-              boxShadow: !isLoginMode ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-            }}
-          >
-            রেজিস্ট্রেশন
-          </button>
+        {/* তথ্য ও বিবরণ */}
+        <div style={{ padding: '18px' }}>
+          <span style={{ fontSize: '11px', background: '#eff6ff', color: '#2563eb', padding: '4px 8px', borderRadius: '6px', fontWeight: 'bold' }}>
+            {product.category || 'Service'}
+          </span>
+
+          <h1 style={{ fontSize: '18px', fontWeight: 'bold', margin: '10px 0 8px', color: '#0f172a' }}>
+            {product.title}
+          </h1>
+
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '16px' }}>
+            <span style={{ fontSize: '22px', fontWeight: 'bold', color: '#dc2626' }}>৳{product.price}</span>
+            {product.original_price && (
+              <span style={{ fontSize: '14px', color: '#94a3b8', textDecoration: 'line-through' }}>
+                ৳{product.original_price}
+              </span>
+            )}
+          </div>
+
+          <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '14px' }}>
+            <h4 style={{ fontSize: '13px', fontWeight: 'bold', margin: '0 0 6px', color: '#334155' }}>বিস্তারিত বিবরণ:</h4>
+            <p style={{ fontSize: '13px', color: '#475569', lineHeight: '1.6', whiteSpace: 'pre-line', margin: 0 }}>
+              {product.description || 'এই প্রোডাক্টটির জন্য কোনো অতিরিক্ত বিবরণ দেওয়া হয়নি।'}
+            </p>
+          </div>
         </div>
-
-        {/* নোটিফিকেশন মেসেজ */}
-        {errorMsg && (
-          <div style={{ padding: '10px', borderRadius: '8px', background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontSize: '12px', marginBottom: '14px', textAlign: 'center' }}>
-            {errorMsg}
-          </div>
-        )}
-        {successMsg && (
-          <div style={{ padding: '10px', borderRadius: '8px', background: '#ecfdf5', border: '1px solid #a7f3d0', color: '#059669', fontSize: '12px', marginBottom: '14px', textAlign: 'center' }}>
-            {successMsg}
-          </div>
-        )}
-
-        {/* ফর্ম */}
-        <form onSubmit={isLoginMode ? handleLogin : handleSignUp}>
-          {!isLoginMode && (
-            <>
-              <div style={{ marginBottom: '12px' }}>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px', color: '#334155' }}>আপনার পূর্ণ নাম *</label>
-                <input
-                  required
-                  type="text"
-                  placeholder="যেমন: Samiul Islam"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px' }}
-                />
-              </div>
-
-              <div style={{ marginBottom: '12px' }}>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px', color: '#334155' }}>WhatsApp নম্বর *</label>
-                <input
-                  required
-                  type="text"
-                  maxLength={11}
-                  placeholder="017XXXXXXXX"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px' }}
-                />
-              </div>
-            </>
-          )}
-
-          <div style={{ marginBottom: '12px' }}>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px', color: '#334155' }}>ইমেইল ঠিকানা *</label>
-            <input
-              required
-              type="email"
-              placeholder="example@mail.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px' }}
-            />
-          </div>
-
-          <div style={{ marginBottom: '18px' }}>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px', color: '#334155' }}>পাসওয়ার্ড *</label>
-            <input
-              required
-              type="password"
-              minLength={6}
-              placeholder="কমপক্ষে ৬ ডিজিটের পাসওয়ার্ড"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px' }}
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              width: '100%',
-              padding: '12px',
-              background: '#2563eb',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '8px',
-              fontWeight: 'bold',
-              fontSize: '14px',
-              cursor: 'pointer',
-            }}
-          >
-            {loading ? 'প্রসেসিং...' : isLoginMode ? 'লগইন করুন' : 'অ্যাকাউন্ট তৈরি করুন'}
-          </button>
-        </form>
-
-        <div style={{ marginTop: '16px', textAlign: 'center' }}>
-          <Link href="/" style={{ textDecoration: 'none', fontSize: '12px', color: '#64748b' }}>
-            ← মূল সাইটে ফিরে যান
-          </Link>
-        </div>
-
       </div>
+
+      {/* নিচের ফিক্সড অর্ডার বার */}
+      <div style={{ position: 'fixed', bottom: 62, left: 0, right: 0, background: '#ffffff', borderTop: '1px solid #e2e8f0', padding: '10px 16px', display: 'flex', gap: '10px', zIndex: 90, maxWidth: '600px', margin: '0 auto' }}>
+        <a
+          href={whatsappUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ flex: 1, textDecoration: 'none', background: '#22c55e', color: '#ffffff', textAlign: 'center', padding: '12px', borderRadius: '10px', fontWeight: 'bold', fontSize: '14px' }}
+        >
+          💬 WhatsApp অর্ডার
+        </a>
+        <button
+          onClick={() => alert('অর্ডার প্রক্রিয়া চালু হয়েছে!')}
+          style={{ flex: 1, border: 'none', background: '#2563eb', color: '#ffffff', padding: '12px', borderRadius: '10px', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer' }}
+        >
+          ⚡ এখনই কিনুন
+        </button>
+      </div>
+
     </div>
   );
 }
