@@ -33,6 +33,10 @@ export default function SecretAdminPage() {
   const [orders, setOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
 
+  // WhatsApp ডেলিভারি মডাল স্টেট
+  const [deliveryModalOrder, setDeliveryModalOrder] = useState(null);
+  const [deliveryExtraNote, setDeliveryExtraNote] = useState('');
+
   // প্রোডাক্ট ইনপুট স্টেট
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('android-root');
@@ -191,7 +195,7 @@ export default function SecretAdminPage() {
     }
   };
 
-  // অর্ডার স্থায়ীভাবে ডিলিট
+  // সম্পূর্ণ অর্ডার ডিলিট
   const handleDeleteOrder = async (orderDbId, orderIdText) => {
     if (!confirm(`আপনি কি নিশ্চিত অর্ডার "${orderIdText}" পুরোপুরি ডিলিট করতে চান?`)) return;
 
@@ -213,6 +217,40 @@ export default function SecretAdminPage() {
     } catch (err) {
       alert('নেটওয়ার্ক সমস্যা!');
     }
+  };
+
+  // WhatsApp ডেলিভারি মেসেজ প্রস্তুত করে পাঠানো
+  const handleSendWhatsAppDelivery = () => {
+    if (!deliveryModalOrder) return;
+
+    const ord = deliveryModalOrder;
+    const cleanPhone = ord.whatsapp_number.replace(/[^0-9]/g, '');
+    const phone = cleanPhone.startsWith('88') ? cleanPhone : `88${cleanPhone}`;
+
+    const host = typeof window !== 'undefined' ? window.location.origin : 'https://hubcart.vercel.app';
+    const invoiceUrl = `${host}/invoice/${ord.order_id}`;
+
+    let message = `হ্যালো ${ord.customer_name}! 👋\n\n` +
+      `Hub Cart থেকে আপনার অর্ডারটি সফলভাবে সম্পন্ন করা হয়েছে। ✅\n\n` +
+      `📦 সার্ভিস: ${ord.service_name}\n` +
+      `🆔 অর্ডার আইডি: ${ord.order_id}\n` +
+      `💰 মূল্য: ৳${ord.price}\n\n` +
+      `📄 ডিজিটাল ক্যাশ মেমো / ইনভয়েস:\n${invoiceUrl}\n\n`;
+
+    if (deliveryExtraNote.trim()) {
+      message += `⚡ সার্ভিস বিস্তারিত / এক্সেস তথ্য:\n${deliveryExtraNote.trim()}\n\n`;
+    }
+
+    message += `যেকোনো সহায়তায় আমাদের জানান। Hub Cart-এর সাথে থাকার জন্য ধন্যবাদ! 🌟`;
+
+    const waLink = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    window.open(waLink, '_blank');
+
+    // অর্ডারের স্ট্যাটাস স্বয়ংক্রিয়ভাবে completed করা
+    handleUpdateOrderStatus(ord.id, 'completed');
+
+    setDeliveryModalOrder(null);
+    setDeliveryExtraNote('');
   };
 
   const handleFileChange = (e) => {
@@ -517,6 +555,7 @@ export default function SecretAdminPage() {
             fontWeight: 'bold',
             fontSize: '13px',
             cursor: 'pointer',
+            transition: 'all 0.2s',
           }}
         >
           🛒 লাইভ অর্ডার ({orders.length})
@@ -534,6 +573,7 @@ export default function SecretAdminPage() {
             fontWeight: 'bold',
             fontSize: '13px',
             cursor: 'pointer',
+            transition: 'all 0.2s',
           }}
         >
           📦 প্রোডাক্ট লিস্ট ({products.length})
@@ -588,7 +628,8 @@ export default function SecretAdminPage() {
                     <div>🔢 <strong>TrxID:</strong> <code style={{ color: '#f8fafc', background: '#0b0f19', padding: '2px 6px', borderRadius: '4px' }}>{ord.trx_id}</code></div>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
+                  {/* স্ট্যাটাস চেঞ্জার ও বাটনসমূহ */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 'bold' }}>স্ট্যাটাস:</span>
                       <select
@@ -629,6 +670,53 @@ export default function SecretAdminPage() {
                     >
                       🗑️ ডিলিট
                     </button>
+                  </div>
+
+                  {/* ১-ক্লিক WhatsApp ডেলিভারি বাটন */}
+                  <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '10px', display: 'flex', gap: '8px' }}>
+                    <button
+                      onClick={() => {
+                        setDeliveryModalOrder(ord);
+                        setDeliveryExtraNote('');
+                      }}
+                      style={{
+                        flex: 1,
+                        background: 'rgba(34, 197, 94, 0.15)',
+                        border: '1px solid rgba(34, 197, 94, 0.4)',
+                        color: '#4ade80',
+                        padding: '8px 12px',
+                        borderRadius: '10px',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                      }}
+                    >
+                      <span>📲</span> WhatsApp ডেলিভারি মেসেজ পাঠান
+                    </button>
+
+                    <Link
+                      href={`/invoice/${ord.order_id}`}
+                      target="_blank"
+                      style={{
+                        background: 'rgba(56, 189, 248, 0.1)',
+                        border: '1px solid rgba(56, 189, 248, 0.25)',
+                        color: '#38bdf8',
+                        padding: '8px 12px',
+                        borderRadius: '10px',
+                        fontSize: '11px',
+                        fontWeight: 'bold',
+                        textDecoration: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      📄 মেমো ↗
+                    </Link>
                   </div>
                 </div>
               ))}
@@ -776,6 +864,116 @@ export default function SecretAdminPage() {
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* WhatsApp ডেলিভারি পপআপ মডাল */}
+      {deliveryModalOrder && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.8)',
+          backdropFilter: 'blur(8px)',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px',
+        }}>
+          <div style={{
+            width: '100%',
+            maxWidth: '420px',
+            background: '#0f172a',
+            border: '1px solid rgba(34, 197, 94, 0.4)',
+            borderRadius: '24px',
+            padding: '24px',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <h3 style={{ margin: 0, fontSize: '16px', color: '#f8fafc', fontWeight: 'bold' }}>
+                📲 WhatsApp ডেলিভারি নিশ্চিতকরণ
+              </h3>
+              <button
+                onClick={() => setDeliveryModalOrder(null)}
+                style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '16px', cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ background: 'rgba(30, 41, 59, 0.6)', padding: '10px 14px', borderRadius: '12px', fontSize: '12px', color: '#cbd5e1', marginBottom: '14px', lineHeight: 1.5 }}>
+              <div>👤 <strong>গ্রাহক:</strong> {deliveryModalOrder.customer_name} ({deliveryModalOrder.whatsapp_number})</div>
+              <div>📦 <strong>সার্ভিস:</strong> {deliveryModalOrder.service_name}</div>
+              <div>🆔 <strong>অর্ডার:</strong> {deliveryModalOrder.order_id}</div>
+            </div>
+
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', fontWeight: 'bold', marginBottom: '6px' }}>
+                সার্ভিস এক্সেস তথ্য / নোট (ঐচ্ছিক):
+              </label>
+              <textarea
+                rows={3}
+                placeholder="যেমন: ইউজারনেম, পাসওয়ার্ড, ফাইল ডাউনলোড লিংক বা বিশেষ কোনো নির্দেশিকা..."
+                value={deliveryExtraNote}
+                onChange={(e) => setDeliveryExtraNote(e.target.value)}
+                style={{
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  padding: '10px 12px',
+                  borderRadius: '12px',
+                  background: 'rgba(30, 41, 59, 0.8)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  color: '#ffffff',
+                  fontSize: '12px',
+                  outline: 'none',
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                onClick={() => setDeliveryModalOrder(null)}
+                style={{
+                  flex: 1,
+                  padding: '11px',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  background: 'transparent',
+                  color: '#94a3b8',
+                  fontWeight: 'bold',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                }}
+              >
+                বাতিল
+              </button>
+
+              <button
+                onClick={handleSendWhatsAppDelivery}
+                style={{
+                  flex: 2,
+                  padding: '11px',
+                  borderRadius: '12px',
+                  border: 'none',
+                  background: 'linear-gradient(135deg, #16a34a, #15803d)',
+                  color: '#ffffff',
+                  fontWeight: 'bold',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  boxShadow: '0 4px 14px rgba(22, 163, 74, 0.4)',
+                }}
+              >
+                <span>🚀</span> WhatsApp-এ পাঠান
+              </button>
+            </div>
           </div>
         </div>
       )}
