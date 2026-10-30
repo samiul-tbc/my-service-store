@@ -56,22 +56,33 @@ export default function Navbar() {
       </Link>
 
       {/* নেভিগেশন অ্যাকশন */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <Link href="/categories" style={{ color: '#94a3b8', display: 'flex', alignItems: 'center', padding: '6px' }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {/* সার্চ / ক্যাটাগরি */}
+        <Link href="/categories" style={{ color: '#94a3b8', display: 'flex', alignItems: 'center', padding: '6px' }} title="Search Categories">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8"></circle>
             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
         </Link>
 
-        <Link href="/cart" style={{ color: '#94a3b8', display: 'flex', alignItems: 'center', padding: '6px' }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        {/* লাইভ অর্ডার ট্র্যাকার */}
+        <Link href="/track" style={{ color: '#38bdf8', display: 'flex', alignItems: 'center', padding: '6px' }} title="Live Track Order">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            <polyline points="9 12 11 14 15 10"></polyline>
+          </svg>
+        </Link>
+
+        {/* কার্ট */}
+        <Link href="/cart" style={{ color: '#94a3b8', display: 'flex', alignItems: 'center', padding: '6px' }} title="Shopping Cart">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="9" cy="21" r="1"></circle>
             <circle cx="20" cy="21" r="1"></circle>
             <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
           </svg>
         </Link>
 
+        {/* ইউজার প্রোফাইল অথবা লগইন বাটন */}
         {user ? (
           <Link
             href="/profile"
