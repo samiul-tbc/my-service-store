@@ -65,14 +65,6 @@ export default function Navbar() {
           </svg>
         </Link>
 
-        {/* লাইভ ট্র্যাকার */}
-        <Link href="/track" style={{ color: '#94a3b8', display: 'flex', alignItems: 'center', padding: '6px' }} title="Live Track Order">
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-            <polyline points="9 12 11 14 15 10"></polyline>
-          </svg>
-        </Link>
-
         {/* অর্ডার হিস্ট্রি (কার্টের পরিবর্তে) */}
         <Link href="/orders" style={{ color: '#38bdf8', display: 'flex', alignItems: 'center', padding: '6px' }} title="My Orders">
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
