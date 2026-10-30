@@ -1,146 +1,301 @@
 'use client';
 import { useState } from 'react';
 
-const SERVICES = [
+// Product list (Ekhane image URL, name, description, price change korte parben)
+const PRODUCTS = [
   {
     id: 1,
-    title: 'Android Firmware & Root Support',
-    description: 'Magisk / KernelSU সেটআপ, Bootloader আনলক ও কাস্টম রম গাইডেন্স।',
+    title: 'Rooting & Magisk Setup',
+    image: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=500&auto=format&fit=crop&q=60',
+    description: 'KernelSU / Magisk root, Bootloader unlock ebong SafetyNet bypass support.',
     price: 600,
-    badge: 'Popular',
   },
   {
     id: 2,
-    title: 'Custom Tool License / Key',
-    description: 'অনলাইন অটোমেশন বা প্রিমিয়াম ইউটিলিটি টুলসের লাইসেন্স কি।',
+    title: 'Custom Tool Premium Key',
+    image: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=500&auto=format&fit=crop&q=60',
+    description: 'VIP Automation & Flash Tool-er official activation license key.',
     price: 1200,
-    badge: 'Instant Key',
   },
   {
     id: 3,
-    title: 'Remote Device Diagnostics',
-    description: 'AnyDesk/TeamViewer এর মাধ্যমে সফটওয়্যার ইস্যু ফিক্সিং।',
+    title: 'Remote Diagnostics & Fix',
+    image: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=500&auto=format&fit=crop&q=60',
+    description: 'AnyDesk / UltraViewer er maddhome direct device issue solution.',
     price: 450,
-    badge: 'Live Remote',
   },
 ];
 
 export default function Home() {
-  const [selectedService, setSelectedService] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [orderStep, setOrderStep] = useState('form'); // 'form' | 'gateway' | 'success'
+  const [paymentMethod, setPaymentMethod] = useState('');
+  const [contact, setContact] = useState('');
+  const [customerName, setCustomerName] = useState('');
+  const [trxId, setTrxId] = useState('');
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [formData, setFormData] = useState({
-    customerName: '',
-    contact: '',
-    deviceModel: '',
-    paymentMethod: 'bKash',
-    trxId: '',
-  });
+  const [copied, setCopied] = useState(false);
 
-  const handleSubmit = async (e) => {
+  // Apnar Personal Number (Bkash & Nagad)
+  const BKASH_NUMBER = '01812080943';
+  const NAGAD_NUMBER = '01812080943';
+
+  const handleCopy = (text) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const resetAll = () => {
+    setSelectedProduct(null);
+    setOrderStep('form');
+    setPaymentMethod('');
+    setContact('');
+    setCustomerName('');
+    setTrxId('');
+    setLoading(false);
+  };
+
+  const handleInitialSubmit = (e) => {
     e.preventDefault();
-    setLoading(true);
+    if (paymentMethod === 'TBC Pay') {
+      sendOrder('TBC Pay (Manual Pay)', 'N/A (TBC Pay)');
+    } else {
+      setOrderStep('gateway');
+    }
+  };
 
+  const sendOrder = async (method, transactionId) => {
+    setLoading(true);
     try {
       const res = await fetch('/api/order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          serviceName: selectedService.title,
-          price: selectedService.price,
-          ...formData,
+          serviceName: selectedProduct.title,
+          price: selectedProduct.price,
+          customerName: customerName || 'N/A',
+          contact,
+          paymentMethod: method,
+          trxId: transactionId,
         }),
       });
 
       const data = await res.json();
       if (res.ok) {
-        setSuccess(true);
+        setOrderStep('success');
       } else {
-        alert(data.error || 'সমস্যা হয়েছে');
+        alert(data.error || 'Somossa hoyeche, abar chesta korun.');
       }
     } catch (err) {
-      alert('নেটওয়ার্ক ত্রুটি। আবার চেষ্টা করুন।');
+      alert('Network error. Check internet connection.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <main style={{ minHeight: '100vh', background: '#0a0d14', color: '#f1f5f9', fontFamily: 'sans-serif', padding: '40px 20px' }}>
-      <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+    <main style={{ minHeight: '100vh', background: '#090d16', color: '#f8fafc', fontFamily: 'sans-serif', padding: '30px 16px' }}>
+      <div style={{ maxWidth: '960px', margin: '0 auto' }}>
         
-        <header style={{ textAlign: 'center', marginBottom: '50px' }}>
-          <h1 style={{ fontSize: '32px', fontWeight: 'bold', color: '#38bdf8' }}>DevTools & Remote Services</h1>
-          <p style={{ color: '#94a3b8', marginTop: '8px' }}>প্রিমিয়াম টুলস ও টেকনিক্যাল সাপোর্ট নিন সহজে</p>
+        {/* Header */}
+        <header style={{ textAlign: 'center', marginBottom: '40px' }}>
+          <h1 style={{ fontSize: '28px', color: '#38bdf8', margin: '0 0 8px' }}>TBC Store & Services</h1>
+          <p style={{ color: '#94a3b8', margin: 0, fontSize: '15px' }}>Fast tools, remote services & instant key access</p>
         </header>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
-          {SERVICES.map((item) => (
-            <div key={item.id} style={{ background: '#111827', border: '1px solid #1f2937', borderRadius: '12px', padding: '24px', position: 'relative' }}>
-              <span style={{ fontSize: '12px', background: '#0369a1', color: '#e0f2fe', padding: '3px 8px', borderRadius: '6px' }}>{item.badge}</span>
-              <h3 style={{ fontSize: '20px', margin: '14px 0 8px' }}>{item.title}</h3>
-              <p style={{ fontSize: '14px', color: '#9ca3af', minHeight: '40px' }}>{item.description}</p>
-              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#10b981', margin: '18px 0' }}>৳{item.price}</div>
-              <button
-                onClick={() => { setSelectedService(item); setSuccess(false); }}
-                style={{ width: '100%', background: '#2563eb', color: '#fff', padding: '10px', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
-              >
-                অর্ডার করুন
-              </button>
+        {/* Product Cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '22px' }}>
+          {PRODUCTS.map((prod) => (
+            <div key={prod.id} style={{ background: '#111827', border: '1px solid #1f2937', borderRadius: '14px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+              <img src={prod.image} alt={prod.title} style={{ width: '100%', height: '170px', objectFit: 'cover' }} />
+              <div style={{ padding: '20px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <h3 style={{ fontSize: '19px', margin: '0 0 8px', color: '#f1f5f9' }}>{prod.title}</h3>
+                  <p style={{ fontSize: '13px', color: '#9ca3af', lineHeight: 1.5, minHeight: '40px', margin: 0 }}>{prod.description}</p>
+                </div>
+                <div style={{ marginTop: '20px' }}>
+                  <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#10b981', marginBottom: '14px' }}>৳ {prod.price}</div>
+                  <button
+                    onClick={() => { setSelectedProduct(prod); setOrderStep('form'); }}
+                    style={{ width: '100%', padding: '12px', background: '#0284c7', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
+                  >
+                    অর্ডার করুন
+                  </button>
+                </div>
+              </div>
             </div>
           ))}
         </div>
 
-        {selectedService && (
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', zIndex: 100 }}>
-            <div style={{ background: '#1e293b', padding: '28px', borderRadius: '14px', width: '100%', maxWidth: '440px', position: 'relative' }}>
-              <button onClick={() => setSelectedService(null)} style={{ position: 'absolute', right: '16px', top: '16px', background: 'none', border: 'none', color: '#94a3b8', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+        {/* Order Modal */}
+        {selectedProduct && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', zIndex: 1000, overflowY: 'auto' }}>
+            <div style={{ background: '#0f172a', border: '1px solid #334155', borderRadius: '16px', width: '100%', maxWidth: '420px', overflow: 'hidden', position: 'relative' }}>
+              
+              {/* Close Button */}
+              <button onClick={resetAll} style={{ position: 'absolute', right: '14px', top: '14px', background: 'none', border: 'none', color: '#94a3b8', fontSize: '20px', cursor: 'pointer', zIndex: 10 }}>✕</button>
 
-              {success ? (
-                <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                  <h3 style={{ color: '#10b981', fontSize: '22px' }}>অর্ডার গ্রহণ করা হয়েছে!</h3>
-                  <p style={{ color: '#cbd5e1', marginTop: '10px' }}>কিছুক্ষণের মধ্যে আপনার সাথে যোগাযোগ করা হবে।</p>
-                  <button onClick={() => setSelectedService(null)} style={{ marginTop: '20px', padding: '8px 20px', background: '#334155', color: '#fff', border: 'none', borderRadius: '6px' }}>ঠিক আছে</button>
+              {/* Step 1: Customer Details & Method Selection */}
+              {orderStep === 'form' && (
+                <div style={{ padding: '24px' }}>
+                  <h2 style={{ fontSize: '18px', color: '#f8fafc', margin: '0 0 6px' }}>অর্ডার বিবরণ</h2>
+                  <p style={{ fontSize: '14px', color: '#38bdf8', margin: '0 0 16px' }}>{selectedProduct.title} (৳{selectedProduct.price})</p>
+
+                  <form onSubmit={handleInitialSubmit}>
+                    <div style={{ marginBottom: '12px' }}>
+                      <label style={{ display: 'block', fontSize: '13px', color: '#94a3b8', marginBottom: '4px' }}>আপনার নাম (Optional)</label>
+                      <input
+                        type="text"
+                        placeholder="Name"
+                        value={customerName}
+                        onChange={(e) => setCustomerName(e.target.value)}
+                        style={{ width: '100%', boxSizing: 'border-box', padding: '10px', background: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#fff' }}
+                      />
+                    </div>
+
+                    <div style={{ marginBottom: '16px' }}>
+                      <label style={{ display: 'block', fontSize: '13px', color: '#94a3b8', marginBottom: '4px' }}>WhatsApp নম্বর / Telegram Username *</label>
+                      <input
+                        required
+                        type="text"
+                        placeholder="017XXXXXXXX ba @username"
+                        value={contact}
+                        onChange={(e) => setContact(e.target.value)}
+                        style={{ width: '100%', boxSizing: 'border-box', padding: '10px', background: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#fff' }}
+                      />
+                    </div>
+
+                    <div style={{ marginBottom: '16px' }}>
+                      <label style={{ display: 'block', fontSize: '13px', color: '#94a3b8', marginBottom: '8px' }}>পেমেন্ট মাধ্যম সিলেক্ট করুন *</label>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                        
+                        <button
+                          type="button"
+                          onClick={() => setPaymentMethod('bKash')}
+                          style={{ padding: '12px 6px', background: paymentMethod === 'bKash' ? '#e2136e' : '#1e293b', color: '#fff', border: paymentMethod === 'bKash' ? '2px solid #fff' : '1px solid #334155', borderRadius: '8px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer' }}
+                        >
+                          bKash
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setPaymentMethod('Nagad')}
+                          style={{ padding: '12px 6px', background: paymentMethod === 'Nagad' ? '#e52d27' : '#1e293b', color: '#fff', border: paymentMethod === 'Nagad' ? '2px solid #fff' : '1px solid #334155', borderRadius: '8px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer' }}
+                        >
+                          Nagad
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setPaymentMethod('TBC Pay')}
+                          style={{ padding: '12px 6px', background: paymentMethod === 'TBC Pay' ? '#0284c7' : '#1e293b', color: '#fff', border: paymentMethod === 'TBC Pay' ? '2px solid #fff' : '1px solid #334155', borderRadius: '8px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer' }}
+                        >
+                          TBC Pay
+                        </button>
+                      </div>
+                    </div>
+
+                    {paymentMethod === 'TBC Pay' && (
+                      <div style={{ background: '#0369a122', border: '1px solid #0284c7', padding: '10px', borderRadius: '8px', marginBottom: '16px', fontSize: '12px', color: '#7dd3fc' }}>
+                        ℹ️ <b>TBC Pay:</b> Ekhon kono taka dewa lagbe na. Order korar por amra apnar sathe jogajog kore payment collect korbo.
+                      </div>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={!paymentMethod || !contact || loading}
+                      style={{ width: '100%', padding: '12px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', opacity: (!paymentMethod || !contact) ? 0.5 : 1 }}
+                    >
+                      {loading ? 'Processing...' : paymentMethod === 'TBC Pay' ? 'অর্ডার কনফার্ম করুন (TBC Pay)' : `পেমেন্ট সম্পন্ন করুন (${paymentMethod})`}
+                    </button>
+                  </form>
                 </div>
-              ) : (
-                <form onSubmit={handleSubmit}>
-                  <h2 style={{ fontSize: '18px', marginBottom: '4px' }}>অর্ডার ফর্ম: {selectedService.title}</h2>
-                  <p style={{ color: '#38bdf8', marginBottom: '16px', fontSize: '15px' }}>মূল্য: ৳{selectedService.price}</p>
-
-                  <div style={{ marginBottom: '12px' }}>
-                    <label style={{ display: 'block', fontSize: '13px', color: '#94a3b8', marginBottom: '4px' }}>আপনার নাম *</label>
-                    <input required type="text" style={{ width: '100%', padding: '8px', background: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: '#fff' }} onChange={(e) => setFormData({ ...formData, customerName: e.target.value })} />
-                  </div>
-
-                  <div style={{ marginBottom: '12px' }}>
-                    <label style={{ display: 'block', fontSize: '13px', color: '#94a3b8', marginBottom: '4px' }}>টেলিগ্রাম ইউজারনেম / হোয়াটসঅ্যাপ নম্বর *</label>
-                    <input required type="text" placeholder="@username বা 017xxxxxxxx" style={{ width: '100%', padding: '8px', background: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: '#fff' }} onChange={(e) => setFormData({ ...formData, contact: e.target.value })} />
-                  </div>
-
-                  <div style={{ marginBottom: '12px' }}>
-                    <label style={{ display: 'block', fontSize: '13px', color: '#94a3b8', marginBottom: '4px' }}>ডিভাইসের মডেল / বিবরণ</label>
-                    <input type="text" placeholder="যেমন: Redmi Note 10 Pro" style={{ width: '100%', padding: '8px', background: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: '#fff' }} onChange={(e) => setFormData({ ...formData, deviceModel: e.target.value })} />
-                  </div>
-
-                  <div style={{ marginBottom: '12px', display: 'flex', gap: '10px' }}>
-                    <div style={{ flex: 1 }}>
-                      <label style={{ display: 'block', fontSize: '13px', color: '#94a3b8', marginBottom: '4px' }}>পেমেন্ট মাধ্যম</label>
-                      <select style={{ width: '100%', padding: '8px', background: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: '#fff' }} onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}>
-                        <option value="bKash">bKash</option>
-                        <option value="Nagad">Nagad</option>
-                      </select>
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <label style={{ display: 'block', fontSize: '13px', color: '#94a3b8', marginBottom: '4px' }}>TrxID *</label>
-                      <input required type="text" placeholder="TrxID" style={{ width: '100%', padding: '8px', background: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: '#fff' }} onChange={(e) => setFormData({ ...formData, trxId: e.target.value })} />
-                    </div>
-                  </div>
-
-                  <button type="submit" disabled={loading} style={{ width: '100%', padding: '10px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
-                    {loading ? 'প্রসেসিং হচ্ছে...' : 'অর্ডার কনফার্ম করুন'}
-                  </button>
-                </form>
               )}
+
+              {/* Step 2: Gateway UI (bKash & Nagad) */}
+              {orderStep === 'gateway' && (
+                <div style={{ background: '#f8fafc', color: '#1e293b' }}>
+                  
+                  {/* Top Bar */}
+                  <div style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0' }}>
+                    <button onClick={() => setOrderStep('form')} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '14px', cursor: 'pointer' }}>← Back</button>
+                    <div style={{ fontWeight: 'bold', fontSize: '16px', color: paymentMethod === 'bKash' ? '#e2136e' : '#e52d27' }}>
+                      {paymentMethod === 'bKash' ? 'bKash পেমেন্ট' : 'নগদ পেমেন্ট'}
+                    </div>
+                    <div style={{ width: '30px' }}></div>
+                  </div>
+
+                  {/* Summary Card */}
+                  <div style={{ padding: '14px 20px', background: '#ffffff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #edf2f7' }}>
+                    <div>
+                      <div style={{ fontSize: '14px', fontWeight: '600' }}>{selectedProduct.title}</div>
+                      <div style={{ fontSize: '12px', color: '#64748b' }}>কন্টাক্ট: {contact}</div>
+                    </div>
+                    <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#0f172a' }}>৳ {selectedProduct.price}</div>
+                  </div>
+
+                  {/* Red/Pink Instruction Box */}
+                  <div style={{ margin: '14px', padding: '16px', background: paymentMethod === 'bKash' ? '#e2136e' : '#e52d27', color: '#ffffff', borderRadius: '12px' }}>
+                    
+                    <label style={{ display: 'block', fontSize: '13px', marginBottom: '6px', fontWeight: 'bold' }}>ট্রানজেকশন আইডি দিন</label>
+                    <input
+                      type="text"
+                      placeholder="TrxID বসান"
+                      value={trxId}
+                      onChange={(e) => setTrxId(e.target.value)}
+                      style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '6px', border: 'none', color: '#1e293b', fontWeight: 'bold', fontSize: '15px', marginBottom: '14px' }}
+                    />
+
+                    {/* Instructions */}
+                    <div style={{ fontSize: '12px', lineHeight: 1.7, opacity: 0.95 }}>
+                      <div>• {paymentMethod === 'bKash' ? '*247# ডায়াল করুন অথবা bKash অ্যাপে যান' : '*167# ডায়াল করুন অথবা NAGAD অ্যাপে যান'}</div>
+                      <div>• <b>Send Money</b> অপশনে ক্লিক করুন</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '4px 0' }}>
+                        <span>• নম্বর: <b>{paymentMethod === 'bKash' ? BKASH_NUMBER : NAGAD_NUMBER}</b></span>
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(paymentMethod === 'bKash' ? BKASH_NUMBER : NAGAD_NUMBER)}
+                          style={{ background: '#ffffff', color: '#000', border: 'none', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', fontWeight: 'bold' }}
+                        >
+                          {copied ? 'Copied!' : 'কপি'}
+                        </button>
+                      </div>
+                      <div>• টাকার পরিমাণ: <b>{selectedProduct.price}</b></div>
+                      <div>• পিন দিয়ে Send Money নিশ্চিত করুন এবং TrxID কপি করুন</div>
+                      <div>• ওপরে TrxID লিখে নিচে ভেরিফাই বাটনে চাপুন</div>
+                    </div>
+                  </div>
+
+                  {/* Verify Action Button */}
+                  <div style={{ padding: '0 14px 16px' }}>
+                    <button
+                      type="button"
+                      disabled={!trxId || loading}
+                      onClick={() => sendOrder(paymentMethod, trxId)}
+                      style={{ width: '100%', padding: '12px', background: paymentMethod === 'bKash' ? '#c2185b' : '#c62828', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', opacity: !trxId ? 0.6 : 1 }}
+                    >
+                      {loading ? 'ভেরিফাই হচ্ছে...' : 'ভেরিফাই ও অর্ডার কনফার্ম'}
+                    </button>
+                  </div>
+
+                </div>
+              )}
+
+              {/* Step 3: Success Screen */}
+              {orderStep === 'success' && (
+                <div style={{ padding: '36px 20px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '50px', marginBottom: '10px' }}>✅</div>
+                  <h3 style={{ color: '#10b981', fontSize: '20px', margin: '0 0 8px' }}>অর্ডার সফল হয়েছে!</h3>
+                  <p style={{ color: '#94a3b8', fontSize: '14px', lineHeight: 1.5, margin: 0 }}>
+                    আপনার অর্ডারের তথ্য পৌঁছে গেছে। আমরা খুব শীঘ্রই আপনার WhatsApp / Telegram এ যোগাযোগ করব।
+                  </p>
+                  <button onClick={resetAll} style={{ marginTop: '22px', padding: '10px 24px', background: '#1e293b', border: '1px solid #334155', color: '#fff', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+                    ঠিক আছে
+                  </button>
+                </div>
+              )}
+
             </div>
           </div>
         )}
