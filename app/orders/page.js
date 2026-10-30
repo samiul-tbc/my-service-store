@@ -5,7 +5,7 @@ import Link from 'next/link';
 const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
 const SUPABASE_URL = 'https://mieygzqgoekinxppdepb.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
-const SUPPORT_WHATSAPP = '8801893432478'; // আপনার হেল্পলাইন নম্বর
+const SUPPORT_WHATSAPP = '8801893432478';
 
 export default function OrderHistoryPage() {
   const [user, setUser] = useState(null);
@@ -31,7 +31,6 @@ export default function OrderHistoryPage() {
     setLoading(false);
   }, []);
 
-  // WhatsApp নম্বর অথবা সরাসরি Order ID (HC-XXXX) দিয়ে অর্ডার খোঁজা
   const fetchOrders = async (queryText) => {
     const query = queryText.trim();
     if (!query) return;
@@ -74,7 +73,6 @@ export default function OrderHistoryPage() {
     fetchOrders(searchInput.trim());
   };
 
-  // স্ট্যাটাস অনুযায়ী ব্যাজ (Cancelled সহ)
   const getStatusBadge = (status) => {
     switch (status?.toLowerCase()) {
       case 'completed':
@@ -111,7 +109,6 @@ export default function OrderHistoryPage() {
           </div>
         </div>
 
-        {/* রিফ্রেশ বাটন */}
         <button
           onClick={() => {
             if (user?.phone) fetchOrders(user.phone);
@@ -124,7 +121,7 @@ export default function OrderHistoryPage() {
         </button>
       </div>
 
-      {/* সার্চ বক্স: লগইন না থাকলে অথবা অন্য নম্বর/অর্ডার আইডি দিয়ে খুঁজতে */}
+      {/* সার্চ বক্স */}
       <div style={{
         background: 'rgba(15, 23, 42, 0.75)',
         backdropFilter: 'blur(16px)',
@@ -225,7 +222,7 @@ export default function OrderHistoryPage() {
                   boxShadow: '0 4px 15px rgba(0, 0, 0, 0.25)',
                 }}
               >
-                {/* কার্ডের শীর্ষভাগ: অর্ডার আইডি ও স্ট্যাটাস */}
+                {/* কার্ডের শীর্ষভাগ */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', paddingBottom: '10px', borderBottom: '1px solid rgba(255, 255, 255, 0.06)' }}>
                   <div>
                     <span style={{ fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>ORDER ID</span>
@@ -269,27 +266,56 @@ export default function OrderHistoryPage() {
                   )}
                 </div>
 
-                {/* অ্যাকশন বাটনসমূহ */}
-                <div style={{ display: 'flex', gap: '8px' }}>
+                {/* অ্যাকশন বাটনসমূহ: ট্র্যাকিং + ইনভয়েস স্লিপ + সাপোর্ট */}
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {!isCancelled && (
                     <Link
                       href={`/track?id=${ord.order_id}`}
                       style={{
                         flex: 1,
+                        minWidth: '95px',
                         textAlign: 'center',
                         background: 'rgba(56, 189, 248, 0.1)',
                         border: '1px solid rgba(56, 189, 248, 0.3)',
                         color: '#38bdf8',
-                        padding: '9px',
+                        padding: '9px 6px',
                         borderRadius: '10px',
                         textDecoration: 'none',
-                        fontSize: '12px',
+                        fontSize: '11px',
                         fontWeight: 'bold',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '4px',
                       }}
                     >
-                      ⚡ লাইভ ট্র্যাকিং →
+                      ⚡ ট্র্যাকিং
                     </Link>
                   )}
+
+                  {/* ক্যাশ মেমো / ইনভয়েস স্লিপ বাটন */}
+                  <Link
+                    href={`/invoice/${ord.order_id}`}
+                    style={{
+                      flex: 1,
+                      minWidth: '95px',
+                      textAlign: 'center',
+                      background: 'rgba(168, 85, 247, 0.12)',
+                      border: '1px solid rgba(168, 85, 247, 0.3)',
+                      color: '#c084fc',
+                      padding: '9px 6px',
+                      borderRadius: '10px',
+                      textDecoration: 'none',
+                      fontSize: '11px',
+                      fontWeight: 'bold',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '4px',
+                    }}
+                  >
+                    📄 মেমো স্লিপ
+                  </Link>
 
                   <a
                     href={`https://wa.me/${SUPPORT_WHATSAPP}?text=${supportMsg}`}
@@ -297,19 +323,20 @@ export default function OrderHistoryPage() {
                     rel="noreferrer"
                     style={{
                       flex: isCancelled ? 1 : 0.8,
+                      minWidth: '85px',
                       textAlign: 'center',
                       background: 'rgba(34, 197, 94, 0.12)',
                       border: '1px solid rgba(34, 197, 94, 0.3)',
                       color: '#4ade80',
-                      padding: '9px',
+                      padding: '9px 6px',
                       borderRadius: '10px',
                       textDecoration: 'none',
-                      fontSize: '12px',
+                      fontSize: '11px',
                       fontWeight: 'bold',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: '4px'
+                      gap: '4px',
                     }}
                   >
                     💬 সাপোর্ট
