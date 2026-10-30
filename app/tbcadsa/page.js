@@ -2,12 +2,12 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
-// Supabase Credentials
+// Supabase ক্রেডেনশিয়াল (ছোট হাতের sb_ দিয়ে ফিক্স করা)
 const SUPABASE_URL = 'https://mieygzqgoekinxppdepb.supabase.co';
-const SUPABASE_KEY = 'Sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
+const SUPABASE_KEY = 'sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
 
-// Secret PIN (Dorkar hole change kore neben)
-const ADMIN_PIN = '614592';
+// আপনার গোপন পিন
+const ADMIN_PIN = '1234';
 
 const CATEGORIES = [
   { id: 'android-root', name: 'Android Root' },
@@ -21,11 +21,11 @@ export default function SecretAdminPage() {
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState(false);
 
-  // Products state
+  // প্রোডাক্ট ও লোডিং স্টেট
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // New product form state
+  // ইনপুট ফর্ম স্টেট
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('android-root');
   const [image, setImage] = useState('');
@@ -34,7 +34,6 @@ export default function SecretAdminPage() {
   const [originalPrice, setOriginalPrice] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // PIN check
   const handlePinSubmit = (e) => {
     e.preventDefault();
     if (pinInput === ADMIN_PIN) {
@@ -45,7 +44,6 @@ export default function SecretAdminPage() {
     }
   };
 
-  // Supabase theke product ana
   const fetchProducts = async () => {
     setLoading(true);
     try {
@@ -58,13 +56,12 @@ export default function SecretAdminPage() {
       const data = await res.json();
       if (Array.isArray(data)) setProducts(data);
     } catch (err) {
-      alert('Product load korte problem hoyeche!');
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Notun product add kora
   const handleAddProduct = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -82,14 +79,16 @@ export default function SecretAdminPage() {
           title,
           category,
           image,
-          description,
+          description: description || '',
           price: Number(price),
           original_price: originalPrice ? Number(originalPrice) : null,
         }),
       });
 
+      const result = await res.json().catch(() => null);
+
       if (res.ok) {
-        alert('Product successfully add hoyeche!');
+        alert('✅ Product successfully add hoyeche!');
         setTitle('');
         setImage('');
         setDescription('');
@@ -97,16 +96,16 @@ export default function SecretAdminPage() {
         setOriginalPrice('');
         fetchProducts();
       } else {
-        alert('Product add kora jayni, details check korun.');
+        // সুপাবেস থেকে আসা সঠিক এরর মেসেজটি দেখাবে
+        alert(`❌ Error (${res.status}): ${result?.message || result?.hint || JSON.stringify(result)}`);
       }
     } catch (err) {
-      alert('Server error!');
+      alert('Network / Server Error: ' + err.message);
     } finally {
       setSubmitting(false);
     }
   };
 
-  // Product delete kora
   const handleDeleteProduct = async (id, prodTitle) => {
     if (!confirm(`Apni ki confirm "${prodTitle}" delete korte chan?`)) return;
 
@@ -121,16 +120,16 @@ export default function SecretAdminPage() {
 
       if (res.ok) {
         setProducts(products.filter((p) => p.id !== id));
-        alert('Product delete kora hoyeche!');
+        alert('🗑️ Product delete kora hoyeche!');
       } else {
-        alert('Delete korte problem hoyeche!');
+        const errData = await res.json().catch(() => null);
+        alert(`Delete korte problem: ${errData?.message || res.statusText}`);
       }
     } catch (err) {
       alert('Network error!');
     }
   };
 
-  // PIN Screen
   if (!isAuthenticated) {
     return (
       <div style={{ maxWidth: '360px', margin: '60px auto', padding: '24px', background: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', textAlign: 'center', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
@@ -141,8 +140,8 @@ export default function SecretAdminPage() {
         <form onSubmit={handlePinSubmit}>
           <input
             type="password"
-            maxLength={6}
-            placeholder="PIN (Default: 1234)"
+            maxLength={10}
+            placeholder="PIN"
             value={pinInput}
             onChange={(e) => { setPinInput(e.target.value); setPinError(false); }}
             style={{ width: '100%', boxSizing: 'border-box', padding: '12px', textAlign: 'center', fontSize: '18px', letterSpacing: '4px', borderRadius: '8px', border: pinError ? '1px solid #ef4444' : '1px solid #cbd5e1', marginBottom: '12px' }}
@@ -156,11 +155,8 @@ export default function SecretAdminPage() {
     );
   }
 
-  // Admin Dashboard
   return (
     <div style={{ maxWidth: '700px', margin: '20px auto', padding: '0 14px' }}>
-      
-      {/* Top Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#ffffff', padding: '14px 18px', borderRadius: '14px', border: '1px solid #e2e8f0', marginBottom: '20px' }}>
         <div>
           <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: '#0f172a' }}>⚙️ Hub Cart Manager (tbcadsa)</h2>
@@ -171,14 +167,13 @@ export default function SecretAdminPage() {
         </Link>
       </div>
 
-      {/* Add Product Form */}
       <div style={{ background: '#ffffff', padding: '20px', borderRadius: '16px', border: '1px solid #e2e8f0', marginBottom: '25px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
         <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: '0 0 16px', color: '#0f172a' }}>+ Notun Product Add Korun</h3>
 
         <form onSubmit={handleAddProduct}>
           <div style={{ marginBottom: '12px' }}>
             <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>Product-er Name *</label>
-            <input required type="text" placeholder="Jemon: Android Permanent Root" value={title} onChange={(e) => setTitle(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px' }} />
+            <input required type="text" placeholder="Jemon: Android Mobile Root" value={title} onChange={(e) => setTitle(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px' }} />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
@@ -193,7 +188,7 @@ export default function SecretAdminPage() {
 
             <div>
               <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>Price (BDT) *</label>
-              <input required type="number" placeholder="250" value={price} onChange={(e) => setPrice(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px' }} />
+              <input required type="number" placeholder="1550" value={price} onChange={(e) => setPrice(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px' }} />
             </div>
           </div>
 
@@ -205,7 +200,7 @@ export default function SecretAdminPage() {
 
             <div>
               <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>Original Price (Kata daag-er jonno)</label>
-              <input type="number" placeholder="300 (Optional)" value={originalPrice} onChange={(e) => setOriginalPrice(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px' }} />
+              <input type="number" placeholder="1800 (Optional)" value={originalPrice} onChange={(e) => setOriginalPrice(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px' }} />
             </div>
           </div>
 
@@ -220,7 +215,6 @@ export default function SecretAdminPage() {
         </form>
       </div>
 
-      {/* Product List and Delete */}
       <div style={{ background: '#ffffff', padding: '20px', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
           <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: 0, color: '#0f172a' }}>Current Products ({products.length})</h3>
@@ -251,7 +245,6 @@ export default function SecretAdminPage() {
           </div>
         )}
       </div>
-
     </div>
   );
 }
