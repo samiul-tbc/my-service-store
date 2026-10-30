@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 const LOGO_HUB_CART = 'https://i.postimg.cc/4Y3TK6bN/5707.png';
-const NAGAD_NUMBER = '01893432478'; // আপনার নগদ নম্বর
+const LOGO_NAGAD = 'https://download.logo.wine/logo/Nagad/Nagad-Logo.wine.png';
+const NAGAD_NUMBER = '01893432478';
 
 export default function NagadPaymentPage() {
   const router = useRouter();
@@ -52,7 +53,7 @@ export default function NagadPaymentPage() {
       });
 
       if (res.ok) {
-        alert('✅ আপনার নগদ পেমেন্ট অর্ডার সফলভাবে সাবমিট হয়েছে! খুব দ্রুত সার্ভিস চালু করা হবে।');
+        alert('✅ আপনার নগদ পেমেন্ট অর্ডার সফলভাবে সাবমিট হয়েছে!');
         localStorage.removeItem('hubcart_current_order');
         router.push('/');
       } else {
@@ -70,23 +71,20 @@ export default function NagadPaymentPage() {
   return (
     <div style={{ maxWidth: '440px', margin: '0 auto', background: '#f8fafc', minHeight: '100vh', padding: '16px' }}>
       
-      {/* নগদ লোগো হেডার */}
-      <div style={{ textAlign: 'center', padding: '16px', background: '#ffffff', borderRadius: '14px', border: '1px solid #e2e8f0', marginBottom: '14px' }}>
-        <h2 style={{ margin: 0, color: '#e53935', fontSize: '24px', fontWeight: '900' }}>নগদ</h2>
+      {/* হেডারে নগদ অফিসিয়াল লোগো */}
+      <div style={{ textAlign: 'center', padding: '12px', background: '#ffffff', borderRadius: '14px', border: '1px solid #e2e8f0', marginBottom: '14px' }}>
+        <img src={LOGO_NAGAD} alt="Nagad" style={{ height: '36px', objectFit: 'contain' }} />
       </div>
 
-      {/* Hub Cart ব্র্যান্ডিং বক্স */}
       <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '14px 20px', display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '14px' }}>
         <img src={LOGO_HUB_CART} alt="Hub Cart" style={{ width: '40px', height: '40px', objectFit: 'contain' }} />
         <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#0f172a' }}>Hub Cart</span>
       </div>
 
-      {/* টাকার পরিমাণ বক্স */}
       <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '16px', textAlign: 'left', marginBottom: '16px', fontSize: '22px', fontWeight: '900', color: '#0f172a' }}>
         ৳ {orderData.price}
       </div>
 
-      {/* লাল নগদ পেমেন্ট নির্দেশিকা কার্ড (ছবি ২-এর হুবহু) */}
       <div style={{ background: '#d32f2f', borderRadius: '16px', padding: '20px 16px', color: '#ffffff', marginBottom: '20px' }}>
         <h4 style={{ margin: '0 0 12px', fontSize: '15px', fontWeight: 'bold' }}>ট্রানজেকশন আইডি দিন</h4>
 
@@ -114,7 +112,6 @@ export default function NagadPaymentPage() {
         </div>
       </div>
 
-      {/* ভেরিফাই বাটন */}
       <button
         onClick={handleVerify}
         disabled={submitting}
