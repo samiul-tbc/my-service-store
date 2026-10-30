@@ -19,7 +19,7 @@ export default function SecretAdminPage() {
   const [pinError, setPinError] = useState(false);
   const [verifying, setVerifying] = useState(false);
 
-  // ড্যাশবোর্ড ট্যাব: 'products' অথবা 'orders'
+  // ডিফল্ট ট্যাব 'orders' রাখা হলো যাতে ঢুকলেই আগে অর্ডার দেখা যায়
   const [activeTab, setActiveTab] = useState('orders');
 
   // প্রোডাক্ট স্টেট
@@ -59,8 +59,8 @@ export default function SecretAdminPage() {
 
       if (res.ok && data.success) {
         setIsAuthenticated(true);
-        fetchProducts();
         fetchOrders();
+        fetchProducts();
       } else {
         setPinError(true);
       }
@@ -71,27 +71,7 @@ export default function SecretAdminPage() {
     }
   };
 
-  // ১. প্রোডাক্ট লোড
-  const fetchProducts = async () => {
-    setLoadingProducts(true);
-    try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/products?select=*&order=id.desc`, {
-        cache: 'no-store',
-        headers: {
-          apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`,
-        },
-      });
-      const data = await res.json();
-      if (Array.isArray(data)) setProducts(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoadingProducts(false);
-    }
-  };
-
-  // ২. অর্ডার লোড (ট্র্যাকিং ডেটা)
+  // ১. অর্ডার ফেচ
   const fetchOrders = async () => {
     setLoadingOrders(true);
     try {
@@ -111,7 +91,27 @@ export default function SecretAdminPage() {
     }
   };
 
-  // অর্ডার স্ট্যাটাস আপডেট (Pending ➜ Verifying ➜ Processing ➜ Completed)
+  // ২. প্রোডাক্ট ফেচ
+  const fetchProducts = async () => {
+    setLoadingProducts(true);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/products?select=*&order=id.desc`, {
+        cache: 'no-store',
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+        },
+      });
+      const data = await res.json();
+      if (Array.isArray(data)) setProducts(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
+
+  // স্ট্যাটাস আপডেট হ্যান্ডলার
   const handleUpdateOrderStatus = async (orderDbId, newStatus) => {
     try {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${orderDbId}`, {
@@ -133,7 +133,7 @@ export default function SecretAdminPage() {
         alert('স্ট্যাটাস আপডেট করা সম্ভব হয়নি!');
       }
     } catch (err) {
-      alert('সার্ভার কানেকশন এরর!');
+      alert('সার্ভার এরর!');
     }
   };
 
@@ -278,7 +278,6 @@ export default function SecretAdminPage() {
     outline: 'none',
   };
 
-  // পিন ভেরিফিকেশন কার্ড (ডার্ক সাইবার স্টাইল)
   if (!isAuthenticated) {
     return (
       <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
@@ -294,7 +293,7 @@ export default function SecretAdminPage() {
           boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
         }}>
           <img src={LOGO_HUB_CART} alt="Hub Cart" style={{ width: '48px', height: '48px', objectFit: 'contain', margin: '0 auto 12px', filter: 'drop-shadow(0 2px 8px rgba(56, 189, 248, 0.4))' }} />
-          <h2 style={{ fontSize: '20px', fontWeight: '900', margin: '0 0 6px', color: '#f8fafc' }}>TBC Admin Access</h2>
+          <h2 style={{ fontSize: '20px', fontWeight: '900', margin: '0 0 6px', color: '#f8fafc' }}>Hub Cart (tbcadsa)</h2>
           <p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 20px' }}>মাস্টার পিন কোড দিয়ে ড্যাশবোর্ডে প্রবেশ করুন</p>
 
           <form onSubmit={handlePinSubmit}>
@@ -348,7 +347,7 @@ export default function SecretAdminPage() {
   return (
     <div style={{ maxWidth: '720px', margin: '14px auto', padding: '0 14px 100px' }}>
       
-      {/* ১. ড্যাশবোর্ড হেডার */}
+      {/* হেডার */}
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
@@ -363,7 +362,7 @@ export default function SecretAdminPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <img src={LOGO_HUB_CART} alt="Hub Cart" style={{ width: '32px', height: '32px', objectFit: 'contain' }} />
           <div>
-            <h2 style={{ fontSize: '16px', fontWeight: '900', margin: 0, color: '#f8fafc' }}>Hub Cart Manager</h2>
+            <h2 style={{ fontSize: '16px', fontWeight: '900', margin: 0, color: '#f8fafc' }}>Hub Cart Manager (tbcadsa)</h2>
             <span style={{ fontSize: '10px', color: '#4ade80', fontWeight: 'bold' }}>● Secure Server Protected</span>
           </div>
         </div>
@@ -385,7 +384,7 @@ export default function SecretAdminPage() {
         </Link>
       </div>
 
-      {/* ২. ট্যাব সুইচিং বাটন */}
+      {/* ট্যাব সিলেকশন */}
       <div style={{ display: 'flex', gap: '8px', background: 'rgba(15, 23, 42, 0.7)', padding: '6px', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.06)', marginBottom: '20px' }}>
         <button
           type="button"
@@ -425,7 +424,7 @@ export default function SecretAdminPage() {
         </button>
       </div>
 
-      {/* ৩. অর্ডার ম্যানেজমেন্ট ট্যাব */}
+      {/* লাইভ অর্ডার ট্যাব */}
       {activeTab === 'orders' && (
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
@@ -465,7 +464,6 @@ export default function SecretAdminPage() {
                     <span style={{ fontSize: '15px', fontWeight: '900', color: '#38bdf8' }}>৳{ord.price}</span>
                   </div>
 
-                  {/* কাস্টমার ও পেমেন্ট ইনফো */}
                   <div style={{ background: 'rgba(30, 41, 59, 0.5)', padding: '10px 12px', borderRadius: '12px', fontSize: '12px', color: '#cbd5e1', lineHeight: '1.6', marginBottom: '12px' }}>
                     <div>👤 <strong>নাম:</strong> {ord.customer_name}</div>
                     <div>📞 <strong>WhatsApp:</strong> <a href={`https://wa.me/88${ord.whatsapp_number}`} target="_blank" rel="noreferrer" style={{ color: '#4ade80', textDecoration: 'none' }}>{ord.whatsapp_number}</a></div>
@@ -474,7 +472,6 @@ export default function SecretAdminPage() {
                     <div>🔢 <strong>TrxID:</strong> <code style={{ color: '#f8fafc', background: '#0b0f19', padding: '2px 6px', borderRadius: '4px' }}>{ord.trx_id}</code></div>
                   </div>
 
-                  {/* স্ট্যাটাস চেঞ্জার ড্রপডাউন */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 'bold' }}>লাইভ স্ট্যাটাস আপডেট:</span>
                     <select
@@ -505,10 +502,9 @@ export default function SecretAdminPage() {
         </div>
       )}
 
-      {/* ৪. প্রোডাক্ট ম্যানেজমেন্ট ট্যাব */}
+      {/* প্রোডাক্ট ট্যাব */}
       {activeTab === 'products' && (
         <div>
-          {/* নতুন প্রোডাক্ট অ্যাড ফর্ম */}
           <div style={{
             background: 'rgba(15, 23, 42, 0.8)',
             backdropFilter: 'blur(16px)',
@@ -541,7 +537,6 @@ export default function SecretAdminPage() {
                 </div>
               </div>
 
-              {/* ছবি আপলোড মোড */}
               <div style={{ marginBottom: '14px', background: 'rgba(30, 41, 59, 0.6)', padding: '12px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
                   <button
@@ -617,7 +612,6 @@ export default function SecretAdminPage() {
             </form>
           </div>
 
-          {/* বর্তমান প্রোডাক্ট তালিকা */}
           <div style={{ background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(16px)', padding: '20px', borderRadius: '20px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
               <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: 0, color: '#f8fafc' }}>বর্তমান প্রোডাক্ট তালিকা ({products.length})</h3>
