@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 const LOGO_HUB_CART = 'https://i.postimg.cc/4Y3TK6bN/5707.png';
-
 const SUPABASE_URL = 'https://mieygzqgoekinxppdepb.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
 
@@ -52,13 +51,13 @@ export default function Home() {
       {/* ব্যানার */}
       <section style={{ margin: '12px 14px', background: 'radial-gradient(circle at center, #1e3a8a 0%, #030712 100%)', borderRadius: '16px', padding: '24px 16px', textAlign: 'center', color: '#ffffff' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '4px' }}>
-          <img src={LOGO_HUB_CART} alt="Logo" style={{ width: '44px', height: '44px', objectFit: 'contain' }} />
-          <h2 style={{ fontSize: '24px', fontWeight: '900', margin: 0 }}>Hub Cart</h2>
+          <img src={LOGO_HUB_CART} alt="Logo" style={{ width: '40px', height: '40px', objectFit: 'contain' }} />
+          <h2 style={{ fontSize: '22px', fontWeight: '900', margin: 0 }}>Hub Cart</h2>
         </div>
         <p style={{ margin: 0, fontSize: '12px', color: '#93c5fd', letterSpacing: '1px' }}>SHOP SMART • LIVE BETTER</p>
       </section>
 
-      {/* ক্যাটাগরি স্লাইডার */}
+      {/* ক্যাটাগরি তালিকা */}
       <section style={{ padding: '0 14px', marginBottom: '18px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
           <h3 style={{ fontSize: '15px', fontWeight: 'bold', margin: 0 }}>Categories</h3>
@@ -70,9 +69,9 @@ export default function Home() {
               key={cat.id}
               onClick={() => setSelectedCategory(cat.id)}
               style={{
-                minWidth: '100px',
-                background: selectedCategory === cat.id ? '#2563eb' : '#fff',
-                color: selectedCategory === cat.id ? '#fff' : '#475569',
+                minWidth: '95px',
+                background: selectedCategory === cat.id ? '#4f46e5' : '#ffffff',
+                color: selectedCategory === cat.id ? '#ffffff' : '#475569',
                 border: '1px solid #e2e8f0',
                 borderRadius: '12px',
                 padding: '10px 8px',
@@ -88,14 +87,14 @@ export default function Home() {
         </div>
       </section>
 
-      {/* প্রোডাক্ট গ্রিড (ক্লিক করলে /product/[id] পেজে যাবে) */}
+      {/* লাইভ প্রোডাক্ট গ্রিড */}
       <section style={{ padding: '0 14px' }}>
         <h3 style={{ fontSize: '15px', fontWeight: 'bold', margin: '0 0 12px' }}>All Products</h3>
 
         {loadingProducts ? (
           <div style={{ textAlign: 'center', padding: '40px 0', color: '#64748b' }}>প্রোডাক্ট লোড হচ্ছে...</div>
         ) : filteredProducts.length === 0 ? (
-          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '30px 16px', textAlign: 'center', color: '#64748b' }}>
+          <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '30px 16px', textAlign: 'center', color: '#64748b' }}>
             এই ক্যাটাগরিতে এখনো কোনো প্রোডাক্ট নেই।
           </div>
         ) : (
@@ -119,7 +118,7 @@ export default function Home() {
                 <img 
                   src={prod.image || LOGO_HUB_CART} 
                   alt={prod.title} 
-                  onError={(e) => { e.target.src = LOGO_HUB_CART; }}
+                  onError={(e) => { e.currentTarget.src = LOGO_HUB_CART; }}
                   style={{ width: '100%', height: '130px', objectFit: 'cover' }} 
                 />
                 <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
@@ -138,8 +137,8 @@ export default function Home() {
                       style={{
                         padding: '5px 10px',
                         borderRadius: '6px',
-                        background: '#2563eb',
-                        color: '#fff',
+                        background: '#4f46e5',
+                        color: '#ffffff',
                         fontSize: '11px',
                         fontWeight: 'bold'
                       }}
