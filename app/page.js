@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
-const LOGO_HUB_CART = 'https://i.postimg.cc/4Y3TK6bN/5707.png';
+const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
 const SUPABASE_URL = 'https://mieygzqgoekinxppdepb.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
 
