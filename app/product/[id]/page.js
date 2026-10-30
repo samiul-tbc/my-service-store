@@ -62,7 +62,7 @@ export default function ProductDetailPage() {
   }
 
   const whatsappMsg = encodeURIComponent(`হ্যালো Hub Cart! আমি এই সার্ভিসটি নিতে আগ্রহী:\n\nপ্যাকেজ: ${product.title}\nমূল্য: ৳${product.price}\nপেজ: ${typeof window !== 'undefined' ? window.location.href : ''}`);
-  const whatsappUrl = `https://wa.me/8801700000000?text=${whatsappMsg}`; // আপনার WhatsApp নম্বর
+  const whatsappUrl = `https://wa.me/8801893432478?text=${whatsappMsg}`; // আপনার WhatsApp নম্বর
 
   return (
     <div style={{ maxWidth: '600px', margin: '0 auto', padding: '12px 14px 100px', color: '#f8fafc' }}>
