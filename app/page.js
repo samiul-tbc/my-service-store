@@ -18,28 +18,52 @@ export default function Home() {
   const [products, setProducts] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 7000); // ৭ সেকেন্ডের বেশি আটকে থাকলে অটো রিলিজ
+
     async function loadProducts() {
       try {
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/products?select=*&order=id.desc`, {
-          cache: 'no-store',
+        setLoadingProducts(true);
+        setHasError(false);
+
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/products?select=id,title,price,original_price,category,image&order=id.desc`, {
+          signal: controller.signal,
           headers: {
             apikey: SUPABASE_KEY,
             Authorization: `Bearer ${SUPABASE_KEY}`,
           },
         });
+
+        if (!res.ok) throw new Error('ডাটাবেজ কানেকশন সমস্যা');
+
         const data = await res.json();
-        if (Array.isArray(data)) {
+        if (isMounted && Array.isArray(data)) {
           setProducts(data);
         }
       } catch (err) {
-        console.error('Fetch error:', err);
+        if (isMounted) {
+          console.error('Fetch error:', err);
+          setHasError(true);
+        }
       } finally {
-        setLoadingProducts(false);
+        clearTimeout(timeoutId);
+        if (isMounted) {
+          setLoadingProducts(false);
+        }
       }
     }
+
     loadProducts();
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+      clearTimeout(timeoutId);
+    };
   }, []);
 
   const filteredProducts = products.filter((prod) =>
@@ -47,30 +71,31 @@ export default function Home() {
   );
 
   return (
-    <main>
+    <main style={{ maxWidth: '650px', margin: '0 auto' }}>
       {/* ব্যানার */}
-      <section style={{ margin: '12px 14px', background: 'radial-gradient(circle at center, #1e3a8a 0%, #030712 100%)', borderRadius: '16px', padding: '24px 16px', textAlign: 'center', color: '#ffffff' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '4px' }}>
-          <img src={LOGO_HUB_CART} alt="Logo" style={{ width: '40px', height: '40px', objectFit: 'contain' }} />
-          <h2 style={{ fontSize: '22px', fontWeight: '900', margin: 0 }}>Hub Cart</h2>
+      <section style={{ margin: '12px 14px', background: 'radial-gradient(circle at center, #1e3a8a 0%, #030712 100%)', borderRadius: '16px', padding: '22px 16px', textAlign: 'center', color: '#ffffff' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '4px' }}>
+          <img src={LOGO_HUB_CART} alt="Logo" style={{ width: '38px', height: '38px', objectFit: 'contain' }} />
+          <h2 style={{ fontSize: '22px', fontWeight: '900', margin: 0, letterSpacing: '0.5px' }}>Hub Cart</h2>
         </div>
-        <p style={{ margin: 0, fontSize: '12px', color: '#93c5fd', letterSpacing: '1px' }}>SHOP SMART • LIVE BETTER</p>
+        <p style={{ margin: 0, fontSize: '11px', color: '#93c5fd', letterSpacing: '1px', fontWeight: 'bold' }}>SHOP SMART • LIVE BETTER</p>
       </section>
 
-      {/* ক্যাটাগরি তালিকা */}
+      {/* ক্যাটাগরি বার */}
       <section style={{ padding: '0 14px', marginBottom: '18px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <h3 style={{ fontSize: '15px', fontWeight: 'bold', margin: 0 }}>Categories</h3>
+          <h3 style={{ fontSize: '15px', fontWeight: 'bold', margin: 0, color: '#0f172a' }}>Categories</h3>
           <Link href="/categories" style={{ textDecoration: 'none', fontSize: '12px', color: '#2563eb', fontWeight: 'bold' }}>সব দেখুন →</Link>
         </div>
-        <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px' }}>
+        <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px', scrollbarWidth: 'none' }}>
           {CATEGORIES.map((cat) => (
-            <div
+            <button
               key={cat.id}
+              type="button"
               onClick={() => setSelectedCategory(cat.id)}
               style={{
                 minWidth: '95px',
-                background: selectedCategory === cat.id ? '#4f46e5' : '#ffffff',
+                background: selectedCategory === cat.id ? '#2563eb' : '#ffffff',
                 color: selectedCategory === cat.id ? '#ffffff' : '#475569',
                 border: '1px solid #e2e8f0',
                 borderRadius: '12px',
@@ -80,22 +105,35 @@ export default function Home() {
                 flexShrink: 0,
               }}
             >
-              <div style={{ fontSize: '20px' }}>{cat.icon}</div>
+              <div style={{ fontSize: '18px' }}>{cat.icon}</div>
               <div style={{ fontSize: '11px', fontWeight: 'bold', marginTop: '4px' }}>{cat.name}</div>
-            </div>
+            </button>
           ))}
         </div>
       </section>
 
-      {/* লাইভ প্রোডাক্ট গ্রিড */}
+      {/* প্রোডাক্ট গ্রিড */}
       <section style={{ padding: '0 14px' }}>
-        <h3 style={{ fontSize: '15px', fontWeight: 'bold', margin: '0 0 12px' }}>All Products</h3>
+        <h3 style={{ fontSize: '15px', fontWeight: 'bold', margin: '0 0 12px', color: '#0f172a' }}>All Products</h3>
 
         {loadingProducts ? (
-          <div style={{ textAlign: 'center', padding: '40px 0', color: '#64748b' }}>প্রোডাক্ট লোড হচ্ছে...</div>
+          <div style={{ textAlign: 'center', padding: '40px 0', color: '#64748b' }}>
+            <div style={{ fontSize: '24px', marginBottom: '8px' }}>⏳</div>
+            প্রোডাক্ট লোড হচ্ছে...
+          </div>
+        ) : hasError ? (
+          <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '12px', padding: '24px 16px', textAlign: 'center', color: '#dc2626' }}>
+            <p style={{ margin: '0 0 10px', fontSize: '13px' }}>ডাটা লোড করতে সমস্যা হয়েছে।</p>
+            <button
+              onClick={() => window.location.reload()}
+              style={{ background: '#dc2626', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+            >
+              আবার চেষ্টা করুন
+            </button>
+          </div>
         ) : filteredProducts.length === 0 ? (
           <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '30px 16px', textAlign: 'center', color: '#64748b' }}>
-            এই ক্যাটাগরিতে এখনো কোনো প্রোডাক্ট নেই।
+            এই ক্যাটাগরিতে কোনো প্রোডাক্ট নেই।
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
@@ -111,18 +149,27 @@ export default function Home() {
                   overflow: 'hidden',
                   display: 'flex',
                   flexDirection: 'column',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.03)',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
                   color: 'inherit'
                 }}
               >
-                <img 
-                  src={prod.image || LOGO_HUB_CART} 
-                  alt={prod.title} 
-                  onError={(e) => { e.currentTarget.src = LOGO_HUB_CART; }}
-                  style={{ width: '100%', height: '130px', objectFit: 'cover' }} 
-                />
+                <div style={{ width: '100%', height: '125px', background: '#f8fafc', overflow: 'hidden' }}>
+                  <img 
+                    src={prod.image || LOGO_HUB_CART} 
+                    alt={prod.title || 'Product'} 
+                    loading="lazy"
+                    onError={(e) => {
+                      if (e.currentTarget.src !== LOGO_HUB_CART) {
+                        e.currentTarget.src = LOGO_HUB_CART;
+                      }
+                    }}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                  />
+                </div>
                 <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
-                  <h4 style={{ fontSize: '12px', fontWeight: '600', margin: '0 0 8px', color: '#1e293b', minHeight: '32px', lineHeight: 1.3 }}>{prod.title}</h4>
+                  <h4 style={{ fontSize: '12px', fontWeight: '600', margin: '0 0 8px', color: '#1e293b', minHeight: '30px', lineHeight: 1.3 }}>
+                    {prod.title}
+                  </h4>
                   
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '6px' }}>
                     <div>
@@ -135,9 +182,9 @@ export default function Home() {
                     </div>
                     <span
                       style={{
-                        padding: '5px 10px',
+                        padding: '5px 9px',
                         borderRadius: '6px',
-                        background: '#4f46e5',
+                        background: '#2563eb',
                         color: '#ffffff',
                         fontSize: '11px',
                         fontWeight: 'bold'
