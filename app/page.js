@@ -1,99 +1,28 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 const LOGO_HUB_CART = 'https://i.postimg.cc/4Y3TK6bN/5707.png';
 const LOGO_BKASH = 'https://logos-world.net/wp-content/uploads/2024/10/Bkash-Logo.png';
 const LOGO_NAGAD = 'https://download.logo.wine/logo/Nagad/Nagad-Logo.wine.png';
 
-// নতুন ৪টি ক্যাটাগরি
+// Supabase ক্রেডেনশিয়াল
+const SUPABASE_URL = 'https://mieygzqgoekinxppdepb.supabase.co';
+const SUPABASE_KEY = 'Sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
+
 const CATEGORIES = [
+  { id: 'all', name: 'All Services', icon: '⚡' },
   { id: 'android-root', name: 'Android Root', icon: '⚡' },
   { id: 'android-panel', name: 'Android Panel', icon: '📱' },
   { id: 'social-package', name: 'Social Package', icon: '🚀' },
   { id: 'subscriptions', name: 'Subscriptions', icon: '💎' },
 ];
 
-// ক্যাটাগরি অনুযায়ী ডেমো প্রোডাক্ট লিস্ট
-const PRODUCTS = [
-  {
-    id: 1,
-    category: 'android-root',
-    title: 'Android Permanent Root Setup',
-    image: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop&q=80',
-    description: 'KernelSU / Magisk রুট, SafetyNet ফিক্স ও ফুল গাইডেন্স।',
-    price: 350,
-    originalPrice: 450,
-  },
-  {
-    id: 2,
-    category: 'android-panel',
-    title: 'Custom Android Tool Panel',
-    image: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600&auto=format&fit=crop&q=80',
-    description: 'ডিভাইস ম্যানেজমেন্ট ও অনলাইন অটোমেশন প্যানেল এক্সেস।',
-    price: 850,
-    originalPrice: 1000,
-  },
-  {
-    id: 3,
-    category: 'social-package',
-    title: 'Premium Social Growth Pack',
-    image: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=600&auto=format&fit=crop&q=80',
-    description: 'অর্গানিক বুস্টিং ও ব্র্যান্ড প্রোফাইল গ্রোথ প্যাকেজ।',
-    price: 250,
-    originalPrice: 350,
-  },
-  {
-    id: 4,
-    category: 'subscriptions',
-    title: 'VIP Premium Subscription Key',
-    image: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=600&auto=format&fit=crop&q=80',
-    description: 'মাসিক ও বাৎসরিক প্রিমিয়াম টুলস লাইসেন্স সাবস্ক্রিপশন।',
-    price: 550,
-    originalPrice: 700,
-  },
-];
-
-const PRODUCTS = [
-  {
-    id: 1,
-    category: 'mobile',
-    title: 'Android Phone Temp Root',
-    image: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop&q=80',
-    description: 'KernelSU / Magisk টেম্পোরারি রুট সাপোর্ট ও গাইডেন্স।',
-    price: 240,
-    originalPrice: 300,
-  },
-  {
-    id: 2,
-    category: 'mobile',
-    title: 'Android Permanent Root',
-    image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=600&auto=format&fit=crop&q=80',
-    description: 'Bootloader unlock, কাস্টম রম ও পার্মানেন্ট রুট সেটআপ।',
-    price: 1550,
-    originalPrice: 1800,
-  },
-  {
-    id: 3,
-    category: 'tools',
-    title: 'VIP Flash Tool Premium Key',
-    image: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600&auto=format&fit=crop&q=80',
-    description: 'অনলাইন ফ্ল্যাশ ও আনলক টুলের অফিশিয়াল লাইসেন্স কী।',
-    price: 450,
-    originalPrice: 600,
-  },
-  {
-    id: 4,
-    category: 'remote',
-    title: 'AnyDesk Diagnostics Support',
-    image: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=600&auto=format&fit=crop&q=80',
-    description: 'লাইভ রিমোট কন্ট্রোলে সফটওয়্যার সমস্যা সমাধান।',
-    price: 350,
-    originalPrice: 400,
-  },
-];
-
 export default function Home() {
+  const [products, setProducts] = useState([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState('all');
+
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [checkoutStep, setCheckoutStep] = useState(null);
   const [paymentOption, setPaymentOption] = useState('Instant Pay');
@@ -109,6 +38,27 @@ export default function Home() {
 
   const BKASH_NUMBER = '01812087109';
   const NAGAD_NUMBER = '01812080943';
+
+  // Supabase থেকে লাইভ প্রোডাক্ট ফেচ করা
+  useEffect(() => {
+    async function loadProducts() {
+      try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/products?select=*&order=id.desc`, {
+          headers: {
+            apikey: SUPABASE_KEY,
+            Authorization: `Bearer ${SUPABASE_KEY}`,
+          },
+        });
+        const data = await res.json();
+        if (Array.isArray(data)) setProducts(data);
+      } catch (err) {
+        console.error('Failed to load products');
+      } finally {
+        setLoadingProducts(false);
+      }
+    }
+    loadProducts();
+  }, []);
 
   const validateBdNumber = (phone) => /^(013|014|015|016|017|018|019)\d{8}$/.test(phone.trim());
 
@@ -151,7 +101,7 @@ export default function Home() {
       if (res.ok) {
         setCheckoutStep('success');
       } else {
-        alert('সমস্যা হয়েছে, আবার চেষ্টা করুন।');
+        alert('অর্ডার পাঠাতে সমস্যা হয়েছে, আবার চেষ্টা করুন।');
       }
     } catch (err) {
       alert('নেটওয়ার্ক সমস্যা।');
@@ -171,6 +121,10 @@ export default function Home() {
     setLoading(false);
   };
 
+  const filteredProducts = products.filter((prod) =>
+    selectedCategory === 'all' ? true : prod.category === selectedCategory
+  );
+
   return (
     <main>
       {/* ব্যানার */}
@@ -182,49 +136,74 @@ export default function Home() {
         <p style={{ margin: 0, fontSize: '12px', color: '#93c5fd', letterSpacing: '1px' }}>SHOP SMART • LIVE BETTER</p>
       </section>
 
-      {/* ক্যাটাগরি প্রিভিউ */}
+      {/* ক্যাটাগরি স্লাইডার */}
       <section style={{ padding: '0 14px', marginBottom: '18px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
           <h3 style={{ fontSize: '15px', fontWeight: 'bold', margin: 0 }}>Categories</h3>
           <Link href="/categories" style={{ textDecoration: 'none', fontSize: '12px', color: '#2563eb', fontWeight: 'bold' }}>সব দেখুন →</Link>
         </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <Link href="/categories" style={{ textDecoration: 'none', flex: 1, background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '12px 8px', textAlign: 'center' }}>
-            <div style={{ fontSize: '22px' }}>💻📱</div>
-            <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#334155', marginTop: '4px' }}>Android Root</div>
-          </Link>
-          <Link href="/categories" style={{ textDecoration: 'none', flex: 1, background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '12px 8px', textAlign: 'center' }}>
-            <div style={{ fontSize: '22px' }}>🔑</div>
-            <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#334155', marginTop: '4px' }}>Android Panel</div>
-          </Link>
-        </div>
-      </section>
-
-      {/* ২ কলাম প্রোডাক্ট গ্রিড */}
-      <section style={{ padding: '0 14px' }}>
-        <h3 style={{ fontSize: '15px', fontWeight: 'bold', margin: '0 0 12px' }}>All Products</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
-          {PRODUCTS.map((prod) => (
-            <div key={prod.id} style={{ background: '#ffffff', borderRadius: '14px', border: '1px solid #e2e8f0', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-              <img src={prod.image} alt={prod.title} style={{ width: '100%', height: '130px', objectFit: 'cover' }} />
-              <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
-                <h4 style={{ fontSize: '12px', fontWeight: '600', margin: '0 0 8px', color: '#1e293b', minHeight: '32px', lineHeight: 1.3 }}>{prod.title}</h4>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div>
-                    <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#dc2626' }}>৳{prod.price}</span>
-                    <span style={{ fontSize: '10px', color: '#94a3b8', textDecoration: 'line-through', marginLeft: '4px' }}>৳{prod.originalPrice}</span>
-                  </div>
-                  <button
-                    onClick={() => { setSelectedProduct(prod); setCheckoutStep('info'); }}
-                    style={{ width: '28px', height: '28px', borderRadius: '50%', border: '1px solid #0f172a', background: '#fff', fontSize: '18px', cursor: 'pointer', fontWeight: 'bold' }}
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
+        <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px' }}>
+          {CATEGORIES.map((cat) => (
+            <div
+              key={cat.id}
+              onClick={() => setSelectedCategory(cat.id)}
+              style={{
+                minWidth: '100px',
+                background: selectedCategory === cat.id ? '#2563eb' : '#fff',
+                color: selectedCategory === cat.id ? '#fff' : '#475569',
+                border: '1px solid #e2e8f0',
+                borderRadius: '12px',
+                padding: '10px 8px',
+                textAlign: 'center',
+                cursor: 'pointer',
+                flexShrink: 0,
+              }}
+            >
+              <div style={{ fontSize: '20px' }}>{cat.icon}</div>
+              <div style={{ fontSize: '11px', fontWeight: 'bold', marginTop: '4px' }}>{cat.name}</div>
             </div>
           ))}
         </div>
+      </section>
+
+      {/* লাইভ প্রোডাক্ট গ্রিড */}
+      <section style={{ padding: '0 14px' }}>
+        <h3 style={{ fontSize: '15px', fontWeight: 'bold', margin: '0 0 12px' }}>All Products</h3>
+
+        {loadingProducts ? (
+          <div style={{ textAlign: 'center', padding: '40px 0', color: '#64748b' }}>প্রোডাক্ট লোড হচ্ছে...</div>
+        ) : filteredProducts.length === 0 ? (
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '30px 16px', textAlign: 'center', color: '#64748b' }}>
+            এই ক্যাটাগরিতে এখনো কোনো প্রোডাক্ট নেই। অ্যাডমিন প্যানেল থেকে প্রোডাক্ট যোগ করুন।
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+            {filteredProducts.map((prod) => (
+              <div key={prod.id} style={{ background: '#ffffff', borderRadius: '14px', border: '1px solid #e2e8f0', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                <img src={prod.image} alt={prod.title} style={{ width: '100%', height: '130px', objectFit: 'cover' }} />
+                <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
+                  <h4 style={{ fontSize: '12px', fontWeight: '600', margin: '0 0 8px', color: '#1e293b', minHeight: '32px', lineHeight: 1.3 }}>{prod.title}</h4>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div>
+                      <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#dc2626' }}>৳{prod.price}</span>
+                      {prod.original_price && (
+                        <span style={{ fontSize: '10px', color: '#94a3b8', textDecoration: 'line-through', marginLeft: '4px' }}>
+                          ৳{prod.original_price}
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => { setSelectedProduct(prod); setCheckoutStep('info'); }}
+                      style={{ width: '28px', height: '28px', borderRadius: '50%', border: '1px solid #0f172a', background: '#fff', fontSize: '18px', cursor: 'pointer', fontWeight: 'bold' }}
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* চেকআউট মডাল */}
