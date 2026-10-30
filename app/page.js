@@ -6,6 +6,54 @@ const LOGO_HUB_CART = 'https://i.postimg.cc/4Y3TK6bN/5707.png';
 const LOGO_BKASH = 'https://logos-world.net/wp-content/uploads/2024/10/Bkash-Logo.png';
 const LOGO_NAGAD = 'https://download.logo.wine/logo/Nagad/Nagad-Logo.wine.png';
 
+// নতুন ৪টি ক্যাটাগরি
+const CATEGORIES = [
+  { id: 'android-root', name: 'Android Root', icon: '⚡' },
+  { id: 'android-panel', name: 'Android Panel', icon: '📱' },
+  { id: 'social-package', name: 'Social Package', icon: '🚀' },
+  { id: 'subscriptions', name: 'Subscriptions', icon: '💎' },
+];
+
+// ক্যাটাগরি অনুযায়ী ডেমো প্রোডাক্ট লিস্ট
+const PRODUCTS = [
+  {
+    id: 1,
+    category: 'android-root',
+    title: 'Android Permanent Root Setup',
+    image: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop&q=80',
+    description: 'KernelSU / Magisk রুট, SafetyNet ফিক্স ও ফুল গাইডেন্স।',
+    price: 350,
+    originalPrice: 450,
+  },
+  {
+    id: 2,
+    category: 'android-panel',
+    title: 'Custom Android Tool Panel',
+    image: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600&auto=format&fit=crop&q=80',
+    description: 'ডিভাইস ম্যানেজমেন্ট ও অনলাইন অটোমেশন প্যানেল এক্সেস।',
+    price: 850,
+    originalPrice: 1000,
+  },
+  {
+    id: 3,
+    category: 'social-package',
+    title: 'Premium Social Growth Pack',
+    image: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=600&auto=format&fit=crop&q=80',
+    description: 'অর্গানিক বুস্টিং ও ব্র্যান্ড প্রোফাইল গ্রোথ প্যাকেজ।',
+    price: 250,
+    originalPrice: 350,
+  },
+  {
+    id: 4,
+    category: 'subscriptions',
+    title: 'VIP Premium Subscription Key',
+    image: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=600&auto=format&fit=crop&q=80',
+    description: 'মাসিক ও বাৎসরিক প্রিমিয়াম টুলস লাইসেন্স সাবস্ক্রিপশন।',
+    price: 550,
+    originalPrice: 700,
+  },
+];
+
 const PRODUCTS = [
   {
     id: 1,
