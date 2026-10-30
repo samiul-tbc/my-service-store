@@ -2,14 +2,15 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
+const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
 const SUPABASE_URL = 'https://mieygzqgoekinxppdepb.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
 
 const CATEGORIES = [
   { id: 'android-root', name: 'Android Root' },
   { id: 'android-panel', name: 'Android Panel' },
-  { id: 'social-package', name: 'Social Package' },
-  { id: 'subscriptions', name: 'Subscriptions' },
+  { id: 'social-package', name: 'Social Boost' },
+  { id: 'subscriptions', name: 'VIP Subs' },
 ];
 
 export default function SecretAdminPage() {
@@ -18,11 +19,18 @@ export default function SecretAdminPage() {
   const [pinError, setPinError] = useState(false);
   const [verifying, setVerifying] = useState(false);
 
+  // ড্যাশবোর্ড ট্যাব: 'products' অথবা 'orders'
+  const [activeTab, setActiveTab] = useState('orders');
+
   // প্রোডাক্ট স্টেট
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loadingProducts, setLoadingProducts] = useState(false);
 
-  // ইনপুট স্টেট
+  // অর্ডার স্টেট
+  const [orders, setOrders] = useState([]);
+  const [loadingOrders, setLoadingOrders] = useState(false);
+
+  // প্রোডাক্ট ইনপুট স্টেট
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('android-root');
   const [uploadMode, setUploadMode] = useState('file');
@@ -34,7 +42,7 @@ export default function SecretAdminPage() {
   const [originalPrice, setOriginalPrice] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // সার্ভারের মাধ্যমে নিরাপদ পিন যাচাই
+  // পিন যাচাই
   const handlePinSubmit = async (e) => {
     e.preventDefault();
     setPinError(false);
@@ -52,6 +60,7 @@ export default function SecretAdminPage() {
       if (res.ok && data.success) {
         setIsAuthenticated(true);
         fetchProducts();
+        fetchOrders();
       } else {
         setPinError(true);
       }
@@ -62,8 +71,9 @@ export default function SecretAdminPage() {
     }
   };
 
+  // ১. প্রোডাক্ট লোড
   const fetchProducts = async () => {
-    setLoading(true);
+    setLoadingProducts(true);
     try {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/products?select=*&order=id.desc`, {
         cache: 'no-store',
@@ -77,7 +87,53 @@ export default function SecretAdminPage() {
     } catch (err) {
       console.error(err);
     } finally {
-      setLoading(false);
+      setLoadingProducts(false);
+    }
+  };
+
+  // ২. অর্ডার লোড (ট্র্যাকিং ডেটা)
+  const fetchOrders = async () => {
+    setLoadingOrders(true);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/orders?select=*&order=id.desc`, {
+        cache: 'no-store',
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+        },
+      });
+      const data = await res.json();
+      if (Array.isArray(data)) setOrders(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingOrders(false);
+    }
+  };
+
+  // অর্ডার স্ট্যাটাস আপডেট (Pending ➜ Verifying ➜ Processing ➜ Completed)
+  const handleUpdateOrderStatus = async (orderDbId, newStatus) => {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${orderDbId}`, {
+        method: 'PATCH',
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json',
+          Prefer: 'return=minimal',
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (res.ok) {
+        setOrders((prev) =>
+          prev.map((ord) => (ord.id === orderDbId ? { ...ord, status: newStatus } : ord))
+        );
+      } else {
+        alert('স্ট্যাটাস আপডেট করা সম্ভব হয়নি!');
+      }
+    } catch (err) {
+      alert('সার্ভার কানেকশন এরর!');
     }
   };
 
@@ -98,7 +154,7 @@ export default function SecretAdminPage() {
         URL.revokeObjectURL(blobUrl);
         try {
           const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 400;
+          const MAX_WIDTH = 420;
           let width = img.width;
           let height = img.height;
 
@@ -111,7 +167,7 @@ export default function SecretAdminPage() {
           canvas.height = height;
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, width, height);
-          resolve(canvas.toDataURL('image/jpeg', 0.6));
+          resolve(canvas.toDataURL('image/jpeg', 0.65));
         } catch (e) {
           reject(new Error('ছবি প্রসেস করা যায়নি'));
         }
@@ -135,7 +191,7 @@ export default function SecretAdminPage() {
 
       if (uploadMode === 'file') {
         if (!imageFile) {
-          alert('অনুগ্রহ করে ছবি নির্বাচন করুন!');
+          alert('অনুগ্রহ করে একটি ছবি নির্বাচন করুন!');
           setSubmitting(false);
           return;
         }
@@ -158,10 +214,10 @@ export default function SecretAdminPage() {
           Prefer: 'return=representation',
         },
         body: JSON.stringify({
-          title,
+          title: title.trim(),
           category,
           image: finalImage,
-          description: description || '',
+          description: description.trim() || '',
           price: Number(price),
           original_price: originalPrice ? Number(originalPrice) : null,
         }),
@@ -202,7 +258,6 @@ export default function SecretAdminPage() {
 
       if (res.ok) {
         setProducts(products.filter((p) => p.id !== id));
-        alert('🗑️ প্রোডাক্ট ডিলিট করা হয়েছে!');
       } else {
         alert('ডিলিট করা যায়নি!');
       }
@@ -211,158 +266,391 @@ export default function SecretAdminPage() {
     }
   };
 
+  const inputStyle = {
+    width: '100%',
+    boxSizing: 'border-box',
+    padding: '11px 14px',
+    borderRadius: '12px',
+    background: 'rgba(30, 41, 59, 0.7)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    color: '#ffffff',
+    fontSize: '13px',
+    outline: 'none',
+  };
+
+  // পিন ভেরিফিকেশন কার্ড (ডার্ক সাইবার স্টাইল)
   if (!isAuthenticated) {
     return (
-      <div style={{ maxWidth: '360px', margin: '60px auto', padding: '24px', background: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', textAlign: 'center', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
-        <div style={{ fontSize: '42px', marginBottom: '8px' }}>🔐</div>
-        <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 6px', color: '#0f172a' }}>Secret Access</h2>
-        <p style={{ fontSize: '13px', color: '#64748b', margin: '0 0 18px' }}>Vercel-এ সেট করা পিন দিয়ে প্রবেশ করুন</p>
+      <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+        <div style={{
+          width: '100%',
+          maxWidth: '380px',
+          background: 'rgba(15, 23, 42, 0.85)',
+          backdropFilter: 'blur(16px)',
+          borderRadius: '24px',
+          border: '1px solid rgba(59, 130, 246, 0.3)',
+          padding: '30px 24px',
+          textAlign: 'center',
+          boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
+        }}>
+          <img src={LOGO_HUB_CART} alt="Hub Cart" style={{ width: '48px', height: '48px', objectFit: 'contain', margin: '0 auto 12px', filter: 'drop-shadow(0 2px 8px rgba(56, 189, 248, 0.4))' }} />
+          <h2 style={{ fontSize: '20px', fontWeight: '900', margin: '0 0 6px', color: '#f8fafc' }}>TBC Admin Access</h2>
+          <p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 20px' }}>মাস্টার পিন কোড দিয়ে ড্যাশবোর্ডে প্রবেশ করুন</p>
 
-        <form onSubmit={handlePinSubmit}>
-          <input
-            type="password"
-            maxLength={10}
-            placeholder="PIN"
-            value={pinInput}
-            onChange={(e) => { setPinInput(e.target.value); setPinError(false); }}
-            style={{ width: '100%', boxSizing: 'border-box', padding: '12px', textAlign: 'center', fontSize: '18px', letterSpacing: '4px', borderRadius: '8px', border: pinError ? '1px solid #ef4444' : '1px solid #cbd5e1', marginBottom: '12px' }}
-          />
-          {pinError && <div style={{ color: '#ef4444', fontSize: '12px', marginBottom: '12px' }}>ভুল পিন কোড!</div>}
-          <button type="submit" disabled={verifying} style={{ width: '100%', padding: '11px', background: '#0f172a', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
-            {verifying ? 'যাচাই হচ্ছে...' : 'Enter'}
-          </button>
-        </form>
+          <form onSubmit={handlePinSubmit}>
+            <input
+              type="password"
+              maxLength={10}
+              placeholder="••••"
+              value={pinInput}
+              onChange={(e) => { setPinInput(e.target.value); setPinError(false); }}
+              style={{
+                width: '100%',
+                boxSizing: 'border-box',
+                padding: '12px',
+                textAlign: 'center',
+                fontSize: '22px',
+                letterSpacing: '8px',
+                borderRadius: '12px',
+                background: 'rgba(30, 41, 59, 0.8)',
+                border: pinError ? '1.5px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.1)',
+                color: '#ffffff',
+                marginBottom: '14px',
+                outline: 'none',
+              }}
+            />
+            {pinError && <div style={{ color: '#f87171', fontSize: '12px', marginBottom: '14px' }}>ভুল পিন কোড! পুনরায় চেষ্টা করুন।</div>}
+            
+            <button
+              type="submit"
+              disabled={verifying}
+              style={{
+                width: '100%',
+                padding: '12px',
+                background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '12px',
+                fontWeight: 'bold',
+                fontSize: '14px',
+                cursor: 'pointer',
+                boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)'
+              }}
+            >
+              {verifying ? 'যাচাই করা হচ্ছে...' : 'প্রবেশ করুন →'}
+            </button>
+          </form>
+        </div>
       </div>
     );
   }
 
   return (
-    <div style={{ maxWidth: '700px', margin: '20px auto', padding: '0 14px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#ffffff', padding: '14px 18px', borderRadius: '14px', border: '1px solid #e2e8f0', marginBottom: '20px' }}>
-        <div>
-          <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: '#0f172a' }}>⚙️ Hub Cart Manager (tbcadsa)</h2>
-          <span style={{ fontSize: '12px', color: '#10b981', fontWeight: 'bold' }}>● Secure Server Protected</span>
+    <div style={{ maxWidth: '720px', margin: '14px auto', padding: '0 14px 100px' }}>
+      
+      {/* ১. ড্যাশবোর্ড হেডার */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        background: 'rgba(15, 23, 42, 0.8)',
+        backdropFilter: 'blur(16px)',
+        padding: '14px 18px',
+        borderRadius: '20px',
+        border: '1px solid rgba(255, 255, 255, 0.08)',
+        marginBottom: '16px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <img src={LOGO_HUB_CART} alt="Hub Cart" style={{ width: '32px', height: '32px', objectFit: 'contain' }} />
+          <div>
+            <h2 style={{ fontSize: '16px', fontWeight: '900', margin: 0, color: '#f8fafc' }}>Hub Cart Manager</h2>
+            <span style={{ fontSize: '10px', color: '#4ade80', fontWeight: 'bold' }}>● Secure Server Protected</span>
+          </div>
         </div>
-        <Link href="/" style={{ textDecoration: 'none', background: '#f1f5f9', color: '#0f172a', padding: '8px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }}>
+
+        <Link
+          href="/"
+          style={{
+            textDecoration: 'none',
+            background: 'rgba(30, 41, 59, 0.8)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            color: '#38bdf8',
+            padding: '6px 12px',
+            borderRadius: '10px',
+            fontSize: '11px',
+            fontWeight: 'bold',
+          }}
+        >
           Live Store ↗
         </Link>
       </div>
 
-      <div style={{ background: '#ffffff', padding: '20px', borderRadius: '16px', border: '1px solid #e2e8f0', marginBottom: '25px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-        <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: '0 0 16px', color: '#0f172a' }}>+ নতুন প্রোডাক্ট যোগ করুন</h3>
+      {/* ২. ট্যাব সুইচিং বাটন */}
+      <div style={{ display: 'flex', gap: '8px', background: 'rgba(15, 23, 42, 0.7)', padding: '6px', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.06)', marginBottom: '20px' }}>
+        <button
+          type="button"
+          onClick={() => setActiveTab('orders')}
+          style={{
+            flex: 1,
+            padding: '10px',
+            borderRadius: '12px',
+            border: 'none',
+            background: activeTab === 'orders' ? 'linear-gradient(135deg, #2563eb, #1d4ed8)' : 'transparent',
+            color: activeTab === 'orders' ? '#ffffff' : '#94a3b8',
+            fontWeight: 'bold',
+            fontSize: '13px',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+          }}
+        >
+          🛒 লাইভ অর্ডার ({orders.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('products')}
+          style={{
+            flex: 1,
+            padding: '10px',
+            borderRadius: '12px',
+            border: 'none',
+            background: activeTab === 'products' ? 'linear-gradient(135deg, #2563eb, #1d4ed8)' : 'transparent',
+            color: activeTab === 'products' ? '#ffffff' : '#94a3b8',
+            fontWeight: 'bold',
+            fontSize: '13px',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+          }}
+        >
+          📦 প্রোডাক্ট লিস্ট ({products.length})
+        </button>
+      </div>
 
-        <form onSubmit={handleAddProduct}>
-          <div style={{ marginBottom: '12px' }}>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>প্রোডাক্টের নাম *</label>
-            <input required type="text" placeholder="যেমন: Android Mobile Root" value={title} onChange={(e) => setTitle(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px' }} />
+      {/* ৩. অর্ডার ম্যানেজমেন্ট ট্যাব */}
+      {activeTab === 'orders' && (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: 0, color: '#f8fafc' }}>কাস্টমারদের অর্ডার তালিকা</h3>
+            <button
+              onClick={fetchOrders}
+              style={{ background: 'none', border: 'none', color: '#38bdf8', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
+            >
+              🔄 রিফ্রেশ অর্ডার
+            </button>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>ক্যাটাগরি *</label>
-              <select value={category} onChange={(e) => setCategory(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', background: '#fff' }}>
-                {CATEGORIES.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
+          {loadingOrders ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: '#64748b', fontSize: '13px' }}>অর্ডার তালিকা লোড হচ্ছে...</div>
+          ) : orders.length === 0 ? (
+            <div style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255, 255, 255, 0.06)', borderRadius: '18px', padding: '36px', textAlign: 'center', color: '#64748b' }}>
+              এখনো কোনো অর্ডার আসেনি।
             </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>বিক্রয় মূল্য (টাকা) *</label>
-              <input required type="number" placeholder="550" value={price} onChange={(e) => setPrice(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px' }} />
-            </div>
-          </div>
-
-          <div style={{ marginBottom: '14px', background: '#f8fafc', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
-              <button
-                type="button"
-                onClick={() => setUploadMode('file')}
-                style={{ flex: 1, padding: '7px', borderRadius: '6px', border: 'none', background: uploadMode === 'file' ? '#2563eb' : '#e2e8f0', color: uploadMode === 'file' ? '#fff' : '#475569', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}
-              >
-                📁 গ্যালারি থেকে আপলোড
-              </button>
-              <button
-                type="button"
-                onClick={() => setUploadMode('url')}
-                style={{ flex: 1, padding: '7px', borderRadius: '6px', border: 'none', background: uploadMode === 'url' ? '#2563eb' : '#e2e8f0', color: uploadMode === 'url' ? '#fff' : '#475569', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}
-              >
-                🔗 ছবির লিংক দিন
-              </button>
-            </div>
-
-            {uploadMode === 'file' ? (
-              <div>
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={handleFileChange}
-                  style={{ width: '100%', boxSizing: 'border-box', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', background: '#fff' }}
-                />
-                {imagePreview && (
-                  <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <img src={imagePreview} alt="Preview" style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
-                    <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 'bold' }}>ছবি সিলেক্ট হয়েছে</span>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {orders.map((ord) => (
+                <div
+                  key={ord.id}
+                  style={{
+                    background: 'rgba(15, 23, 42, 0.8)',
+                    backdropFilter: 'blur(12px)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    borderRadius: '18px',
+                    padding: '16px',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+                    <div>
+                      <span style={{ fontSize: '11px', color: '#38bdf8', fontWeight: 'bold' }}>{ord.order_id}</span>
+                      <h4 style={{ margin: '2px 0 0', fontSize: '15px', color: '#f8fafc', fontWeight: 'bold' }}>{ord.service_name}</h4>
+                    </div>
+                    <span style={{ fontSize: '15px', fontWeight: '900', color: '#38bdf8' }}>৳{ord.price}</span>
                   </div>
+
+                  {/* কাস্টমার ও পেমেন্ট ইনফো */}
+                  <div style={{ background: 'rgba(30, 41, 59, 0.5)', padding: '10px 12px', borderRadius: '12px', fontSize: '12px', color: '#cbd5e1', lineHeight: '1.6', marginBottom: '12px' }}>
+                    <div>👤 <strong>নাম:</strong> {ord.customer_name}</div>
+                    <div>📞 <strong>WhatsApp:</strong> <a href={`https://wa.me/88${ord.whatsapp_number}`} target="_blank" rel="noreferrer" style={{ color: '#4ade80', textDecoration: 'none' }}>{ord.whatsapp_number}</a></div>
+                    {ord.telegram_username && <div>✈️ <strong>Telegram:</strong> {ord.telegram_username}</div>}
+                    <div>💳 <strong>পেমেন্ট:</strong> {ord.payment_method}</div>
+                    <div>🔢 <strong>TrxID:</strong> <code style={{ color: '#f8fafc', background: '#0b0f19', padding: '2px 6px', borderRadius: '4px' }}>{ord.trx_id}</code></div>
+                  </div>
+
+                  {/* স্ট্যাটাস চেঞ্জার ড্রপডাউন */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 'bold' }}>লাইভ স্ট্যাটাস আপডেট:</span>
+                    <select
+                      value={ord.status || 'pending'}
+                      onChange={(e) => handleUpdateOrderStatus(ord.id, e.target.value)}
+                      style={{
+                        background: '#0b0f19',
+                        color: ord.status === 'completed' ? '#4ade80' : ord.status === 'processing' ? '#38bdf8' : '#fbbf24',
+                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                        padding: '6px 12px',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        outline: 'none',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <option value="pending">⏳ Pending (গৃহীত)</option>
+                      <option value="verifying">🔍 Verifying (যাচাইকরণ)</option>
+                      <option value="processing">⚡ Processing (প্রসেসিং)</option>
+                      <option value="completed">✅ Completed (সম্পন্ন)</option>
+                    </select>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ৪. প্রোডাক্ট ম্যানেজমেন্ট ট্যাব */}
+      {activeTab === 'products' && (
+        <div>
+          {/* নতুন প্রোডাক্ট অ্যাড ফর্ম */}
+          <div style={{
+            background: 'rgba(15, 23, 42, 0.8)',
+            backdropFilter: 'blur(16px)',
+            padding: '20px',
+            borderRadius: '20px',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            marginBottom: '24px',
+          }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: '0 0 16px', color: '#f8fafc' }}>+ নতুন প্রোডাক্ট যোগ করুন</h3>
+
+            <form onSubmit={handleAddProduct}>
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px', color: '#94a3b8' }}>প্রোডাক্টের নাম *</label>
+                <input required type="text" placeholder="যেমন: Android Mobile Root" value={title} onChange={(e) => setTitle(e.target.value)} style={inputStyle} />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px', color: '#94a3b8' }}>ক্যাটাগরি *</label>
+                  <select value={category} onChange={(e) => setCategory(e.target.value)} style={{ ...inputStyle, background: '#1e293b' }}>
+                    {CATEGORIES.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px', color: '#94a3b8' }}>বিক্রয় মূল্য (টাকা) *</label>
+                  <input required type="number" placeholder="550" value={price} onChange={(e) => setPrice(e.target.value)} style={inputStyle} />
+                </div>
+              </div>
+
+              {/* ছবি আপলোড মোড */}
+              <div style={{ marginBottom: '14px', background: 'rgba(30, 41, 59, 0.6)', padding: '12px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setUploadMode('file')}
+                    style={{ flex: 1, padding: '8px', borderRadius: '8px', border: 'none', background: uploadMode === 'file' ? '#2563eb' : 'rgba(15, 23, 42, 0.6)', color: '#fff', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer' }}
+                  >
+                    📁 গ্যালারি থেকে আপলোড
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUploadMode('url')}
+                    style={{ flex: 1, padding: '8px', borderRadius: '8px', border: 'none', background: uploadMode === 'url' ? '#2563eb' : 'rgba(15, 23, 42, 0.6)', color: '#fff', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer' }}
+                  >
+                    🔗 ছবির লিংক দিন
+                  </button>
+                </div>
+
+                {uploadMode === 'file' ? (
+                  <div>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={handleFileChange}
+                      style={{ width: '100%', boxSizing: 'border-box', padding: '8px', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.1)', fontSize: '12px', color: '#94a3b8', background: '#0b0f19' }}
+                    />
+                    {imagePreview && (
+                      <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <img src={imagePreview} alt="Preview" style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #38bdf8' }} />
+                        <span style={{ fontSize: '11px', color: '#4ade80', fontWeight: 'bold' }}>✓ ছবি নির্বাচিত হয়েছে</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <input
+                    type="url"
+                    placeholder="https://... ছবির ডিরেক্ট লিংক"
+                    value={imageUrl}
+                    onChange={(e) => setImageUrl(e.target.value)}
+                    style={inputStyle}
+                  />
                 )}
               </div>
+
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px', color: '#94a3b8' }}>আগের মূল্য (ঐচ্ছিক / Discount)</label>
+                <input type="number" placeholder="800" value={originalPrice} onChange={(e) => setOriginalPrice(e.target.value)} style={inputStyle} />
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px', color: '#94a3b8' }}>বিস্তারিত বিবরণ</label>
+                <textarea rows={2} placeholder="সার্ভিস বা প্যাকেজ সম্পর্কে বিস্তারিত লিখুন..." value={description} onChange={(e) => setDescription(e.target.value)} style={inputStyle} />
+              </div>
+
+              <button
+                type="submit"
+                disabled={submitting}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '12px',
+                  fontWeight: 'bold',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)',
+                }}
+              >
+                {submitting ? 'সংরক্ষণ হচ্ছে...' : 'Add Product'}
+              </button>
+            </form>
+          </div>
+
+          {/* বর্তমান প্রোডাক্ট তালিকা */}
+          <div style={{ background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(16px)', padding: '20px', borderRadius: '20px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: 0, color: '#f8fafc' }}>বর্তমান প্রোডাক্ট তালিকা ({products.length})</h3>
+              <button onClick={fetchProducts} style={{ background: 'none', border: 'none', color: '#38bdf8', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>🔄 রিফ্রেশ</button>
+            </div>
+
+            {loadingProducts ? (
+              <div style={{ textAlign: 'center', padding: '20px', color: '#64748b' }}>লোড হচ্ছে...</div>
+            ) : products.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '20px', color: '#64748b' }}>কোনো প্রোডাক্ট পাওয়া যায়নি।</div>
             ) : (
-              <input
-                type="url"
-                placeholder="https://... ছবির সম্পূর্ণ লিংক"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px', background: '#fff' }}
-              />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {products.map((prod) => (
+                  <div key={prod.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', border: '1px solid rgba(255, 255, 255, 0.06)', borderRadius: '14px', background: 'rgba(30, 41, 59, 0.5)' }}>
+                    <img src={prod.image} alt={prod.title} style={{ width: '46px', height: '46px', objectFit: 'cover', borderRadius: '10px', background: '#0b0f19' }} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#f8fafc' }}>{prod.title}</div>
+                      <div style={{ fontSize: '11px', color: '#94a3b8' }}>৳{prod.price} • {prod.category}</div>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteProduct(prod.id, prod.title)}
+                      style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#f87171', padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
-
-          <div style={{ marginBottom: '12px' }}>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>আগের মূল্য (ঐচ্ছিক)</label>
-            <input type="number" placeholder="800" value={originalPrice} onChange={(e) => setOriginalPrice(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px' }} />
-          </div>
-
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>বিবরণ / বিস্তারিত তথ্য</label>
-            <textarea rows={2} placeholder="সার্ভিস বা প্রোডাক্ট সম্পর্কিত বিস্তারিত লিখুন..." value={description} onChange={(e) => setDescription(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px' }} />
-          </div>
-
-          <button type="submit" disabled={submitting} style={{ width: '100%', padding: '12px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' }}>
-            {submitting ? 'সংরক্ষণ হচ্ছে...' : 'Add Product'}
-          </button>
-        </form>
-      </div>
-
-      <div style={{ background: '#ffffff', padding: '20px', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-          <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: 0, color: '#0f172a' }}>বর্তমান প্রোডাক্ট তালিকা ({products.length})</h3>
-          <button onClick={fetchProducts} style={{ background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}>🔄 রিফ্রেশ</button>
         </div>
+      )}
 
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '20px', color: '#64748b' }}>লোড হচ্ছে...</div>
-        ) : products.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>কোনো প্রোডাক্ট নেই।</div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {products.map((prod) => (
-              <div key={prod.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', border: '1px solid #f1f5f9', borderRadius: '10px', background: '#f8fafc' }}>
-                <img src={prod.image} alt={prod.title} style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '8px' }} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#0f172a' }}>{prod.title}</div>
-                  <div style={{ fontSize: '11px', color: '#64748b' }}>৳{prod.price} | {prod.category}</div>
-                </div>
-                <button
-                  onClick={() => handleDeleteProduct(prod.id, prod.title)}
-                  style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', padding: '7px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
-                >
-                  Delete
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
     </div>
   );
 }
