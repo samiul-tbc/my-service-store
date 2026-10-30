@@ -55,7 +55,7 @@ export default function HomePage() {
   return (
     <div style={{ maxWidth: '640px', margin: '0 auto', padding: '12px 14px 100px' }}>
       
-      {/* ডায়নামিক নোটিশ ব্যানার (অ্যাডমিন নিয়ন্ত্রিত) */}
+      {/* ডায়নামিক নোটিশ ব্যানার */}
       {notice && (
         <div style={{
           background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.15) 0%, rgba(15, 23, 42, 0.85) 100%)',
@@ -94,44 +94,54 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* হিরো ব্যানার */}
+      {/* আগের Hub Cart ব্যানার */}
       <div style={{
-        background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+        background: 'radial-gradient(circle at center, #0a2356 0%, #020816 85%)',
         borderRadius: '24px',
-        padding: '24px 20px',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
+        padding: '30px 16px',
+        border: '1px solid rgba(56, 189, 248, 0.15)',
         marginBottom: '22px',
-        position: 'relative',
-        overflow: 'hidden',
-        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.4)',
+        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        textAlign: 'center',
       }}>
-        <div style={{ position: 'relative', zIndex: 2 }}>
-          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#38bdf8', letterSpacing: '1px', textTransform: 'uppercase' }}>
-            Instant Delivery
-          </span>
-          <h1 style={{ fontSize: '22px', fontWeight: '900', color: '#f8fafc', margin: '6px 0 10px', lineHeight: 1.2 }}>
-            প্রিমিয়াম ডিজিটাল টুলস ও বিশ্বস্ত সার্ভিস
-          </h1>
-          <p style={{ fontSize: '12px', color: '#94a3b8', margin: '0 0 16px', lineHeight: 1.4 }}>
-            সেরা মূল্যে ১০০% সিকিউর সার্ভিস এক ক্লিকেই অর্ডার করুন
-          </p>
-          <Link
-            href="/categories"
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '8px' }}>
+          <img
+            src={LOGO_HUB_CART}
+            alt="Hub Cart Logo"
             style={{
-              display: 'inline-block',
-              background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
-              color: '#ffffff',
-              padding: '10px 20px',
-              borderRadius: '12px',
-              textDecoration: 'none',
-              fontWeight: 'bold',
-              fontSize: '12px',
-              boxShadow: '0 4px 15px rgba(37, 99, 235, 0.4)',
+              width: '46px',
+              height: '46px',
+              borderRadius: '8px',
+              objectFit: 'contain',
+              background: '#000000',
+              padding: '3px',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
             }}
-          >
-            সার্ভিসগুলো দেখুন →
-          </Link>
+          />
+          <h1 style={{
+            fontSize: '28px',
+            fontWeight: '900',
+            color: '#ffffff',
+            margin: 0,
+            letterSpacing: '0.5px',
+          }}>
+            Hub Cart
+          </h1>
         </div>
+        <p style={{
+          margin: 0,
+          fontSize: '12px',
+          fontWeight: '600',
+          letterSpacing: '2.8px',
+          color: '#82a5dc',
+          textTransform: 'uppercase',
+        }}>
+          SHOP SMART &bull; LIVE BETTER
+        </p>
       </div>
 
       {/* প্রোডাক্ট তালিকা */}
