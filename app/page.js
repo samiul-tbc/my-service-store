@@ -191,11 +191,11 @@ export default function Home() {
         <div style={{ display: 'flex', gap: '10px' }}>
           <Link href="/categories" style={{ textDecoration: 'none', flex: 1, background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '12px 8px', textAlign: 'center' }}>
             <div style={{ fontSize: '22px' }}>💻📱</div>
-            <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#334155', marginTop: '4px' }}>Mobile & Gadgets</div>
+            <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#334155', marginTop: '4px' }}>Android Root</div>
           </Link>
           <Link href="/categories" style={{ textDecoration: 'none', flex: 1, background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '12px 8px', textAlign: 'center' }}>
             <div style={{ fontSize: '22px' }}>🔑</div>
-            <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#334155', marginTop: '4px' }}>License & Tools</div>
+            <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#334155', marginTop: '4px' }}>Android Panel</div>
           </Link>
         </div>
       </section>
