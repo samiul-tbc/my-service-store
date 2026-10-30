@@ -19,7 +19,6 @@ export default function SecretAdminPage() {
   const [pinError, setPinError] = useState(false);
   const [verifying, setVerifying] = useState(false);
 
-  // ডিফল্ট ট্যাব 'orders' রাখা হলো যাতে ঢুকলেই আগে অর্ডার দেখা যায়
   const [activeTab, setActiveTab] = useState('orders');
 
   // প্রোডাক্ট স্টেট
@@ -71,7 +70,7 @@ export default function SecretAdminPage() {
     }
   };
 
-  // ১. অর্ডার ফেচ
+  // অর্ডার ফেচ
   const fetchOrders = async () => {
     setLoadingOrders(true);
     try {
@@ -91,7 +90,7 @@ export default function SecretAdminPage() {
     }
   };
 
-  // ২. প্রোডাক্ট ফেচ
+  // প্রোডাক্ট ফেচ
   const fetchProducts = async () => {
     setLoadingProducts(true);
     try {
@@ -111,7 +110,7 @@ export default function SecretAdminPage() {
     }
   };
 
-  // স্ট্যাটাস আপডেট হ্যান্ডলার
+  // অর্ডার স্ট্যাটাস আপডেট (Cancel সহ)
   const handleUpdateOrderStatus = async (orderDbId, newStatus) => {
     try {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${orderDbId}`, {
@@ -134,6 +133,30 @@ export default function SecretAdminPage() {
       }
     } catch (err) {
       alert('সার্ভার এরর!');
+    }
+  };
+
+  // সম্পূর্ণ অর্ডার ডিলিট
+  const handleDeleteOrder = async (orderDbId, orderIdText) => {
+    if (!confirm(`আপনি কি নিশ্চিত অর্ডার "${orderIdText}" পুরোপুরি ডিলিট করতে চান?`)) return;
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${orderDbId}`, {
+        method: 'DELETE',
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+        },
+      });
+
+      if (res.ok) {
+        setOrders(orders.filter((ord) => ord.id !== orderDbId));
+        alert('🗑️ অর্ডার তালিকা থেকে মুছে ফেলা হয়েছে!');
+      } else {
+        alert('অর্ডার ডিলিট করা যায়নি!');
+      }
+    } catch (err) {
+      alert('নেটওয়ার্ক সমস্যা!');
     }
   };
 
@@ -362,7 +385,7 @@ export default function SecretAdminPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <img src={LOGO_HUB_CART} alt="Hub Cart" style={{ width: '32px', height: '32px', objectFit: 'contain' }} />
           <div>
-            <h2 style={{ fontSize: '16px', fontWeight: '900', margin: 0, color: '#f8fafc' }}>Hub Cart Manager (tbcadsa)</h2>
+            <h2 style={{ fontSize: '16px', fontWeight: '900', margin: 0, color: '#f8fafc' }}>Hub Cart Manager</h2>
             <span style={{ fontSize: '10px', color: '#4ade80', fontWeight: 'bold' }}>● Secure Server Protected</span>
           </div>
         </div>
@@ -472,28 +495,49 @@ export default function SecretAdminPage() {
                     <div>🔢 <strong>TrxID:</strong> <code style={{ color: '#f8fafc', background: '#0b0f19', padding: '2px 6px', borderRadius: '4px' }}>{ord.trx_id}</code></div>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 'bold' }}>লাইভ স্ট্যাটাস আপডেট:</span>
-                    <select
-                      value={ord.status || 'pending'}
-                      onChange={(e) => handleUpdateOrderStatus(ord.id, e.target.value)}
+                  {/* স্ট্যাটাস চেঞ্জার ও অর্ডার ডিলিট বাটন */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 'bold' }}>স্ট্যাটাস:</span>
+                      <select
+                        value={ord.status || 'pending'}
+                        onChange={(e) => handleUpdateOrderStatus(ord.id, e.target.value)}
+                        style={{
+                          background: '#0b0f19',
+                          color: ord.status === 'completed' ? '#4ade80' : ord.status === 'processing' ? '#38bdf8' : ord.status === 'cancelled' ? '#f87171' : '#fbbf24',
+                          border: '1px solid rgba(255, 255, 255, 0.15)',
+                          padding: '6px 10px',
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                          fontWeight: 'bold',
+                          outline: 'none',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <option value="pending">⏳ Pending (গৃহীত)</option>
+                        <option value="verifying">🔍 Verifying (যাচাইকরণ)</option>
+                        <option value="processing">⚡ Processing (প্রসেসিং)</option>
+                        <option value="completed">✅ Completed (সম্পন্ন)</option>
+                        <option value="cancelled">❌ Cancelled (বাতিল)</option>
+                      </select>
+                    </div>
+
+                    {/* অর্ডার স্থায়ীভাবে ডিলিট বাটন */}
+                    <button
+                      onClick={() => handleDeleteOrder(ord.id, ord.order_id)}
                       style={{
-                        background: '#0b0f19',
-                        color: ord.status === 'completed' ? '#4ade80' : ord.status === 'processing' ? '#38bdf8' : '#fbbf24',
-                        border: '1px solid rgba(255, 255, 255, 0.15)',
-                        padding: '6px 12px',
+                        background: 'rgba(239, 68, 68, 0.12)',
+                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                        color: '#f87171',
+                        padding: '6px 10px',
                         borderRadius: '8px',
-                        fontSize: '12px',
+                        fontSize: '11px',
                         fontWeight: 'bold',
-                        outline: 'none',
                         cursor: 'pointer',
                       }}
                     >
-                      <option value="pending">⏳ Pending (গৃহীত)</option>
-                      <option value="verifying">🔍 Verifying (যাচাইকরণ)</option>
-                      <option value="processing">⚡ Processing (প্রসেসিং)</option>
-                      <option value="completed">✅ Completed (সম্পন্ন)</option>
-                    </select>
+                      🗑️ ডিলিট
+                    </button>
                   </div>
                 </div>
               ))}
