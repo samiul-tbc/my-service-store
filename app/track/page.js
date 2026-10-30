@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
@@ -7,7 +7,8 @@ const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
 const SUPABASE_URL = 'https://mieygzqgoekinxppdepb.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
 
-export default function TrackOrderPage() {
+// ট্র্যাকিংয়ের মূল কনটেন্ট কম্পোনেন্ট
+function TrackContent() {
   const searchParams = useSearchParams();
   const initialId = searchParams.get('id') || '';
 
@@ -30,7 +31,6 @@ export default function TrackOrderPage() {
     setSearched(true);
 
     try {
-      // অর্ডার আইডি অথবা হোয়াটসঅ্যাপ নম্বর দিয়ে সার্চ
       const isOrderId = query.toUpperCase().startsWith('HC-');
       const filter = isOrderId
         ? `order_id=eq.${query.toUpperCase()}`
@@ -68,7 +68,7 @@ export default function TrackOrderPage() {
       case 'verifying':
         return 2;
       default:
-        return 1; // pending
+        return 1;
     }
   };
 
@@ -77,7 +77,11 @@ export default function TrackOrderPage() {
       
       {/* হেডার */}
       <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-        <img src={LOGO_HUB_CART} alt="Hub Cart" style={{ width: '46px', height: '46px', objectFit: 'contain', margin: '0 auto 8px', filter: 'drop-shadow(0 4px 10px rgba(56, 189, 248, 0.4))' }} />
+        <img
+          src={LOGO_HUB_CART}
+          alt="Hub Cart"
+          style={{ width: '46px', height: '46px', objectFit: 'contain', margin: '0 auto 8px', filter: 'drop-shadow(0 4px 10px rgba(56, 189, 248, 0.4))' }}
+        />
         <h1 style={{ fontSize: '22px', fontWeight: '900', color: '#f8fafc', margin: '0 0 4px' }}>
           Live Order Tracker
         </h1>
@@ -86,7 +90,7 @@ export default function TrackOrderPage() {
         </p>
       </div>
 
-      {/* সার্চ ইনপুট বক্স */}
+      {/* সার্চ বক্স */}
       <div style={{
         background: 'rgba(15, 23, 42, 0.75)',
         backdropFilter: 'blur(16px)',
@@ -132,7 +136,7 @@ export default function TrackOrderPage() {
         </button>
       </div>
 
-      {/* ট্র্যাকিং রেজাল্ট */}
+      {/* ফলাফল */}
       {loading ? (
         <div style={{ textAlign: 'center', padding: '40px', color: '#64748b', fontSize: '13px' }}>
           তথ্য অনুসন্ধান করা হচ্ছে...
@@ -148,7 +152,7 @@ export default function TrackOrderPage() {
         }}>
           <div style={{ fontSize: '32px', marginBottom: '8px' }}>🔍</div>
           <h3 style={{ fontSize: '15px', color: '#f8fafc', margin: '0 0 4px' }}>কোনো অর্ডার পাওয়া যায়নি</h3>
-          <p style={{ fontSize: '12px', margin: 0, color: '#64748b' }}>সঠিক অর্ডার আইডি বা নম্বরটি লিখে আবার চেষ্টা করুন।</p>
+          <p style={{ fontSize: '12px', margin: 0, color: '#64748b' }}>সঠিক অর্ডার আইডি বা নম্বরটি দিয়ে আবার চেষ্টা করুন।</p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -166,7 +170,6 @@ export default function TrackOrderPage() {
                   boxShadow: '0 10px 25px rgba(0,0,0,0.4)',
                 }}
               >
-                {/* কার্ডের শীর্ষভাগ */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', borderBottom: '1px solid rgba(255, 255, 255, 0.06)', paddingBottom: '12px' }}>
                   <div>
                     <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold' }}>ORDER ID</span>
@@ -187,7 +190,6 @@ export default function TrackOrderPage() {
                   </span>
                 </div>
 
-                {/* সার্ভিসের বিবরণ */}
                 <div style={{ marginBottom: '18px' }}>
                   <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#f8fafc', marginBottom: '4px' }}>
                     {ord.service_name}
@@ -197,11 +199,8 @@ export default function TrackOrderPage() {
                   </div>
                 </div>
 
-                {/* প্রগ্রেস ট্র্যাকিং টাইমলাইন (সাইবার-গ্লাস স্টাইল) */}
                 <div style={{ background: 'rgba(30, 41, 59, 0.5)', borderRadius: '14px', padding: '14px 10px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative', margin: '0 8px 10px' }}>
-                    
-                    {/* কানেক্টিং লাইন */}
                     <div style={{
                       position: 'absolute',
                       top: '12px',
@@ -261,4 +260,13 @@ export default function TrackOrderPage() {
 
     </div>
   );
-        }
+}
+
+// Suspense বাউন্ডারিসহ রুট এক্সপোর্ট
+export default function TrackOrderPage() {
+  return (
+    <Suspense fallback={<div style={{ textAlign: 'center', padding: '60px', color: '#64748b' }}>লোড হচ্ছে...</div>}>
+      <TrackContent />
+    </Suspense>
+  );
+}
