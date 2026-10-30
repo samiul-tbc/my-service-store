@@ -5,7 +5,7 @@ import Link from 'next/link';
 const SUPABASE_URL = 'https://mieygzqgoekinxppdepb.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
 
-const ADMIN_PIN = '1234';
+const ADMIN_PIN = '614592';
 
 const CATEGORIES = [
   { id: 'android-root', name: 'Android Root' },
@@ -19,13 +19,15 @@ export default function SecretAdminPage() {
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState(false);
 
-  // প্রোডাক্ট স্টেট
+  // প্রোডাক্ট ও লোডিং স্টেট
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
 
   // ইনপুট স্টেট
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('android-root');
+  const [uploadMode, setUploadMode] = useState('file'); // 'file' অথবা 'url'
+  const [imageUrl, setImageUrl] = useState('');
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
   const [description, setDescription] = useState('');
@@ -71,22 +73,22 @@ export default function SecretAdminPage() {
     }
   };
 
-  // ছবি স্বয়ংক্রিয়ভাবে ছোট (Compress) ও কনভার্ট করার ফাংশন
+  // মোবাইল-ফ্রেন্ডলি মেমোরি-সেফ ছবি কম্প্রেসর
   const compressImage = (file) => {
     return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = (event) => {
-        const img = new Image();
-        img.src = event.target.result;
-        img.onload = () => {
+      const blobUrl = URL.createObjectURL(file);
+      const img = new Image();
+
+      img.onload = () => {
+        URL.revokeObjectURL(blobUrl);
+        try {
           const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 500;
+          const MAX_WIDTH = 400; // মোবাইল উপযোগী সাইজ
           let width = img.width;
           let height = img.height;
 
           if (width > MAX_WIDTH) {
-            height = (height * MAX_WIDTH) / width;
+            height = Math.round((height * MAX_WIDTH) / width);
             width = MAX_WIDTH;
           }
 
@@ -95,29 +97,46 @@ export default function SecretAdminPage() {
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, width, height);
 
-          // হালকা ও পরিষ্কার JPEG ফরম্যাটে কনভার্ট
-          resolve(canvas.toDataURL('image/jpeg', 0.7));
-        };
-        img.onerror = (error) => reject(error);
+          // হালকা সাইজের JPEG তৈরি
+          const base64 = canvas.toDataURL('image/jpeg', 0.6);
+          resolve(base64);
+        } catch (e) {
+          reject(new Error('ছবি প্রসেস করতে সমস্যা হয়েছে।'));
+        }
       };
-      reader.onerror = (error) => reject(error);
+
+      img.onerror = () => {
+        URL.revokeObjectURL(blobUrl);
+        reject(new Error('এই ফরম্যাটের ছবি সাপোর্ট করেনি। সাধারণ JPG বা PNG ছবি দিন।'));
+      };
+
+      img.src = blobUrl;
     });
   };
 
   const handleAddProduct = async (e) => {
     e.preventDefault();
-    if (!imageFile) {
-      alert('অনুগ্রহ করে মোবাইল থেকে একটি প্রোডাক্টের ছবি বেছে নিন!');
-      return;
-    }
-
     setSubmitting(true);
 
     try {
-      // ছবি কম্প্রেস করা
-      const compressedImageBase64 = await compressImage(imageFile);
+      let finalImage = '';
 
-      // সরাসরি ডাটাবেজে সংরক্ষণ
+      if (uploadMode === 'file') {
+        if (!imageFile) {
+          alert('অনুগ্রহ করে গ্যালারি থেকে ছবি সিলেক্ট করুন!');
+          setSubmitting(false);
+          return;
+        }
+        finalImage = await compressImage(imageFile);
+      } else {
+        if (!imageUrl.trim()) {
+          alert('অনুগ্রহ করে ছবির লিংক দিন!');
+          setSubmitting(false);
+          return;
+        }
+        finalImage = imageUrl.trim();
+      }
+
       const res = await fetch(`${SUPABASE_URL}/rest/v1/products`, {
         method: 'POST',
         headers: {
@@ -129,7 +148,7 @@ export default function SecretAdminPage() {
         body: JSON.stringify({
           title,
           category,
-          image: compressedImageBase64,
+          image: finalImage,
           description: description || '',
           price: Number(price),
           original_price: originalPrice ? Number(originalPrice) : null,
@@ -137,27 +156,35 @@ export default function SecretAdminPage() {
       });
 
       if (res.ok) {
-        alert('✅ প্রোডাক্ট ও ছবি সফলভাবে যুক্ত হয়েছে!');
+        alert('✅ প্রোডাক্ট সফলভাবে যোগ হয়েছে!');
         setTitle('');
         setImageFile(null);
         setImagePreview('');
+        setImageUrl('');
         setDescription('');
         setPrice('');
         setOriginalPrice('');
         fetchProducts();
       } else {
-        const errorData = await res.json().catch(() => null);
-        alert(`❌ এরর: ${errorData?.message || 'তথ্য সেভ হয়নি'}`);
+        const errText = await res.text();
+        let errMsg = 'ডাটাবেজে সেভ হয়নি';
+        try {
+          const parsed = JSON.parse(errText);
+          errMsg = parsed.message || parsed.hint || errText;
+        } catch (e) {
+          errMsg = errText || `সার্ভার এরর (${res.status})`;
+        }
+        alert('❌ এরর: ' + errMsg);
       }
     } catch (err) {
-      alert('এরর: ' + err.message);
+      alert('❌ এরর: ' + (err?.message || 'ছবি আপলোডে সমস্যা হয়েছে'));
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDeleteProduct = async (id, prodTitle) => {
-    if (!confirm(`আপনি কি "${prodTitle}" ডিলিট করতে চান?`)) return;
+    if (!confirm(`আপনি কি নিশ্চিত "${prodTitle}" ডিলিট করতে চান?`)) return;
 
     try {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/products?id=eq.${id}`, {
@@ -209,7 +236,7 @@ export default function SecretAdminPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#ffffff', padding: '14px 18px', borderRadius: '14px', border: '1px solid #e2e8f0', marginBottom: '20px' }}>
         <div>
           <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: '#0f172a' }}>⚙️ Hub Cart Manager (tbcadsa)</h2>
-          <span style={{ fontSize: '12px', color: '#10b981', fontWeight: 'bold' }}>● Direct Upload (No Bucket Needed)</span>
+          <span style={{ fontSize: '12px', color: '#10b981', fontWeight: 'bold' }}>● Database Connected</span>
         </div>
         <Link href="/" style={{ textDecoration: 'none', background: '#f1f5f9', color: '#0f172a', padding: '8px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }}>
           Live Store ↗
@@ -222,7 +249,7 @@ export default function SecretAdminPage() {
         <form onSubmit={handleAddProduct}>
           <div style={{ marginBottom: '12px' }}>
             <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>প্রোডাক্টের নাম *</label>
-            <input required type="text" placeholder="যেমন: Android Mobile Temp Root" value={title} onChange={(e) => setTitle(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px' }} />
+            <input required type="text" placeholder="যেমন: Android Mobile Root" value={title} onChange={(e) => setTitle(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px' }} />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
@@ -241,20 +268,48 @@ export default function SecretAdminPage() {
             </div>
           </div>
 
-          <div style={{ marginBottom: '14px' }}>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>প্রোডাক্টের ছবি আপলোড করুন *</label>
-            <input
-              required
-              type="file"
-              accept="image/*"
-              onChange={handleFileChange}
-              style={{ width: '100%', boxSizing: 'border-box', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', background: '#f8fafc' }}
-            />
-            {imagePreview && (
-              <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <img src={imagePreview} alt="Preview" style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e2e8f0' }} />
-                <span style={{ fontSize: '12px', color: '#10b981' }}>ছবি রেডি</span>
+          {/* ছবি সিলেক্ট বা লিংক অপশন ট্যাব */}
+          <div style={{ marginBottom: '14px', background: '#f8fafc', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setUploadMode('file')}
+                style={{ flex: 1, padding: '7px', borderRadius: '6px', border: 'none', background: uploadMode === 'file' ? '#2563eb' : '#e2e8f0', color: uploadMode === 'file' ? '#fff' : '#475569', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}
+              >
+                📁 গ্যালারি থেকে আপলোড
+              </button>
+              <button
+                type="button"
+                onClick={() => setUploadMode('url')}
+                style={{ flex: 1, padding: '7px', borderRadius: '6px', border: 'none', background: uploadMode === 'url' ? '#2563eb' : '#e2e8f0', color: uploadMode === 'url' ? '#fff' : '#475569', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}
+              >
+                🔗 ছবির লিংক দিন
+              </button>
+            </div>
+
+            {uploadMode === 'file' ? (
+              <div>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleFileChange}
+                  style={{ width: '100%', boxSizing: 'border-box', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', background: '#fff' }}
+                />
+                {imagePreview && (
+                  <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <img src={imagePreview} alt="Preview" style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                    <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 'bold' }}>ছবি সিলেক্ট হয়েছে</span>
+                  </div>
+                )}
               </div>
+            ) : (
+              <input
+                type="url"
+                placeholder="https://... ছবির সম্পূর্ণ লিংক"
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px', background: '#fff' }}
+              />
             )}
           </div>
 
@@ -264,12 +319,12 @@ export default function SecretAdminPage() {
           </div>
 
           <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>বিবরণ / বিস্তারিত বিবরণ</label>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>বিবরণ / বিস্তারিত তথ্য</label>
             <textarea rows={2} placeholder="সার্ভিস বা প্রোডাক্ট সম্পর্কিত বিস্তারিত লিখুন..." value={description} onChange={(e) => setDescription(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px' }} />
           </div>
 
           <button type="submit" disabled={submitting} style={{ width: '100%', padding: '12px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' }}>
-            {submitting ? 'ছবি প্রসেসিং ও আপলোড হচ্ছে...' : 'Add Product'}
+            {submitting ? 'সংরক্ষণ হচ্ছে...' : 'Add Product'}
           </button>
         </form>
       </div>
