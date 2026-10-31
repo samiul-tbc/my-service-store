@@ -1,10 +1,8 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 
 const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
-const SUPABASE_URL = 'https://mieygzqgoekinxppdepb.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
 
 const CATEGORIES = [
   { id: 'android-root', name: 'Android Root' },
@@ -33,7 +31,7 @@ export default function SecretAdminPage() {
   const [orders, setOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
 
-  // WhatsApp ডেলিভারি মডাল স্টেট
+  // WhatsApp ডেলিভারি মডাল
   const [deliveryModalOrder, setDeliveryModalOrder] = useState(null);
   const [deliveryExtraNote, setDeliveryExtraNote] = useState('');
 
@@ -66,79 +64,29 @@ export default function SecretAdminPage() {
 
       if (res.ok && data.success) {
         setIsAuthenticated(true);
-        fetchOrders();
-        fetchProducts();
-        fetchNotice();
+        loadAllData(pinInput);
       } else {
         setPinError(true);
       }
     } catch (err) {
-      alert('ভেরিফিকেশন সার্ভারে সমস্যা হয়েছে!');
+      alert('ভেরিফিকেশন এরর!');
     } finally {
       setVerifying(false);
     }
   };
 
-  // নোটিশ ফেচ
-  const fetchNotice = async () => {
-    try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/site_settings?key=eq.announcement&select=value`, {
-        cache: 'no-store',
-        headers: {
-          apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`,
-        },
-      });
-      const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) {
-        setNoticeText(data[0].value);
-      }
-    } catch (err) {
-      console.error(err);
-    }
+  const loadAllData = (pin) => {
+    fetchOrders(pin);
+    fetchProducts(pin);
+    fetchNotice(pin);
   };
 
-  // নোটিশ সেভ
-  const handleSaveNotice = async (e) => {
-    e.preventDefault();
-    setSavingNotice(true);
-    try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/site_settings`, {
-        method: 'POST',
-        headers: {
-          apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`,
-          'Content-Type': 'application/json',
-          Prefer: 'resolution=merge-duplicates',
-        },
-        body: JSON.stringify({
-          key: 'announcement',
-          value: noticeText.trim(),
-        }),
-      });
-
-      if (res.ok) {
-        alert('📢 হোমপেজ নোটিশ সফলভাবে আপডেট হয়েছে!');
-      } else {
-        alert('নোটিশ আপডেট করা যায়নি!');
-      }
-    } catch (err) {
-      alert('নেটওয়ার্ক এরর!');
-    } finally {
-      setSavingNotice(false);
-    }
-  };
-
-  // অর্ডার ফেচ
-  const fetchOrders = async () => {
+  // ১. অর্ডার ফেচ (নিরাপদ সার্ভার কল)
+  const fetchOrders = async (pin = pinInput) => {
     setLoadingOrders(true);
     try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/orders?select=*&order=id.desc`, {
-        cache: 'no-store',
-        headers: {
-          apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`,
-        },
+      const res = await fetch('/api/admin?type=orders', {
+        headers: { 'x-admin-pin': pin },
       });
       const data = await res.json();
       if (Array.isArray(data)) setOrders(data);
@@ -149,16 +97,12 @@ export default function SecretAdminPage() {
     }
   };
 
-  // প্রোডাক্ট ফেচ
-  const fetchProducts = async () => {
+  // ২. প্রোডাক্ট ফেচ (নিরাপদ সার্ভার কল)
+  const fetchProducts = async (pin = pinInput) => {
     setLoadingProducts(true);
     try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/products?select=*&order=id.desc`, {
-        cache: 'no-store',
-        headers: {
-          apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`,
-        },
+      const res = await fetch('/api/admin?type=products', {
+        headers: { 'x-admin-pin': pin },
       });
       const data = await res.json();
       if (Array.isArray(data)) setProducts(data);
@@ -169,18 +113,55 @@ export default function SecretAdminPage() {
     }
   };
 
-  // অর্ডার স্ট্যাটাস আপডেট
+  // ৩. নোটিশ ফেচ
+  const fetchNotice = async (pin = pinInput) => {
+    try {
+      const res = await fetch('/api/admin?type=notice', {
+        headers: { 'x-admin-pin': pin },
+      });
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) setNoticeText(data[0].value);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // নোটিশ সেভ (নিরাপদ সার্ভার কল)
+  const handleSaveNotice = async (e) => {
+    e.preventDefault();
+    setSavingNotice(true);
+    try {
+      const res = await fetch('/api/admin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-pin': pinInput,
+        },
+        body: JSON.stringify({
+          action: 'update-notice',
+          payload: noticeText.trim(),
+        }),
+      });
+
+      if (res.ok) alert('📢 নোটিশ সফলভাবে আপডেট হয়েছে!');
+      else alert('নোটিশ আপডেট ব্যর্থ হয়েছে!');
+    } catch (err) {
+      alert('নেটওয়ার্ক এরর!');
+    } finally {
+      setSavingNotice(false);
+    }
+  };
+
+  // অর্ডার স্ট্যাটাস আপডেট (নিরাপদ সার্ভার কল)
   const handleUpdateOrderStatus = async (orderDbId, newStatus) => {
     try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${orderDbId}`, {
+      const res = await fetch('/api/admin', {
         method: 'PATCH',
         headers: {
-          apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`,
           'Content-Type': 'application/json',
-          Prefer: 'return=minimal',
+          'x-admin-pin': pinInput,
         },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify({ orderDbId, status: newStatus }),
       });
 
       if (res.ok) {
@@ -188,49 +169,45 @@ export default function SecretAdminPage() {
           prev.map((ord) => (ord.id === orderDbId ? { ...ord, status: newStatus } : ord))
         );
       } else {
-        alert('স্ট্যাটাস আপডেট করা সম্ভব হয়নি!');
+        alert('স্ট্যাটাস আপডেট করা যায়নি!');
       }
     } catch (err) {
       alert('সার্ভার এরর!');
     }
   };
 
-  // সম্পূর্ণ অর্ডার ডিলিট
+  // সম্পূর্ণ অর্ডার ডিলিট (নিরাপদ সার্ভার কল)
   const handleDeleteOrder = async (orderDbId, orderIdText) => {
-    if (!confirm(`আপনি কি নিশ্চিত অর্ডার "${orderIdText}" পুরোপুরি ডিলিট করতে চান?`)) return;
+    if (!confirm(`আপনি কি নিশ্চিত অর্ডার "${orderIdText}" মুছে ফেলতে চান?`)) return;
 
     try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${orderDbId}`, {
+      const res = await fetch(`/api/admin?type=order&id=${orderDbId}`, {
         method: 'DELETE',
-        headers: {
-          apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`,
-        },
+        headers: { 'x-admin-pin': pinInput },
       });
 
       if (res.ok) {
-        setOrders(orders.filter((ord) => ord.id !== orderDbId));
-        alert('🗑️ অর্ডার ডিলিট করা হয়েছে!');
+        setOrders((prev) => prev.filter((ord) => ord.id !== orderDbId));
+        alert('🗑️ অর্ডার ডিলিট সম্পন্ন!');
       } else {
-        alert('অর্ডার ডিলিট করা যায়নি!');
+        alert('ডিলিট করা যায়নি!');
       }
     } catch (err) {
       alert('নেটওয়ার্ক সমস্যা!');
     }
   };
 
-  // WhatsApp ডেলিভারি মেসেজ প্রস্তুত করে পাঠানো
+  // WhatsApp ডেলিভারি
   const handleSendWhatsAppDelivery = () => {
     if (!deliveryModalOrder) return;
 
     const ord = deliveryModalOrder;
     const cleanPhone = ord.whatsapp_number.replace(/[^0-9]/g, '');
     const phone = cleanPhone.startsWith('88') ? cleanPhone : `88${cleanPhone}`;
-
     const host = typeof window !== 'undefined' ? window.location.origin : 'https://hubcart.vercel.app';
     const invoiceUrl = `${host}/invoice/${ord.order_id}`;
 
-    let message = `হ্যালো ${ord.customer_name}! 👋\n\n` +
+    let message = `সালামু আলাইকুম ${ord.customer_name}! 👋\n\n` +
       `Hub Cart থেকে আপনার অর্ডারটি সফলভাবে সম্পন্ন করা হয়েছে। ✅\n\n` +
       `📦 সার্ভিস: ${ord.service_name}\n` +
       `🆔 অর্ডার আইডি: ${ord.order_id}\n` +
@@ -243,12 +220,8 @@ export default function SecretAdminPage() {
 
     message += `যেকোনো সহায়তায় আমাদের জানান। Hub Cart-এর সাথে থাকার জন্য ধন্যবাদ! 🌟`;
 
-    const waLink = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-    window.open(waLink, '_blank');
-
-    // অর্ডারের স্ট্যাটাস স্বয়ংক্রিয়ভাবে completed করা
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
     handleUpdateOrderStatus(ord.id, 'completed');
-
     setDeliveryModalOrder(null);
     setDeliveryExtraNote('');
   };
@@ -298,6 +271,7 @@ export default function SecretAdminPage() {
     });
   };
 
+  // প্রোডাক্ট যোগ (নিরাপদ সার্ভার কল)
   const handleAddProduct = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -321,21 +295,22 @@ export default function SecretAdminPage() {
         finalImage = imageUrl.trim();
       }
 
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/products`, {
+      const res = await fetch('/api/admin', {
         method: 'POST',
         headers: {
-          apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`,
           'Content-Type': 'application/json',
-          Prefer: 'return=representation',
+          'x-admin-pin': pinInput,
         },
         body: JSON.stringify({
-          title: title.trim(),
-          category,
-          image: finalImage,
-          description: description.trim() || '',
-          price: Number(price),
-          original_price: originalPrice ? Number(originalPrice) : null,
+          action: 'add-product',
+          payload: {
+            title: title.trim(),
+            category,
+            image: finalImage,
+            description: description.trim() || '',
+            price: Number(price),
+            original_price: originalPrice ? Number(originalPrice) : null,
+          },
         }),
       });
 
@@ -350,8 +325,7 @@ export default function SecretAdminPage() {
         setOriginalPrice('');
         fetchProducts();
       } else {
-        const errText = await res.text();
-        alert('❌ এরর: ' + errText);
+        alert('প্রোডাক্ট যোগ করা যায়নি!');
       }
     } catch (err) {
       alert('এরর: ' + err.message);
@@ -360,20 +334,18 @@ export default function SecretAdminPage() {
     }
   };
 
+  // প্রোডাক্ট ডিলিট (নিরাপদ সার্ভার কল)
   const handleDeleteProduct = async (id, prodTitle) => {
     if (!confirm(`আপনি কি নিশ্চিত "${prodTitle}" ডিলিট করতে চান?`)) return;
 
     try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/products?id=eq.${id}`, {
+      const res = await fetch(`/api/admin?type=product&id=${id}`, {
         method: 'DELETE',
-        headers: {
-          apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`,
-        },
+        headers: { 'x-admin-pin': pinInput },
       });
 
       if (res.ok) {
-        setProducts(products.filter((p) => p.id !== id));
+        setProducts((prev) => prev.filter((p) => p.id !== id));
       } else {
         alert('ডিলিট করা যায়নি!');
       }
@@ -479,7 +451,7 @@ export default function SecretAdminPage() {
           <img src={LOGO_HUB_CART} alt="Hub Cart" style={{ width: '32px', height: '32px', objectFit: 'contain' }} />
           <div>
             <h2 style={{ fontSize: '16px', fontWeight: '900', margin: 0, color: '#f8fafc' }}>Hub Cart Manager</h2>
-            <span style={{ fontSize: '10px', color: '#4ade80', fontWeight: 'bold' }}>● Secure Server Protected</span>
+            <span style={{ fontSize: '10px', color: '#4ade80', fontWeight: 'bold' }}>● Secure Server API Protected</span>
           </div>
         </div>
 
@@ -509,9 +481,9 @@ export default function SecretAdminPage() {
         padding: '16px',
         marginBottom: '16px',
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-          <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#38bdf8' }}>📢 হোমপেজ নোটিশ ব্যানার</span>
-        </div>
+        <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#38bdf8', display: 'block', marginBottom: '8px' }}>
+          📢 হোমপেজ নোটিশ ব্যানার
+        </span>
         <form onSubmit={handleSaveNotice} style={{ display: 'flex', gap: '8px' }}>
           <input
             type="text"
@@ -555,7 +527,6 @@ export default function SecretAdminPage() {
             fontWeight: 'bold',
             fontSize: '13px',
             cursor: 'pointer',
-            transition: 'all 0.2s',
           }}
         >
           🛒 লাইভ অর্ডার ({orders.length})
@@ -573,7 +544,6 @@ export default function SecretAdminPage() {
             fontWeight: 'bold',
             fontSize: '13px',
             cursor: 'pointer',
-            transition: 'all 0.2s',
           }}
         >
           📦 প্রোডাক্ট লিস্ট ({products.length})
@@ -586,7 +556,7 @@ export default function SecretAdminPage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
             <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: 0, color: '#f8fafc' }}>কাস্টমারদের অর্ডার তালিকা</h3>
             <button
-              onClick={fetchOrders}
+              onClick={() => fetchOrders()}
               style={{ background: 'none', border: 'none', color: '#38bdf8', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
             >
               🔄 রিফ্রেশ অর্ডার
@@ -628,7 +598,6 @@ export default function SecretAdminPage() {
                     <div>🔢 <strong>TrxID:</strong> <code style={{ color: '#f8fafc', background: '#0b0f19', padding: '2px 6px', borderRadius: '4px' }}>{ord.trx_id}</code></div>
                   </div>
 
-                  {/* স্ট্যাটাস চেঞ্জার ও বাটনসমূহ */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 'bold' }}>স্ট্যাটাস:</span>
@@ -672,7 +641,6 @@ export default function SecretAdminPage() {
                     </button>
                   </div>
 
-                  {/* ১-ক্লিক WhatsApp ডেলিভারি বাটন */}
                   <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '10px', display: 'flex', gap: '8px' }}>
                     <button
                       onClick={() => {
@@ -695,7 +663,7 @@ export default function SecretAdminPage() {
                         gap: '6px',
                       }}
                     >
-                      <span>📲</span> WhatsApp ডেলিভারি মেসেজ পাঠান
+                      <span>📲</span> WhatsApp ডেলিভারি
                     </button>
 
                     <Link
@@ -838,7 +806,7 @@ export default function SecretAdminPage() {
           <div style={{ background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(16px)', padding: '20px', borderRadius: '20px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
               <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: 0, color: '#f8fafc' }}>বর্তমান প্রোডাক্ট তালিকা ({products.length})</h3>
-              <button onClick={fetchProducts} style={{ background: 'none', border: 'none', color: '#38bdf8', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>🔄 রিফ্রেশ</button>
+              <button onClick={() => fetchProducts()} style={{ background: 'none', border: 'none', color: '#38bdf8', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>🔄 রিফ্রেশ</button>
             </div>
 
             {loadingProducts ? (
@@ -868,7 +836,7 @@ export default function SecretAdminPage() {
         </div>
       )}
 
-      {/* WhatsApp ডেলিভারি পপআপ মডাল */}
+      {/* WhatsApp ডেলিভারি মডাল */}
       {deliveryModalOrder && (
         <div style={{
           position: 'fixed',
@@ -897,10 +865,7 @@ export default function SecretAdminPage() {
               <h3 style={{ margin: 0, fontSize: '16px', color: '#f8fafc', fontWeight: 'bold' }}>
                 📲 WhatsApp ডেলিভারি নিশ্চিতকরণ
               </h3>
-              <button
-                onClick={() => setDeliveryModalOrder(null)}
-                style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '16px', cursor: 'pointer' }}
-              >
+              <button onClick={() => setDeliveryModalOrder(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '16px', cursor: 'pointer' }}>
                 ✕
               </button>
             </div>
@@ -917,7 +882,7 @@ export default function SecretAdminPage() {
               </label>
               <textarea
                 rows={3}
-                placeholder="যেমন: ইউজারনেম, পাসওয়ার্ড, ফাইল ডাউনলোড লিংক বা বিশেষ কোনো নির্দেশিকা..."
+                placeholder="যেমন: ইউজারনেম, পাসওয়ার্ড, ফাইল ডাউনলোড লিংক..."
                 value={deliveryExtraNote}
                 onChange={(e) => setDeliveryExtraNote(e.target.value)}
                 style={{
@@ -968,7 +933,6 @@ export default function SecretAdminPage() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '6px',
-                  boxShadow: '0 4px 14px rgba(22, 163, 74, 0.4)',
                 }}
               >
                 <span>🚀</span> WhatsApp-এ পাঠান
