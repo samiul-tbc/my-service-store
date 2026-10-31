@@ -52,7 +52,28 @@ export default function BkashPaymentPage() {
         }),
       });
 
+      const data = await res.json();
+
       if (res.ok) {
+        const generatedOrderId = data.orderId || data.order_id || data.id;
+
+        // বিকাশ অর্ডারের জন্য WhatsApp অটো-মেসেজ ট্রিগার
+        try {
+          await fetch('/api/send-whatsapp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              customerName: orderData.customerName,
+              phone: orderData.whatsappNumber,
+              orderId: generatedOrderId || 'HC-BKASH',
+              serviceName: orderData.serviceName,
+              price: orderData.price,
+            }),
+          });
+        } catch (waErr) {
+          console.error('WhatsApp alert error:', waErr);
+        }
+
         alert('✅ আপনার বিকাশ পেমেন্ট অর্ডার সফলভাবে সাবমিট হয়েছে!');
         localStorage.removeItem('hubcart_current_order');
         router.push('/');
