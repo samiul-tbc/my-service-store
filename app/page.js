@@ -4,64 +4,29 @@ import Link from 'next/link';
 
 const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://mieygzqgoekinxppdepb.supabase.co';
-const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
-
 export default function HomePage() {
   const [products, setProducts] = useState([]);
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 6000); // ৬ সেকেন্ডে টাইমআউট
-
-    async function fetchData() {
+    async function loadHomeData() {
       try {
-        const headers = {
-          apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`,
-        };
-
-        // দুটি রিকোয়েস্ট একসাথে সমান্তরালে (Parallel) কল করা হচ্ছে
-        const [prodRes, noticeRes] = await Promise.allSettled([
-          fetch(`${SUPABASE_URL}/rest/v1/products?select=*&order=id.desc`, {
-            cache: 'no-store',
-            headers,
-            signal: controller.signal,
-          }),
-          fetch(`${SUPABASE_URL}/rest/v1/site_settings?key=eq.announcement&select=value`, {
-            cache: 'no-store',
-            headers,
-            signal: controller.signal,
-          }),
-        ]);
-
-        if (prodRes.status === 'fulfilled' && prodRes.value.ok) {
-          const prodData = await prodRes.value.json();
-          if (Array.isArray(prodData)) setProducts(prodData);
+        const res = await fetch('/api/products', { cache: 'no-store' });
+        const data = await res.json();
+        if (Array.isArray(data.products)) {
+          setProducts(data.products);
         }
-
-        if (noticeRes.status === 'fulfilled' && noticeRes.value.ok) {
-          const noticeData = await noticeRes.value.json();
-          if (Array.isArray(noticeData) && noticeData.length > 0) {
-            setNotice(noticeData[0].value);
-          }
+        if (data.notice) {
+          setNotice(data.notice);
         }
       } catch (err) {
-        console.error('Fetch error:', err);
+        console.error('Home load error:', err);
       } finally {
-        clearTimeout(timeoutId);
         setLoading(false);
       }
     }
-
-    fetchData();
-
-    return () => {
-      controller.abort();
-      clearTimeout(timeoutId);
-    };
+    loadHomeData();
   }, []);
 
   return (
@@ -222,4 +187,4 @@ export default function HomePage() {
 
     </div>
   );
-                    }
+}
