@@ -207,7 +207,7 @@ export default function SecretAdminPage() {
     const host = typeof window !== 'undefined' ? window.location.origin : 'https://hubcart.vercel.app';
     const invoiceUrl = `${host}/invoice/${ord.order_id}`;
 
-    let message = `সালামু আলাইকুম ${ord.customer_name}! 👋\n\n` +
+    let message = ` ${ord.customer_name}! 👋\n\n` +
       `Hub Cart থেকে আপনার অর্ডারটি সফলভাবে সম্পন্ন করা হয়েছে। ✅\n\n` +
       `📦 সার্ভিস: ${ord.service_name}\n` +
       `🆔 অর্ডার আইডি: ${ord.order_id}\n` +
