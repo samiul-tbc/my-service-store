@@ -3,8 +3,10 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
-const SUPABASE_URL = 'https://mieygzqgoekinxppdepb.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
+
+// Vercel Environment Variables থেকে ডাটা নেওয়া হচ্ছে
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://mieygzqgoekinxppdepb.supabase.co';
+const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
 
 export default function HomePage() {
   const [products, setProducts] = useState([]);
@@ -94,7 +96,7 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* আগের Hub Cart ব্যানার */}
+      {/* Hub Cart ব্র্যান্ড ব্যানার */}
       <div style={{
         background: 'radial-gradient(circle at center, #0a2356 0%, #020816 85%)',
         borderRadius: '24px',
