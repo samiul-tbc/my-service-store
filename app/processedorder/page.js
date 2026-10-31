@@ -42,7 +42,29 @@ export default function ProcessedOrderPage() {
             trxId: 'Manual Contact',
           }),
         });
+
+        const data = await res.json();
+
         if (res.ok) {
+          const generatedOrderId = data.orderId || data.order_id || data.id;
+
+          // স্বয়ংক্রিয় WhatsApp কনফার্মেশন মেসেজ পাঠানো
+          try {
+            await fetch('/api/send-whatsapp', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                customerName: orderData.customerName,
+                phone: orderData.whatsappNumber,
+                orderId: generatedOrderId || 'HC-PENDING',
+                serviceName: orderData.serviceName,
+                price: orderData.price,
+              }),
+            });
+          } catch (waErr) {
+            console.error('WhatsApp alert error:', waErr);
+          }
+
           alert('✅ TBC Pay অর্ডার সাবমিট হয়েছে! খুব দ্রুত আমাদের টিম আপনার সাথে যোগাযোগ করবে।');
           localStorage.removeItem('hubcart_current_order');
           router.push('/');
@@ -63,7 +85,7 @@ export default function ProcessedOrderPage() {
     return (
       <div style={{ textAlign: 'center', padding: '80px 20px', color: '#94a3b8' }}>
         <h3>কোনো অর্ডার পাওয়া যায়নি!</h3>
-        <button onClick={() => router.push('/')} style={{ marginTop: '10px', padding: '8px 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px' }}>
+        <button onClick={() => router.push('/')} style={{ marginTop: '10px', padding: '8px 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
           হোমপেজে ফিরে যান
         </button>
       </div>
