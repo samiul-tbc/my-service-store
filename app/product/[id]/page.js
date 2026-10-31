@@ -5,9 +5,11 @@ import Link from 'next/link';
 
 const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
 const LOGO_WHATSAPP = 'https://download.logo.wine/logo/WhatsApp/WhatsApp-Logo.wine.png';
-const SUPABASE_URL = 'https://mieygzqgoekinxppdepb.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
-const WHATSAPP_NUMBER = '8801893432478'; // আপনার WhatsApp নম্বর
+
+// Vercel Environment Variables থেকে ডাটা নেওয়া হচ্ছে
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://mieygzqgoekinxppdepb.supabase.co';
+const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
+const WHATSAPP_NUMBER = '8801893432478';
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -163,7 +165,7 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
-      {/* নিচের ফিক্সড অর্ডার বার: WhatsApp Order + এখনই কিনুন */}
+      {/* নিচের ফিক্সড অর্ডার বার */}
       <div style={{
         position: 'fixed',
         bottom: 60,
@@ -179,7 +181,6 @@ export default function ProductDetailPage() {
         maxWidth: '600px',
         margin: '0 auto',
       }}>
-        {/* ১. বাম পাশে WhatsApp Order বাটন */}
         <a
           href={whatsappUrl}
           target="_blank"
@@ -210,7 +211,6 @@ export default function ProductDetailPage() {
           <span>WhatsApp Order</span>
         </a>
 
-        {/* ২. ডান পাশে এখনই কিনুন বাটন */}
         <button
           onClick={() => { setShowOrderModal(true); setErrorMsg(''); }}
           style={{
