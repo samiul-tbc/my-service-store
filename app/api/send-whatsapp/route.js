@@ -11,7 +11,7 @@ export async function POST(req) {
       return NextResponse.json({ error: 'ফোন নম্বর বা অর্ডার আইডি অনুপস্থিত' }, { status: 400 });
     }
 
-    // নম্বরের শুরুতে ৮৮ ফরম্যাট নিশ্চিত করা
+    // বাংলাদেশের নম্বর ফরম্যাট নিশ্চিত করা (880...)
     let cleanPhone = phone.replace(/[^0-9]/g, '');
     if (cleanPhone.startsWith('0')) {
       cleanPhone = `88${cleanPhone}`;
@@ -31,9 +31,9 @@ export async function POST(req) {
         to: cleanPhone,
         type: 'template',
         template: {
-          name: 'hubcart_order_confirm', // আপনার অনুমোদিত টেমপ্লেট নাম
+          name: 'order_confirmation',
           language: {
-            code: 'bn', // টেমপ্লেটের ভাষা (ইংরেজি হলে en_US)
+            code: 'en_US',
           },
           components: [
             {
@@ -41,8 +41,6 @@ export async function POST(req) {
               parameters: [
                 { type: 'text', text: customerName || 'Customer' },
                 { type: 'text', text: String(orderId) },
-                { type: 'text', text: String(serviceName) },
-                { type: 'text', text: String(price) },
               ],
             },
           ],
