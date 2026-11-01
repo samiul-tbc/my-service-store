@@ -5,13 +5,13 @@ const ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN;
 
 export async function POST(req) {
   try {
-    const { customerName, phone, orderId, serviceName, price } = await req.json();
+    const { customerName, phone, orderId } = await req.json();
 
     if (!phone || !orderId) {
       return NextResponse.json({ error: 'ফোন নম্বর বা অর্ডার আইডি অনুপস্থিত' }, { status: 400 });
     }
 
-    // বাংলাদেশের নম্বর ফরম্যাট নিশ্চিত করা (880...)
+    // বাংলাদেশের নম্বর ফরম্যাট ঠিক করা (880...)
     let cleanPhone = phone.replace(/[^0-9]/g, '');
     if (cleanPhone.startsWith('0')) {
       cleanPhone = `88${cleanPhone}`;
@@ -19,7 +19,13 @@ export async function POST(req) {
       cleanPhone = `880${cleanPhone}`;
     }
 
-    // Meta WhatsApp Cloud API-তে রিকোয়েস্ট পাঠানো
+    // আজকের তারিখ ফরম্যাট করা (যেমন: Nov 1, 2026)
+    const orderDate = new Date().toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+
     const metaRes = await fetch(`https://graph.facebook.com/v21.0/${PHONE_ID}/messages`, {
       method: 'POST',
       headers: {
@@ -31,7 +37,7 @@ export async function POST(req) {
         to: cleanPhone,
         type: 'template',
         template: {
-          name: 'order_confirmation',
+          name: 'jaspers_market_order_confirmation_v1',
           language: {
             code: 'en_US',
           },
@@ -41,6 +47,7 @@ export async function POST(req) {
               parameters: [
                 { type: 'text', text: customerName || 'Customer' },
                 { type: 'text', text: String(orderId) },
+                { type: 'text', text: orderDate },
               ],
             },
           ],
