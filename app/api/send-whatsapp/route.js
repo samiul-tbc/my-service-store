@@ -19,7 +19,7 @@ export async function POST(req) {
       cleanPhone = `880${cleanPhone}`;
     }
 
-    // আজকের তারিখ ফরম্যাট করা (যেমন: Nov 1, 2026)
+    // আজকের তারিখ (যেমন: Nov 1, 2026)
     const orderDate = new Date().toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
