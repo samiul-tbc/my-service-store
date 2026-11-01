@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-const PHONE_ID = process.env.WHATSAPP_PHONE_ID || '1375047549643574';
+const PHONE_ID = process.env.WHATSAPP_PHONE_ID || '1376942948843524';
 const ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN;
 
 export async function POST(req) {
