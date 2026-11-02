@@ -11,7 +11,7 @@ export async function POST(req) {
       return NextResponse.json({ error: 'ফোন নম্বর বা অর্ডার আইডি অনুপস্থিত' }, { status: 400 });
     }
 
-    // বাংলাদেশের নম্বর ফরম্যাট ঠিক করা (880...)
+    // বাংলাদেশ নম্বর ফরম্যাট ঠিক করা (880...)
     let cleanPhone = phone.replace(/[^0-9]/g, '');
     if (cleanPhone.startsWith('0')) {
       cleanPhone = `88${cleanPhone}`;
@@ -19,12 +19,15 @@ export async function POST(req) {
       cleanPhone = `880${cleanPhone}`;
     }
 
-    // আজকের তারিখ (যেমন: Nov 1, 2026)
+    // অর্ডারের তারিখ (যেমন: Nov 2, 2026)
     const orderDate = new Date().toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
     });
+
+    // ইনভয়েস লিংক
+    const invoiceUrl = `https://hubcart.vercel.app/invoice/${orderId}`;
 
     const metaRes = await fetch(`https://graph.facebook.com/v21.0/${PHONE_ID}/messages`, {
       method: 'POST',
@@ -37,7 +40,7 @@ export async function POST(req) {
         to: cleanPhone,
         type: 'template',
         template: {
-          name: 'jaspers_market_order_confirmation_v1',
+          name: 'hubcart_order_confirmation', // আপনার অনুমোদিত টেমপ্লেট
           language: {
             code: 'en_US',
           },
@@ -45,9 +48,10 @@ export async function POST(req) {
             {
               type: 'body',
               parameters: [
-                { type: 'text', text: customerName || 'Customer' },
-                { type: 'text', text: String(orderId) },
-                { type: 'text', text: orderDate },
+                { type: 'text', text: customerName || 'Customer' }, // {{1}} কাস্টমারের নাম
+                { type: 'text', text: String(orderId) },           // {{2}} অর্ডার আইডি
+                { type: 'text', text: orderDate },                 // {{3}} তারিখ
+                { type: 'text', text: invoiceUrl },                // {{4}} ইনভয়েস লিংক
               ],
             },
           ],
