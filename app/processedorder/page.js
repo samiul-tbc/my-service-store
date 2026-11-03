@@ -3,26 +3,25 @@
 import { useState } from 'react';
 
 export default function ProcessedOrderPage() {
-  // Shudhu 2-ti auto method: 'instant' ebong 'crypto'
   const [selectedMethod, setSelectedMethod] = useState('instant');
   const [loading, setLoading] = useState(false);
 
-  // Example / State theke asha order data
+  // আপনার অর্ডার ডাটা (স্টেট বা প্রপস থেকে আসা মান)
   const [orderData, setOrderData] = useState({
-    id: `HC-${Date.now().toString().slice(-6)}`,
-    price: 1550, // BDT te total amount
-    customerName: 'Customer Name',
+    id: 'HC-514801',
+    price: 1550,
+    customerName: 'Samiul',
     whatsappNumber: '017XXXXXXXX',
   });
 
   const bdtAmount = Number(orderData.price) || 0;
-  const cryptoAmountUSD = (bdtAmount / 120).toFixed(2); // 1 USD = 120 BDT
+  const cryptoAmountUSD = (bdtAmount / 120).toFixed(2); // ১ ডলার = ১২০ টাকা
 
   const handleProceed = async () => {
     setLoading(true);
 
     try {
-      // ১. Instant Auto Pay (bKash/Nagad/Rocket via UddoktaPay)
+      // ১. BDT অটো পেমেন্ট (bKash/Nagad via UddoktaPay)
       if (selectedMethod === 'instant') {
         const res = await fetch('/api/create-bdt-payment', {
           method: 'POST',
@@ -40,12 +39,12 @@ export default function ProcessedOrderPage() {
         if (res.ok && data.paymentUrl) {
           window.location.href = data.paymentUrl;
         } else {
-          alert(data.error || 'BDT payment shuru kora jayni');
+          alert(data.error || 'পেমেন্ট গেটওয়েতে সংযোগ করা সম্ভব হয়নি');
         }
         return;
       }
 
-      // ২. Crypto Auto Pay (USDT TRC-20 via NOWPayments)
+      // ২. ক্রিপ্টো পেমেন্ট (USDT TRC-20 via NOWPayments)
       if (selectedMethod === 'crypto') {
         const res = await fetch('/api/create-crypto-invoice', {
           method: 'POST',
@@ -63,83 +62,144 @@ export default function ProcessedOrderPage() {
         if (res.ok && data.invoiceUrl) {
           window.location.href = data.invoiceUrl;
         } else {
-          alert(data.error || 'Crypto invoice toiri kora jayni');
+          alert(data.error || 'ক্রিপ্টো ইনভয়েস তৈরি করা যায়নি');
         }
         return;
       }
     } catch (err) {
-      alert('Server error: Payment gateway-te connect kora jacche na.');
+      alert('সার্ভার এরর: পেমেন্ট শুরু করা যায়নি।');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-6 space-y-6">
-        <h2 className="text-xl font-bold text-gray-800 text-center">
-          Payment Method Select Korun
-        </h2>
+    <div style={{ minHeight: '85vh', backgroundColor: '#090d16', color: '#ffffff', padding: '16px 16px 90px 16px' }}>
+      <div style={{ maxWidth: '440px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        
+        {/* Title */}
+        <div style={{ textAlign: 'center', marginTop: '8px' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#f8fafc', margin: '0 0 4px 0' }}>
+            Payment Method Select Korun
+          </h2>
+          <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0 }}>
+            অর্ডারটি সম্পন্ন করতে পেমেন্ট মাধ্যম বেছে নিন
+          </p>
+        </div>
 
-        {/* Order Summary */}
-        <div className="bg-gray-100 p-4 rounded-xl space-y-1">
-          <div className="flex justify-between text-sm text-gray-600">
+        {/* Order Summary Card */}
+        <div style={{
+          backgroundColor: '#111827',
+          border: '1px solid #1f2937',
+          borderRadius: '16px',
+          padding: '16px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#9ca3af' }}>
             <span>Order ID:</span>
-            <span className="font-semibold text-gray-800">{orderData.id}</span>
+            <span style={{ fontWeight: '600', color: '#e5e7eb' }}>{orderData.id}</span>
           </div>
-          <div className="flex justify-between text-sm text-gray-600">
-            <span>Payable Amount:</span>
-            <span className="font-bold text-lg text-emerald-600">৳{bdtAmount}</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #1f2937', paddingTop: '10px' }}>
+            <span style={{ fontSize: '14px', color: '#9ca3af' }}>Payable Amount:</span>
+            <span style={{ fontSize: '22px', fontWeight: '800', color: '#10b981' }}>৳{bdtAmount}</span>
           </div>
-          <div className="flex justify-between text-xs text-gray-500">
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#6b7280' }}>
             <span>Crypto Equivalent:</span>
-            <span>${cryptoAmountUSD} USDT (Rate: ৳120 = $1)</span>
+            <span style={{ color: '#38bdf8' }}>${cryptoAmountUSD} USDT (Rate: ৳120 = $1)</span>
           </div>
         </div>
 
-        {/* 2-Way Payment Options */}
-        <div className="space-y-3">
-          {/* Instant Auto Pay */}
+        {/* Payment Methods */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          
+          {/* Option 1: Instant Pay (bKash, Nagad, Rocket) */}
           <div
             onClick={() => setSelectedMethod('instant')}
-            className={`p-4 border-2 rounded-xl cursor-pointer transition flex items-center justify-between ${
-              selectedMethod === 'instant'
-                ? 'border-emerald-500 bg-emerald-50/40'
-                : 'border-gray-200 hover:border-gray-300'
-            }`}
+            style={{
+              padding: '16px',
+              borderRadius: '14px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              transition: 'all 0.2s ease',
+              backgroundColor: selectedMethod === 'instant' ? '#0f291e' : '#111827',
+              border: selectedMethod === 'instant' ? '2px solid #10b981' : '1px solid #1f2937',
+            }}
           >
-            <div>
-              <p className="font-bold text-gray-800">Instant Pay (Auto)</p>
-              <p className="text-xs text-gray-500">bKash, Nagad, Rocket</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{
+                width: '20px',
+                height: '20px',
+                borderRadius: '50%',
+                border: selectedMethod === 'instant' ? '6px solid #10b981' : '2px solid #4b5563',
+                backgroundColor: '#ffffff'
+              }} />
+              <div>
+                <p style={{ margin: 0, fontWeight: '700', fontSize: '15px', color: '#ffffff' }}>Instant Pay (Auto)</p>
+                <p style={{ margin: 0, fontSize: '12px', color: '#94a3b8' }}>bKash, Nagad, Rocket</p>
+              </div>
             </div>
-            <span className="text-sm font-bold text-emerald-600">৳{bdtAmount}</span>
+            <span style={{ fontWeight: '700', fontSize: '16px', color: '#10b981' }}>৳{bdtAmount}</span>
           </div>
 
-          {/* Crypto Auto Pay */}
+          {/* Option 2: Crypto Pay (USDT TRC20) */}
           <div
             onClick={() => setSelectedMethod('crypto')}
-            className={`p-4 border-2 rounded-xl cursor-pointer transition flex items-center justify-between ${
-              selectedMethod === 'crypto'
-                ? 'border-emerald-500 bg-emerald-50/40'
-                : 'border-gray-200 hover:border-gray-300'
-            }`}
+            style={{
+              padding: '16px',
+              borderRadius: '14px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              transition: 'all 0.2s ease',
+              backgroundColor: selectedMethod === 'crypto' ? '#0f291e' : '#111827',
+              border: selectedMethod === 'crypto' ? '2px solid #10b981' : '1px solid #1f2937',
+            }}
           >
-            <div>
-              <p className="font-bold text-gray-800">Crypto Pay (Instant)</p>
-              <p className="text-xs text-gray-500">USDT (TRC-20)</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{
+                width: '20px',
+                height: '20px',
+                borderRadius: '50%',
+                border: selectedMethod === 'crypto' ? '6px solid #10b981' : '2px solid #4b5563',
+                backgroundColor: '#ffffff'
+              }} />
+              <div>
+                <p style={{ margin: 0, fontWeight: '700', fontSize: '15px', color: '#ffffff' }}>Crypto Pay (Instant)</p>
+                <p style={{ margin: 0, fontSize: '12px', color: '#94a3b8' }}>USDT (TRC-20)</p>
+              </div>
             </div>
-            <span className="text-sm font-bold text-emerald-600">${cryptoAmountUSD} USDT</span>
+            <span style={{ fontWeight: '700', fontSize: '15px', color: '#38bdf8' }}>${cryptoAmountUSD} USDT</span>
           </div>
+
         </div>
 
         {/* Action Button */}
         <button
           onClick={handleProceed}
           disabled={loading}
-          className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow transition disabled:opacity-50"
+          style={{
+            width: '100%',
+            marginTop: '8px',
+            padding: '16px',
+            borderRadius: '14px',
+            backgroundColor: loading ? '#047857' : '#059669',
+            color: '#ffffff',
+            fontWeight: '700',
+            fontSize: '16px',
+            border: 'none',
+            cursor: loading ? 'not-allowed' : 'pointer',
+            boxShadow: '0 4px 14px rgba(5, 150, 105, 0.4)',
+            transition: 'background-color 0.2s ease'
+          }}
         >
-          {loading ? 'Processing...' : 'Pay Now'}
+          {loading ? 'Processing...' : `Pay ${selectedMethod === 'instant' ? `৳${bdtAmount}` : `$${cryptoAmountUSD} USDT`}`}
         </button>
+
       </div>
     </div>
   );
