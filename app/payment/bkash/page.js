@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 
 const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
 const LOGO_BKASH = 'https://1000logos.net/wp-content/uploads/2021/02/Bkash-logo.png';
-const BKASH_NUMBER = '01893432478';
+const BKASH_NUMBER = '010';
 
 export default function BkashPaymentPage() {
   const router = useRouter();
