@@ -10,17 +10,35 @@ export async function POST(req) {
     const { orderId, amount, customerName, phone } = body;
 
     const cleanOrderId = orderId || `HC-${Date.now().toString().slice(-6)}`;
-    const apiKey = 'vBpZtnIaHhpwaGZHctzfmuVkQGquI';
-    const apiUrl = 'https://hubcart.paymently.io/api/checkout-v2';
+
+    // Vercel theke API key ebong URL read kora
+    const apiKey = process.env.UDDOKTAPAY_API_KEY;
+    const rawUrl = process.env.UDDOKTAPAY_API_URL || 'https://hubcart.paymently.io/api';
+
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: 'Vercel environment variables-e UDDOKTAPAY_API_KEY pawa jayni!' },
+        { status: 500 }
+      );
+    }
+
+    // Base URL er sheshe checkout endpoint auto-adjust kora
+    const cleanBaseUrl = rawUrl.replace(/\/+$/, ''); // Shesh-er slash bad deya
+    const apiUrl = cleanBaseUrl.endsWith('/checkout-v2')
+      ? cleanBaseUrl
+      : `${cleanBaseUrl}/checkout-v2`;
 
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'RT-UDDOKTAPAY-API-KEY': apiKey,
+        'RT-PAYMENTLY-API-KEY': apiKey,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
       },
       body: JSON.stringify({
-        full_name: customerName || 'Customer',
+        full_name: customerName || 'Valued Customer',
         email: 'customer@hubcart.com',
         amount: String(amount),
         metadata: {
@@ -41,7 +59,7 @@ export async function POST(req) {
     }
 
     return NextResponse.json(
-      { error: data?.message || 'পেমেন্ট গেটওয়েতে সংযোগ ব্যর্থ' },
+      { error: data?.message || 'Payment gateway response error' },
       { status: 400 }
     );
   } catch (error) {
