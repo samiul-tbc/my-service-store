@@ -1,27 +1,64 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function ProcessedOrderPage() {
   const [selectedMethod, setSelectedMethod] = useState('instant');
   const [loading, setLoading] = useState(false);
 
-  // আপনার অর্ডার ডাটা (স্টেট বা প্রপস থেকে আসা মান)
   const [orderData, setOrderData] = useState({
-    id: 'HC-514801',
-    price: 1550,
-    customerName: 'Samiul',
-    whatsappNumber: '017XXXXXXXX',
+    id: '',
+    price: 0,
+    customerName: '',
+    whatsappNumber: '',
   });
 
+  // Product page theke asha real data load kora (URL ba LocalStorage)
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const urlPrice = params.get('price') || params.get('amount');
+      const urlId = params.get('id') || params.get('orderId');
+      const urlName = params.get('name');
+      const urlPhone = params.get('phone');
+
+      const saved =
+        localStorage.getItem('currentOrder') ||
+        localStorage.getItem('pendingOrder') ||
+        localStorage.getItem('orderData') ||
+        localStorage.getItem('order');
+
+      const parsed = saved ? JSON.parse(saved) : {};
+
+      const finalPrice = Number(urlPrice || parsed.price || parsed.amount || 5);
+      const finalId = urlId || parsed.id || parsed.orderId || `HC-${Date.now().toString().slice(-6)}`;
+      const finalName = urlName || parsed.customerName || parsed.name || 'Samiul Islam';
+      const finalPhone = urlPhone || parsed.whatsappNumber || parsed.phone || '01893432478';
+
+      setOrderData({
+        id: finalId,
+        price: finalPrice,
+        customerName: finalName,
+        whatsappNumber: finalPhone,
+      });
+    } catch (e) {
+      setOrderData({
+        id: `HC-${Date.now().toString().slice(-6)}`,
+        price: 5,
+        customerName: 'Samiul Islam',
+        whatsappNumber: '01893432478',
+      });
+    }
+  }, []);
+
   const bdtAmount = Number(orderData.price) || 0;
-  const cryptoAmountUSD = (bdtAmount / 120).toFixed(2); // ১ ডলার = ১২০ টাকা
+  const cryptoAmountUSD = (bdtAmount / 120).toFixed(2);
 
   const handleProceed = async () => {
     setLoading(true);
 
     try {
-      // ১. BDT অটো পেমেন্ট (bKash/Nagad via UddoktaPay)
+      // ১. Instant Auto Pay (bKash/Nagad/Rocket)
       if (selectedMethod === 'instant') {
         const res = await fetch('/api/create-bdt-payment', {
           method: 'POST',
@@ -34,17 +71,24 @@ export default function ProcessedOrderPage() {
           }),
         });
 
+        // 404 / 500 error jeno crash na kore
+        const contentType = res.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          alert('API Route khuje pawa jacche na! GitHub-e "app/api/create-bdt-payment/route.js" file-ti ache kina check korun.');
+          return;
+        }
+
         const data = await res.json();
 
         if (res.ok && data.paymentUrl) {
           window.location.href = data.paymentUrl;
         } else {
-          alert(data.error || 'পেমেন্ট গেটওয়েতে সংযোগ করা সম্ভব হয়নি');
+          alert(data.error || 'UddoktaPay theke kono URL pawa jayni');
         }
         return;
       }
 
-      // ২. ক্রিপ্টো পেমেন্ট (USDT TRC-20 via NOWPayments)
+      // ২. Crypto Pay (USDT TRC20)
       if (selectedMethod === 'crypto') {
         const res = await fetch('/api/create-crypto-invoice', {
           method: 'POST',
@@ -57,17 +101,23 @@ export default function ProcessedOrderPage() {
           }),
         });
 
+        const contentType = res.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          alert('Crypto API Route khuje pawa jacche na!');
+          return;
+        }
+
         const data = await res.json();
 
         if (res.ok && data.invoiceUrl) {
           window.location.href = data.invoiceUrl;
         } else {
-          alert(data.error || 'ক্রিপ্টো ইনভয়েস তৈরি করা যায়নি');
+          alert(data.error || 'Crypto invoice toiri kora jayni');
         }
         return;
       }
     } catch (err) {
-      alert('সার্ভার এরর: পেমেন্ট শুরু করা যায়নি।');
+      alert('Network ba server problem: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -77,17 +127,16 @@ export default function ProcessedOrderPage() {
     <div style={{ minHeight: '85vh', backgroundColor: '#090d16', color: '#ffffff', padding: '16px 16px 90px 16px' }}>
       <div style={{ maxWidth: '440px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
         
-        {/* Title */}
         <div style={{ textAlign: 'center', marginTop: '8px' }}>
           <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#f8fafc', margin: '0 0 4px 0' }}>
             Payment Method Select Korun
           </h2>
           <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0 }}>
-            অর্ডারটি সম্পন্ন করতে পেমেন্ট মাধ্যম বেছে নিন
+            Order-ti shompurno korte payment maddhom beche nin
           </p>
         </div>
 
-        {/* Order Summary Card */}
+        {/* Order Summary */}
         <div style={{
           backgroundColor: '#111827',
           border: '1px solid #1f2937',
@@ -99,7 +148,7 @@ export default function ProcessedOrderPage() {
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#9ca3af' }}>
             <span>Order ID:</span>
-            <span style={{ fontWeight: '600', color: '#e5e7eb' }}>{orderData.id}</span>
+            <span style={{ fontWeight: '600', color: '#e5e7eb' }}>{orderData.id || 'HC-TEST'}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #1f2937', paddingTop: '10px' }}>
             <span style={{ fontSize: '14px', color: '#9ca3af' }}>Payable Amount:</span>
@@ -111,10 +160,9 @@ export default function ProcessedOrderPage() {
           </div>
         </div>
 
-        {/* Payment Methods */}
+        {/* Options */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          
-          {/* Option 1: Instant Pay (bKash, Nagad, Rocket) */}
+          {/* Instant Pay */}
           <div
             onClick={() => setSelectedMethod('instant')}
             style={{
@@ -124,15 +172,14 @@ export default function ProcessedOrderPage() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              transition: 'all 0.2s ease',
               backgroundColor: selectedMethod === 'instant' ? '#0f291e' : '#111827',
               border: selectedMethod === 'instant' ? '2px solid #10b981' : '1px solid #1f2937',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <div style={{
-                width: '20px',
-                height: '20px',
+                width: '18px',
+                height: '18px',
                 borderRadius: '50%',
                 border: selectedMethod === 'instant' ? '6px solid #10b981' : '2px solid #4b5563',
                 backgroundColor: '#ffffff'
@@ -145,7 +192,7 @@ export default function ProcessedOrderPage() {
             <span style={{ fontWeight: '700', fontSize: '16px', color: '#10b981' }}>৳{bdtAmount}</span>
           </div>
 
-          {/* Option 2: Crypto Pay (USDT TRC20) */}
+          {/* Crypto Pay */}
           <div
             onClick={() => setSelectedMethod('crypto')}
             style={{
@@ -155,15 +202,14 @@ export default function ProcessedOrderPage() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              transition: 'all 0.2s ease',
               backgroundColor: selectedMethod === 'crypto' ? '#0f291e' : '#111827',
               border: selectedMethod === 'crypto' ? '2px solid #10b981' : '1px solid #1f2937',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <div style={{
-                width: '20px',
-                height: '20px',
+                width: '18px',
+                height: '18px',
                 borderRadius: '50%',
                 border: selectedMethod === 'crypto' ? '6px solid #10b981' : '2px solid #4b5563',
                 backgroundColor: '#ffffff'
@@ -175,10 +221,9 @@ export default function ProcessedOrderPage() {
             </div>
             <span style={{ fontWeight: '700', fontSize: '15px', color: '#38bdf8' }}>${cryptoAmountUSD} USDT</span>
           </div>
-
         </div>
 
-        {/* Action Button */}
+        {/* Button */}
         <button
           onClick={handleProceed}
           disabled={loading}
@@ -194,7 +239,6 @@ export default function ProcessedOrderPage() {
             border: 'none',
             cursor: loading ? 'not-allowed' : 'pointer',
             boxShadow: '0 4px 14px rgba(5, 150, 105, 0.4)',
-            transition: 'background-color 0.2s ease'
           }}
         >
           {loading ? 'Processing...' : `Pay ${selectedMethod === 'instant' ? `৳${bdtAmount}` : `$${cryptoAmountUSD} USDT`}`}
