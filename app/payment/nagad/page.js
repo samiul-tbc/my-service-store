@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 
 const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
 const LOGO_NAGAD = 'https://download.logo.wine/logo/Nagad/Nagad-Logo.wine.png';
-const NAGAD_NUMBER = '01893432478';
+const NAGAD_NUMBER = '010';
 
 export default function NagadPaymentPage() {
   const router = useRouter();
