@@ -5,8 +5,10 @@ import { useRouter } from 'next/navigation';
 const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
 const LOGO_BKASH = 'https://1000logos.net/wp-content/uploads/2021/02/Bkash-logo.png';
 const LOGO_NAGAD = 'https://download.logo.wine/logo/Nagad/Nagad-Logo.wine.png';
-// Tether (USDT TRC-20) অফিসিয়াল লোগো
 const LOGO_TRC20 = 'https://cryptologos.cc/logos/tether-usdt-logo.png';
+
+// প্রতি ডলারের রেট (১ ডলার = ১২০ টাকা)
+const DOLLAR_RATE = 120;
 
 export default function ProcessedOrderPage() {
   const router = useRouter();
@@ -25,17 +27,23 @@ export default function ProcessedOrderPage() {
     }
   }, []);
 
+  // BDT থেকে USDT ক্যালকুলেশন ফাংশন
+  const calculateUSDT = (bdtPrice) => {
+    const bdt = Number(bdtPrice) || 0;
+    return (bdt / DOLLAR_RATE).toFixed(2);
+  };
+
   const handleProceed = async () => {
     if (!orderData) return;
 
-    // ১. ক্রিপ্টো পেমেন্ট (USDT TRC-20 via NOWPayments)
+    // ১. ক্রিপ্টো পেমেন্ট (USDT TRC-20)
     if (selectedMethod === 'crypto') {
       setLoading(true);
       try {
-        // মূল্য যদি টাকায় থাকে তবে আনুমানিক ডলারে রূপান্তর (১ ডলার ≈ ১২৫ টাকা)
+        // ১২০ টাকা হিসেবে ডলারে কনভার্ট
         const priceInUSD = orderData.priceUSD 
           ? Number(orderData.priceUSD) 
-          : Math.max(1, Number((Number(orderData.price) / 125).toFixed(2)));
+          : Number(calculateUSDT(orderData.price));
 
         const generatedOrderId = orderData.id || `HC-${Date.now().toString().slice(-6)}`;
 
@@ -53,7 +61,6 @@ export default function ProcessedOrderPage() {
         const data = await res.json();
 
         if (res.ok && data.invoiceUrl) {
-          // NOWPayments এর পেমেন্ট পেজে রিডাইরেক্ট
           window.location.href = data.invoiceUrl;
         } else {
           alert(data.error || 'ক্রিপ্টো ইনভয়েস তৈরিতে সমস্যা হয়েছে। আবার চেষ্টা করুন।');
@@ -90,7 +97,6 @@ export default function ProcessedOrderPage() {
         if (res.ok) {
           const generatedOrderId = data.orderId || data.order_id || data.id;
 
-          // স্বয়ংক্রিয় WhatsApp কনফার্মেশন মেসেজ
           try {
             await fetch('/api/send-whatsapp', {
               method: 'POST',
@@ -133,6 +139,8 @@ export default function ProcessedOrderPage() {
     );
   }
 
+  const usdtAmount = calculateUSDT(orderData.price);
+
   return (
     <div style={{ maxWidth: '480px', margin: '20px auto', padding: '0 16px 80px' }}>
       
@@ -145,7 +153,6 @@ export default function ProcessedOrderPage() {
         </h2>
       </div>
 
-      {/* ৩টি পেমেন্ট অপশন গ্রিড */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '20px' }}>
         
         {/* TBC Pay */}
@@ -180,7 +187,7 @@ export default function ProcessedOrderPage() {
           </div>
         </div>
 
-        {/* Instant Pay (bKash & Nagad) */}
+        {/* Instant Pay */}
         <div
           onClick={() => setSelectedMethod('instant')}
           style={{
@@ -215,7 +222,7 @@ export default function ProcessedOrderPage() {
           </div>
         </div>
 
-        {/* Crypto Pay (USDT TRC20) */}
+        {/* Crypto Pay */}
         <div
           onClick={() => setSelectedMethod('crypto')}
           style={{
@@ -249,10 +256,18 @@ export default function ProcessedOrderPage() {
 
       </div>
 
+      {/* মূল্য প্রদর্শন (১২০ টাকা = ১ USDT অনুপাত) */}
       <div style={{ background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', padding: '16px', marginBottom: '20px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#cbd5e1', fontSize: '13px' }}>
-          <span>ℹ️</span>
-          <span>প্রোডাক্ট মূল্য: <strong style={{ color: '#ff7a00', fontSize: '15px' }}>৳ {orderData.price}</strong> {selectedMethod === 'crypto' && `(≈ $${(Number(orderData.price) / 125).toFixed(2)} USDT)`}</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#cbd5e1', fontSize: '13px' }}>
+          <span>ℹ️ প্রোডাক্ট মূল্য:</span>
+          <span style={{ fontWeight: 'bold', color: '#f8fafc' }}>
+            ৳ {orderData.price} 
+            {selectedMethod === 'crypto' && (
+              <span style={{ color: '#10b981', marginLeft: '6px' }}>
+                (≈ ${usdtAmount} USDT)
+              </span>
+            )}
+          </span>
         </div>
       </div>
 
@@ -275,7 +290,7 @@ export default function ProcessedOrderPage() {
         {loading 
           ? 'প্রসেসিং হচ্ছে...' 
           : selectedMethod === 'crypto' 
-            ? 'Pay with USDT (Crypto)' 
+            ? `Pay $${usdtAmount} USDT` 
             : selectedMethod === 'tbc' 
               ? 'অর্ডার সাবমিট করুন' 
               : 'Buy Now'}
