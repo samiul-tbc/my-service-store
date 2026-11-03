@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
 const LOGO_BKASH = 'https://1000logos.net/wp-content/uploads/2021/02/Bkash-logo.png';
 const LOGO_NAGAD = 'https://download.logo.wine/logo/Nagad/Nagad-Logo.wine.png';
+// Tether (USDT TRC-20) অফিসিয়াল লোগো
+const LOGO_TRC20 = 'https://cryptologos.cc/logos/tether-usdt-logo.png';
 
 export default function ProcessedOrderPage() {
   const router = useRouter();
@@ -26,6 +28,46 @@ export default function ProcessedOrderPage() {
   const handleProceed = async () => {
     if (!orderData) return;
 
+    // ১. ক্রিপ্টো পেমেন্ট (USDT TRC-20 via NOWPayments)
+    if (selectedMethod === 'crypto') {
+      setLoading(true);
+      try {
+        // মূল্য যদি টাকায় থাকে তবে আনুমানিক ডলারে রূপান্তর (১ ডলার ≈ ১২৫ টাকা)
+        const priceInUSD = orderData.priceUSD 
+          ? Number(orderData.priceUSD) 
+          : Math.max(1, Number((Number(orderData.price) / 125).toFixed(2)));
+
+        const generatedOrderId = orderData.id || `HC-${Date.now().toString().slice(-6)}`;
+
+        const res = await fetch('/api/create-crypto-invoice', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId: generatedOrderId,
+            amountUSD: priceInUSD,
+            customerName: orderData.customerName,
+            phone: orderData.whatsappNumber,
+          }),
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.invoiceUrl) {
+          // NOWPayments এর পেমেন্ট পেজে রিডাইরেক্ট
+          window.location.href = data.invoiceUrl;
+        } else {
+          alert(data.error || 'ক্রিপ্টো ইনভয়েস তৈরিতে সমস্যা হয়েছে। আবার চেষ্টা করুন।');
+        }
+      } catch (err) {
+        console.error('Crypto invoice error:', err);
+        alert('সার্ভার এরর: ক্রিপ্টো পেমেন্ট শুরু করা যায়নি।');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    // ২. ম্যানুয়াল TBC Pay
     if (selectedMethod === 'tbc') {
       setLoading(true);
       try {
@@ -48,7 +90,7 @@ export default function ProcessedOrderPage() {
         if (res.ok) {
           const generatedOrderId = data.orderId || data.order_id || data.id;
 
-          // স্বয়ংক্রিয় WhatsApp কনফার্মেশন মেসেজ পাঠানো
+          // স্বয়ংক্রিয় WhatsApp কনফার্মেশন মেসেজ
           try {
             await fetch('/api/send-whatsapp', {
               method: 'POST',
@@ -57,8 +99,6 @@ export default function ProcessedOrderPage() {
                 customerName: orderData.customerName,
                 phone: orderData.whatsappNumber,
                 orderId: generatedOrderId || 'HC-PENDING',
-                serviceName: orderData.serviceName,
-                price: orderData.price,
               }),
             });
           } catch (waErr) {
@@ -77,6 +117,7 @@ export default function ProcessedOrderPage() {
         setLoading(false);
       }
     } else {
+      // ৩. লোকাল Instant Pay (bKash/Nagad)
       router.push('/payment');
     }
   };
@@ -100,11 +141,12 @@ export default function ProcessedOrderPage() {
           3
         </div>
         <h2 style={{ fontSize: '20px', fontWeight: '900', color: '#f8fafc', margin: 0 }}>
-          Select one option
+          Select payment option
         </h2>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '20px' }}>
+      {/* ৩টি পেমেন্ট অপশন গ্রিড */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '20px' }}>
         
         {/* TBC Pay */}
         <div
@@ -123,22 +165,22 @@ export default function ProcessedOrderPage() {
           }}
         >
           {selectedMethod === 'tbc' && (
-            <div style={{ position: 'absolute', top: 0, left: 0, width: '24px', height: '24px', background: '#ff7a00', clipPath: 'polygon(0 0, 100% 0, 0 100%)', display: 'flex', alignItems: 'flex-start', padding: '2px' }}>
-              <span style={{ color: '#fff', fontSize: '10px', fontWeight: 'bold' }}>✓</span>
+            <div style={{ position: 'absolute', top: 0, left: 0, width: '22px', height: '22px', background: '#ff7a00', clipPath: 'polygon(0 0, 100% 0, 0 100%)', display: 'flex', alignItems: 'flex-start', padding: '2px' }}>
+              <span style={{ color: '#fff', fontSize: '9px', fontWeight: 'bold' }}>✓</span>
             </div>
           )}
 
-          <div style={{ padding: '20px 10px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '90px' }}>
-            <img src={LOGO_HUB_CART} alt="Hub Cart" style={{ width: '42px', height: '42px', objectFit: 'contain', marginBottom: '6px' }} />
-            <span style={{ fontSize: '14px', fontWeight: '900', color: '#0f172a' }}>TBC Pay</span>
+          <div style={{ padding: '16px 6px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '85px' }}>
+            <img src={LOGO_HUB_CART} alt="Hub Cart" style={{ width: '36px', height: '36px', objectFit: 'contain', marginBottom: '6px' }} />
+            <span style={{ fontSize: '13px', fontWeight: '900', color: '#0f172a' }}>TBC Pay</span>
           </div>
 
-          <div style={{ background: '#f1f5f9', padding: '8px', textAlign: 'center', fontSize: '12px', fontWeight: 'bold', color: '#475569' }}>
-            TBC Pay (Manual)
+          <div style={{ background: '#f1f5f9', padding: '6px', textAlign: 'center', fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>
+            Manual
           </div>
         </div>
 
-        {/* Instant Pay (Official Logos) */}
+        {/* Instant Pay (bKash & Nagad) */}
         <div
           onClick={() => setSelectedMethod('instant')}
           style={{
@@ -155,21 +197,53 @@ export default function ProcessedOrderPage() {
           }}
         >
           {selectedMethod === 'instant' && (
-            <div style={{ position: 'absolute', top: 0, left: 0, width: '24px', height: '24px', background: '#ff7a00', clipPath: 'polygon(0 0, 100% 0, 0 100%)', display: 'flex', alignItems: 'flex-start', padding: '2px' }}>
-              <span style={{ color: '#fff', fontSize: '10px', fontWeight: 'bold' }}>✓</span>
+            <div style={{ position: 'absolute', top: 0, left: 0, width: '22px', height: '22px', background: '#ff7a00', clipPath: 'polygon(0 0, 100% 0, 0 100%)', display: 'flex', alignItems: 'flex-start', padding: '2px' }}>
+              <span style={{ color: '#fff', fontSize: '9px', fontWeight: 'bold' }}>✓</span>
             </div>
           )}
 
-          <div style={{ padding: '16px 8px', textAlign: 'center', minHeight: '90px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '8px' }}>
-              <img src={LOGO_BKASH} alt="bKash" style={{ height: '22px', objectFit: 'contain' }} />
-              <img src={LOGO_NAGAD} alt="Nagad" style={{ height: '22px', objectFit: 'contain' }} />
+          <div style={{ padding: '16px 6px', textAlign: 'center', minHeight: '85px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', marginBottom: '8px' }}>
+              <img src={LOGO_BKASH} alt="bKash" style={{ height: '18px', objectFit: 'contain' }} />
+              <img src={LOGO_NAGAD} alt="Nagad" style={{ height: '18px', objectFit: 'contain' }} />
             </div>
-            <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#0284c7' }}>Auto Payment</span>
+            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#0284c7' }}>Auto Pay</span>
           </div>
 
-          <div style={{ background: '#f1f5f9', padding: '8px', textAlign: 'center', fontSize: '12px', fontWeight: 'bold', color: '#475569' }}>
-            Instant Pay
+          <div style={{ background: '#f1f5f9', padding: '6px', textAlign: 'center', fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>
+            Instant
+          </div>
+        </div>
+
+        {/* Crypto Pay (USDT TRC20) */}
+        <div
+          onClick={() => setSelectedMethod('crypto')}
+          style={{
+            background: '#ffffff',
+            borderRadius: '16px',
+            border: selectedMethod === 'crypto' ? '2px solid #ff7a00' : '1px solid #e2e8f0',
+            overflow: 'hidden',
+            cursor: 'pointer',
+            position: 'relative',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+          }}
+        >
+          {selectedMethod === 'crypto' && (
+            <div style={{ position: 'absolute', top: 0, left: 0, width: '22px', height: '22px', background: '#ff7a00', clipPath: 'polygon(0 0, 100% 0, 0 100%)', display: 'flex', alignItems: 'flex-start', padding: '2px' }}>
+              <span style={{ color: '#fff', fontSize: '9px', fontWeight: 'bold' }}>✓</span>
+            </div>
+          )}
+
+          <div style={{ padding: '16px 6px', textAlign: 'center', minHeight: '85px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <img src={LOGO_TRC20} alt="USDT TRC20" style={{ height: '26px', width: '26px', objectFit: 'contain', marginBottom: '6px' }} />
+            <span style={{ fontSize: '12px', fontWeight: '900', color: '#16a34a' }}>USDT (TRC20)</span>
+          </div>
+
+          <div style={{ background: '#f1f5f9', padding: '6px', textAlign: 'center', fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>
+            Crypto
           </div>
         </div>
 
@@ -178,7 +252,7 @@ export default function ProcessedOrderPage() {
       <div style={{ background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', padding: '16px', marginBottom: '20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#cbd5e1', fontSize: '13px' }}>
           <span>ℹ️</span>
-          <span>প্রোডাক্ট কিনতে প্রয়োজন: <strong style={{ color: '#ff7a00', fontSize: '15px' }}>৳ {orderData.price}</strong></span>
+          <span>প্রোডাক্ট মূল্য: <strong style={{ color: '#ff7a00', fontSize: '15px' }}>৳ {orderData.price}</strong> {selectedMethod === 'crypto' && `(≈ $${(Number(orderData.price) / 125).toFixed(2)} USDT)`}</span>
         </div>
       </div>
 
@@ -194,11 +268,17 @@ export default function ProcessedOrderPage() {
           borderRadius: '12px',
           fontWeight: '900',
           fontSize: '16px',
-          cursor: 'pointer',
+          cursor: loading ? 'not-allowed' : 'pointer',
           boxShadow: '0 4px 15px rgba(255, 122, 0, 0.4)',
         }}
       >
-        {loading ? 'প্রসেসিং হচ্ছে...' : selectedMethod === 'tbc' ? 'অর্ডার সাবমিট করুন' : 'Buy Now'}
+        {loading 
+          ? 'প্রসেসিং হচ্ছে...' 
+          : selectedMethod === 'crypto' 
+            ? 'Pay with USDT (Crypto)' 
+            : selectedMethod === 'tbc' 
+              ? 'অর্ডার সাবমিট করুন' 
+              : 'Buy Now'}
       </button>
 
     </div>
