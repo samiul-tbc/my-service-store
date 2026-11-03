@@ -1,80 +1,61 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+
+const LOGO_BKASH = 'https://1000logos.net/wp-content/uploads/2021/02/Bkash-logo.png';
+const LOGO_NAGAD = 'https://download.logo.wine/logo/Nagad/Nagad-Logo.wine.png';
+const LOGO_TRC20 = 'https://cryptologos.cc/logos/tether-usdt-logo.png';
+
+const DOLLAR_RATE = 120; // ১ ডলার = ১২০ টাকা
 
 export default function ProcessedOrderPage() {
+  const router = useRouter();
+  const [orderData, setOrderData] = useState(null);
   const [selectedMethod, setSelectedMethod] = useState('instant');
   const [loading, setLoading] = useState(false);
 
-  const [orderData, setOrderData] = useState({
-    id: '',
-    price: 0,
-    customerName: '',
-    whatsappNumber: '',
-  });
-
-  // Product page theke asha real data load kora (URL ba LocalStorage)
   useEffect(() => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const urlPrice = params.get('price') || params.get('amount');
-      const urlId = params.get('id') || params.get('orderId');
-      const urlName = params.get('name');
-      const urlPhone = params.get('phone');
-
-      const saved =
-        localStorage.getItem('currentOrder') ||
-        localStorage.getItem('pendingOrder') ||
-        localStorage.getItem('orderData') ||
-        localStorage.getItem('order');
-
-      const parsed = saved ? JSON.parse(saved) : {};
-
-      const finalPrice = Number(urlPrice || parsed.price || parsed.amount || 5);
-      const finalId = urlId || parsed.id || parsed.orderId || `HC-${Date.now().toString().slice(-6)}`;
-      const finalName = urlName || parsed.customerName || parsed.name || 'Samiul Islam';
-      const finalPhone = urlPhone || parsed.whatsappNumber || parsed.phone || '01893432478';
-
-      setOrderData({
-        id: finalId,
-        price: finalPrice,
-        customerName: finalName,
-        whatsappNumber: finalPhone,
-      });
-    } catch (e) {
-      setOrderData({
-        id: `HC-${Date.now().toString().slice(-6)}`,
-        price: 5,
-        customerName: 'Samiul Islam',
-        whatsappNumber: '01893432478',
-      });
+    const saved = localStorage.getItem('hubcart_current_order');
+    if (saved) {
+      try {
+        setOrderData(JSON.parse(saved));
+      } catch (e) {
+        console.error('Order data parse error:', e);
+      }
     }
   }, []);
 
-  const bdtAmount = Number(orderData.price) || 0;
-  const cryptoAmountUSD = (bdtAmount / 120).toFixed(2);
+  const calculateUSDT = (bdtPrice) => {
+    const bdt = Number(bdtPrice) || 0;
+    return (bdt / DOLLAR_RATE).toFixed(2);
+  };
 
   const handleProceed = async () => {
-    setLoading(true);
+    if (!orderData) return;
 
-    try {
-      // ১. Instant Auto Pay (bKash/Nagad/Rocket)
-      if (selectedMethod === 'instant') {
+    setLoading(true);
+    const generatedOrderId = orderData.id || `HC-${Date.now().toString().slice(-6)}`;
+    const priceInBDT = Number(orderData.price) || 0;
+
+    // ১. লোকাল Instant Pay (bKash/Nagad/Rocket Auto via UddoktaPay)
+    if (selectedMethod === 'instant') {
+      try {
         const res = await fetch('/api/create-bdt-payment', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            orderId: orderData.id,
-            amount: bdtAmount,
-            customerName: orderData.customerName,
-            phone: orderData.whatsappNumber,
+            orderId: generatedOrderId,
+            amount: priceInBDT,
+            customerName: orderData.customerName || 'Valued Customer',
+            phone: orderData.whatsappNumber || '',
           }),
         });
 
-        // 404 / 500 error jeno crash na kore
+        // 404 বা HTML এরর হ্যান্ডলিং
         const contentType = res.headers.get('content-type');
         if (!contentType || !contentType.includes('application/json')) {
-          alert('API Route khuje pawa jacche na! GitHub-e "app/api/create-bdt-payment/route.js" file-ti ache kina check korun.');
+          alert('API Route পাওয়া যায়নি (404)! দয়া করে GitHub-এ "app/api/create-bdt-payment/route.js" ফাইলটি সঠিক পাথে আছে কিনা চেক করুন।');
           return;
         }
 
@@ -83,19 +64,29 @@ export default function ProcessedOrderPage() {
         if (res.ok && data.paymentUrl) {
           window.location.href = data.paymentUrl;
         } else {
-          alert(data.error || 'UddoktaPay theke kono URL pawa jayni');
+          alert(data.error || 'পেমেন্ট গেটওয়েতে সংযোগ করা যায়নি');
         }
-        return;
+      } catch (err) {
+        alert('সার্ভার এরর: পেমেন্ট শুরু করা যায়নি।');
+      } finally {
+        setLoading(false);
       }
+      return;
+    }
 
-      // ২. Crypto Pay (USDT TRC20)
-      if (selectedMethod === 'crypto') {
+    // ২. ক্রিপ্টো পেমেন্ট (USDT TRC-20 via NOWPayments)
+    if (selectedMethod === 'crypto') {
+      try {
+        const priceInUSD = orderData.priceUSD
+          ? Number(orderData.priceUSD)
+          : Number(calculateUSDT(orderData.price));
+
         const res = await fetch('/api/create-crypto-invoice', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            orderId: orderData.id,
-            amountUSD: cryptoAmountUSD,
+            orderId: generatedOrderId,
+            amountUSD: priceInUSD,
             customerName: orderData.customerName,
             phone: orderData.whatsappNumber,
           }),
@@ -103,7 +94,7 @@ export default function ProcessedOrderPage() {
 
         const contentType = res.headers.get('content-type');
         if (!contentType || !contentType.includes('application/json')) {
-          alert('Crypto API Route khuje pawa jacche na!');
+          alert('Crypto API Route পাওয়া যায়নি!');
           return;
         }
 
@@ -112,139 +103,204 @@ export default function ProcessedOrderPage() {
         if (res.ok && data.invoiceUrl) {
           window.location.href = data.invoiceUrl;
         } else {
-          alert(data.error || 'Crypto invoice toiri kora jayni');
+          alert(data.error || 'ক্রিপ্টো ইনভয়েস তৈরিতে সমস্যা হয়েছে।');
         }
-        return;
+      } catch (err) {
+        alert('সার্ভার এরর: ক্রিপ্টো পেমেন্ট শুরু করা যায়নি।');
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      alert('Network ba server problem: ' + err.message);
-    } finally {
-      setLoading(false);
+      return;
     }
   };
 
-  return (
-    <div style={{ minHeight: '85vh', backgroundColor: '#090d16', color: '#ffffff', padding: '16px 16px 90px 16px' }}>
-      <div style={{ maxWidth: '440px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        
-        <div style={{ textAlign: 'center', marginTop: '8px' }}>
-          <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#f8fafc', margin: '0 0 4px 0' }}>
-            Payment Method Select Korun
-          </h2>
-          <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0 }}>
-            Order-ti shompurno korte payment maddhom beche nin
-          </p>
-        </div>
-
-        {/* Order Summary */}
-        <div style={{
-          backgroundColor: '#111827',
-          border: '1px solid #1f2937',
-          borderRadius: '16px',
-          padding: '16px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '10px'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#9ca3af' }}>
-            <span>Order ID:</span>
-            <span style={{ fontWeight: '600', color: '#e5e7eb' }}>{orderData.id || 'HC-TEST'}</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #1f2937', paddingTop: '10px' }}>
-            <span style={{ fontSize: '14px', color: '#9ca3af' }}>Payable Amount:</span>
-            <span style={{ fontSize: '22px', fontWeight: '800', color: '#10b981' }}>৳{bdtAmount}</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#6b7280' }}>
-            <span>Crypto Equivalent:</span>
-            <span style={{ color: '#38bdf8' }}>${cryptoAmountUSD} USDT (Rate: ৳120 = $1)</span>
-          </div>
-        </div>
-
-        {/* Options */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {/* Instant Pay */}
-          <div
-            onClick={() => setSelectedMethod('instant')}
-            style={{
-              padding: '16px',
-              borderRadius: '14px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              backgroundColor: selectedMethod === 'instant' ? '#0f291e' : '#111827',
-              border: selectedMethod === 'instant' ? '2px solid #10b981' : '1px solid #1f2937',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{
-                width: '18px',
-                height: '18px',
-                borderRadius: '50%',
-                border: selectedMethod === 'instant' ? '6px solid #10b981' : '2px solid #4b5563',
-                backgroundColor: '#ffffff'
-              }} />
-              <div>
-                <p style={{ margin: 0, fontWeight: '700', fontSize: '15px', color: '#ffffff' }}>Instant Pay (Auto)</p>
-                <p style={{ margin: 0, fontSize: '12px', color: '#94a3b8' }}>bKash, Nagad, Rocket</p>
-              </div>
-            </div>
-            <span style={{ fontWeight: '700', fontSize: '16px', color: '#10b981' }}>৳{bdtAmount}</span>
-          </div>
-
-          {/* Crypto Pay */}
-          <div
-            onClick={() => setSelectedMethod('crypto')}
-            style={{
-              padding: '16px',
-              borderRadius: '14px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              backgroundColor: selectedMethod === 'crypto' ? '#0f291e' : '#111827',
-              border: selectedMethod === 'crypto' ? '2px solid #10b981' : '1px solid #1f2937',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{
-                width: '18px',
-                height: '18px',
-                borderRadius: '50%',
-                border: selectedMethod === 'crypto' ? '6px solid #10b981' : '2px solid #4b5563',
-                backgroundColor: '#ffffff'
-              }} />
-              <div>
-                <p style={{ margin: 0, fontWeight: '700', fontSize: '15px', color: '#ffffff' }}>Crypto Pay (Instant)</p>
-                <p style={{ margin: 0, fontSize: '12px', color: '#94a3b8' }}>USDT (TRC-20)</p>
-              </div>
-            </div>
-            <span style={{ fontWeight: '700', fontSize: '15px', color: '#38bdf8' }}>${cryptoAmountUSD} USDT</span>
-          </div>
-        </div>
-
-        {/* Button */}
+  if (!orderData) {
+    return (
+      <div style={{ textAlign: 'center', padding: '80px 20px', color: '#94a3b8' }}>
+        <h3>কোনো অর্ডার পাওয়া যায়নি!</h3>
         <button
-          onClick={handleProceed}
-          disabled={loading}
+          onClick={() => router.push('/')}
           style={{
-            width: '100%',
-            marginTop: '8px',
-            padding: '16px',
-            borderRadius: '14px',
-            backgroundColor: loading ? '#047857' : '#059669',
-            color: '#ffffff',
-            fontWeight: '700',
-            fontSize: '16px',
+            marginTop: '10px',
+            padding: '8px 16px',
+            background: '#ff7a00',
+            color: '#fff',
             border: 'none',
-            cursor: loading ? 'not-allowed' : 'pointer',
-            boxShadow: '0 4px 14px rgba(5, 150, 105, 0.4)',
+            borderRadius: '8px',
+            cursor: 'pointer',
           }}
         >
-          {loading ? 'Processing...' : `Pay ${selectedMethod === 'instant' ? `৳${bdtAmount}` : `$${cryptoAmountUSD} USDT`}`}
+          হোমপেজে ফিরে যান
         </button>
+      </div>
+    );
+  }
+
+  const usdtAmount = calculateUSDT(orderData.price);
+
+  return (
+    <div style={{ maxWidth: '480px', margin: '20px auto', padding: '0 16px 80px' }}>
+      
+      {/* Header Step */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+        <div
+          style={{
+            width: '28px',
+            height: '28px',
+            borderRadius: '50%',
+            background: '#ff7a00',
+            color: '#fff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontWeight: 'bold',
+            fontSize: '15px',
+          }}
+        >
+          3
+        </div>
+        <h2 style={{ fontSize: '20px', fontWeight: '900', color: '#f8fafc', margin: 0 }}>
+          Select payment option
+        </h2>
+      </div>
+
+      {/* Payment Options Grid (২টি অটোমেটেড অপশন) */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '20px' }}>
+        
+        {/* Instant Auto Pay (bKash, Nagad) */}
+        <div
+          onClick={() => setSelectedMethod('instant')}
+          style={{
+            background: '#ffffff',
+            borderRadius: '16px',
+            border: selectedMethod === 'instant' ? '2px solid #ff7a00' : '1px solid #e2e8f0',
+            overflow: 'hidden',
+            cursor: 'pointer',
+            position: 'relative',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+          }}
+        >
+          {selectedMethod === 'instant' && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '22px',
+                height: '22px',
+                background: '#ff7a00',
+                clipPath: 'polygon(0 0, 100% 0, 0 100%)',
+                display: 'flex',
+                alignItems: 'flex-start',
+                padding: '2px',
+              }}
+            >
+              <span style={{ color: '#fff', fontSize: '9px', fontWeight: 'bold' }}>✓</span>
+            </div>
+          )}
+
+          <div style={{ padding: '16px 6px', textAlign: 'center', minHeight: '85px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginBottom: '8px' }}>
+              <img src={LOGO_BKASH} alt="bKash" style={{ height: '18px', objectFit: 'contain' }} />
+              <img src={LOGO_NAGAD} alt="Nagad" style={{ height: '18px', objectFit: 'contain' }} />
+            </div>
+            <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#0284c7' }}>Auto Pay</span>
+          </div>
+
+          <div style={{ background: '#f1f5f9', padding: '6px', textAlign: 'center', fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>
+            bKash / Nagad
+          </div>
+        </div>
+
+        {/* Crypto Pay (USDT TRC20) */}
+        <div
+          onClick={() => setSelectedMethod('crypto')}
+          style={{
+            background: '#ffffff',
+            borderRadius: '16px',
+            border: selectedMethod === 'crypto' ? '2px solid #ff7a00' : '1px solid #e2e8f0',
+            overflow: 'hidden',
+            cursor: 'pointer',
+            position: 'relative',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+          }}
+        >
+          {selectedMethod === 'crypto' && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '22px',
+                height: '22px',
+                background: '#ff7a00',
+                clipPath: 'polygon(0 0, 100% 0, 0 100%)',
+                display: 'flex',
+                alignItems: 'flex-start',
+                padding: '2px',
+              }}
+            >
+              <span style={{ color: '#fff', fontSize: '9px', fontWeight: 'bold' }}>✓</span>
+            </div>
+          )}
+
+          <div style={{ padding: '16px 6px', textAlign: 'center', minHeight: '85px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <img src={LOGO_TRC20} alt="USDT TRC20" style={{ height: '26px', width: '26px', objectFit: 'contain', marginBottom: '6px' }} />
+            <span style={{ fontSize: '12px', fontWeight: '900', color: '#16a34a' }}>USDT (TRC20)</span>
+          </div>
+
+          <div style={{ background: '#f1f5f9', padding: '6px', textAlign: 'center', fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>
+            Crypto
+          </div>
+        </div>
 
       </div>
+
+      {/* মূল্য বিবরণ */}
+      <div style={{ background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', padding: '16px', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#cbd5e1', fontSize: '13px' }}>
+          <span>ℹ️ প্রোডাক্ট মূল্য:</span>
+          <span style={{ fontWeight: 'bold', color: '#f8fafc' }}>
+            ৳ {orderData.price} 
+            {selectedMethod === 'crypto' && (
+              <span style={{ color: '#10b981', marginLeft: '6px' }}>
+                (≈ ${usdtAmount} USDT)
+              </span>
+            )}
+          </span>
+        </div>
+      </div>
+
+      {/* Buy Button */}
+      <button
+        onClick={handleProceed}
+        disabled={loading}
+        style={{
+          width: '100%',
+          padding: '14px',
+          background: '#ff7a00',
+          color: '#ffffff',
+          border: 'none',
+          borderRadius: '12px',
+          fontWeight: '900',
+          fontSize: '16px',
+          cursor: loading ? 'not-allowed' : 'pointer',
+          boxShadow: '0 4px 15px rgba(255, 122, 0, 0.4)',
+        }}
+      >
+        {loading 
+          ? 'প্রসেসিং হচ্ছে...' 
+          : selectedMethod === 'crypto' 
+            ? `Pay $${usdtAmount} USDT` 
+            : `Pay ৳${orderData.price}`}
+      </button>
+
     </div>
   );
 }
