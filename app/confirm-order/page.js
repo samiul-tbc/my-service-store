@@ -28,12 +28,31 @@ export default function ConfirmOrderPage() {
 
   useEffect(() => {
     try {
+      // ১. প্রোডাক্টের তথ্য লোড করা
       const savedProduct = localStorage.getItem('hubcart_selected_product');
       if (savedProduct) {
         setProductData(JSON.parse(savedProduct));
       }
+
+      // ২. কাস্টমারের পূর্বে সংরক্ষিত তথ্য থাকলে স্বয়ংক্রিয়ভাবে পূরণ করা
+      const savedUser = localStorage.getItem('hubcart_user');
+      if (savedUser) {
+        const parsedUser = JSON.parse(savedUser);
+        if (parsedUser.name) setName(parsedUser.name);
+        if (parsedUser.telegram) setTelegram(parsedUser.telegram);
+
+        if (parsedUser.phone) {
+          const matchedCountry = COUNTRY_CODES.find((c) => parsedUser.phone.startsWith(c.code));
+          if (matchedCountry) {
+            setSelectedCountry(matchedCountry);
+            setPhoneNumber(parsedUser.phone.replace(matchedCountry.code, ''));
+          } else {
+            setPhoneNumber(parsedUser.phone.replace(/^\+880|^0/, ''));
+          }
+        }
+      }
     } catch (e) {
-      console.error('Error loading product data:', e);
+      console.error('Error loading data from localStorage:', e);
     }
   }, []);
 
@@ -50,7 +69,7 @@ export default function ConfirmOrderPage() {
       return;
     }
 
-    // গ্রাহক যদি প্রথমে ভুল করে 0 দেয়, তা বাদ দিয়ে আন্তর্জাতিক ফরম্যাট তৈরি করা
+    // নম্বরের শুরুতে ভুল করে 0 দিলে তা বাদ দিয়ে আন্তর্জাতিক ফরম্যাট তৈরি করা
     const cleanPhone = phoneNumber.trim().replace(/^0+/, '');
     const fullPhoneNumber = `${selectedCountry.code}${cleanPhone}`;
 
@@ -65,10 +84,17 @@ export default function ConfirmOrderPage() {
       telegramUsername: telegram.trim() || 'N/A',
     };
 
-    // পরবর্তী পেমেন্ট পেজের জন্য অর্ডার ডাটা সংরক্ষণ
+    // ১. চলমান পেমেন্ট সম্পন্ন করার জন্য বর্তমান অর্ডার সংরক্ষণ
     localStorage.setItem('hubcart_current_order', JSON.stringify(fullOrder));
 
-    // পেমেন্ট মেথড পেজে রিডাইরেক্ট
+    // ২. কাস্টমারের প্রোফাইল হিসেবে স্থায়ীভাবে সংরক্ষণ (My Orders পেজে অটো-লোডের জন্য)
+    localStorage.setItem('hubcart_user', JSON.stringify({
+      name: name.trim(),
+      phone: fullPhoneNumber,
+      telegram: telegram.trim() || '',
+    }));
+
+    // পেমেন্ট নির্বাচন পেজে রিডাইরেক্ট
     router.push('/processedorder');
   };
 
