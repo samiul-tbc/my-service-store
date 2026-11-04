@@ -9,7 +9,7 @@ const LOGO_WHATSAPP = 'https://download.logo.wine/logo/WhatsApp/WhatsApp-Logo.wi
 // Vercel Environment Variables থেকে ডাটা নেওয়া হচ্ছে
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://mieygzqgoekinxppdepb.supabase.co';
 const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
-const WHATSAPP_NUMBER = '8801893432478';
+const WHATSAPP_NUMBER = '8801319760720';
 
 export default function ProductDetailPage() {
   const params = useParams();
