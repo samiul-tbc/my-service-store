@@ -1,6 +1,6 @@
 import Navbar from './Navbar';
 import BottomNav from './BottomNav';
-import { LanguageProvider } from '@/context/LanguageContext';
+import { LanguageProvider } from '../context/LanguageContext';
 
 export const metadata = {
   title: 'Hub Cart - Shop Smart • Live Better',
