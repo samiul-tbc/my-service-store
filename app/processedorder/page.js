@@ -5,7 +5,9 @@ import { useRouter } from 'next/navigation';
 
 const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
 const LOGO_BKASH = 'https://1000logos.net/wp-content/uploads/2021/02/Bkash-logo.png';
-const LOGO_NAGAD = 'https://download.logo.wine/logo/Nagad/Nagad-Logo.wine.png';
+const LOGO_NAGAD = 'https://i.postimg.cc/3xv1gSBL/Nagad-Logo-wine.png';
+const LOGO_ROCKET = 'https://i.postimg.cc/vBM08r5J/vecteezy-rocket-color-logo-mobile-banking-icon-68706013.png';
+const LOGO_UPAY = 'https://i.postimg.cc/Gh9qphTM/upay-logo-mobile-banking-app-icon-transparent-background-free-png.png';
 const LOGO_TRC20 = 'https://cryptologos.cc/logos/tether-usdt-logo.png';
 
 const DOLLAR_RATE = 120;
@@ -197,7 +199,7 @@ export default function ProcessedOrderPage() {
       {/* Grid Methods */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '20px' }}>
         
-        {/* 1. bKash & Nagad (Manual) */}
+        {/* 1. Manual Pay (bKash, Nagad, Rocket, Upay) */}
         <div
           onClick={() => setSelectedMethod('manual_mfs')}
           style={{
@@ -212,19 +214,21 @@ export default function ProcessedOrderPage() {
           <div style={{ background: '#16a34a', color: '#ffffff', fontSize: '9px', fontWeight: '900', textAlign: 'center', padding: '3px 0' }}>
             ⭐ RECOMMENDED
           </div>
-          <div style={{ padding: '12px 6px', textAlign: 'center', minHeight: '74px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '6px' }}>
-              <img src={LOGO_BKASH} alt="bKash" style={{ height: '16px', objectFit: 'contain' }} />
-              <img src={LOGO_NAGAD} alt="Nagad" style={{ height: '16px', objectFit: 'contain' }} />
+          <div style={{ padding: '10px 4px', textAlign: 'center', minHeight: '74px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', flexWrap: 'wrap', marginBottom: '6px' }}>
+              <img src={LOGO_BKASH} alt="bKash" style={{ height: '14px', objectFit: 'contain' }} />
+              <img src={LOGO_NAGAD} alt="Nagad" style={{ height: '14px', objectFit: 'contain' }} />
+              <img src={LOGO_ROCKET} alt="Rocket" style={{ height: '15px', objectFit: 'contain' }} />
+              <img src={LOGO_UPAY} alt="Upay" style={{ height: '13px', objectFit: 'contain' }} />
             </div>
             <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#15803d' }}>Manual Pay</span>
           </div>
-          <div style={{ background: '#dcfce7', padding: '6px', textAlign: 'center', fontSize: '11px', fontWeight: 'bold', color: '#166534' }}>
-            bKash / Nagad
+          <div style={{ background: '#dcfce7', padding: '6px', textAlign: 'center', fontSize: '10px', fontWeight: 'bold', color: '#166534' }}>
+            bKash / Nagad / Rocket / Upay
           </div>
         </div>
 
-        {/* 2. bKash & Nagad (Auto) */}
+        {/* 2. Auto Pay (bKash & Nagad) */}
         <div
           onClick={() => setSelectedMethod('instant')}
           style={{
@@ -239,14 +243,14 @@ export default function ProcessedOrderPage() {
           <div style={{ background: '#ef4444', color: '#ffffff', fontSize: '9px', fontWeight: '900', textAlign: 'center', padding: '3px 0' }}>
             ⚠️ Not Recommended
           </div>
-          <div style={{ padding: '12px 6px', textAlign: 'center', minHeight: '74px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '6px' }}>
-              <img src={LOGO_BKASH} alt="bKash" style={{ height: '16px', objectFit: 'contain' }} />
-              <img src={LOGO_NAGAD} alt="Nagad" style={{ height: '16px', objectFit: 'contain' }} />
+          <div style={{ padding: '10px 4px', textAlign: 'center', minHeight: '74px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginBottom: '6px' }}>
+              <img src={LOGO_BKASH} alt="bKash" style={{ height: '15px', objectFit: 'contain' }} />
+              <img src={LOGO_NAGAD} alt="Nagad" style={{ height: '15px', objectFit: 'contain' }} />
             </div>
             <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#64748b' }}>Auto Pay</span>
           </div>
-          <div style={{ background: '#fee2e2', padding: '6px', textAlign: 'center', fontSize: '11px', fontWeight: 'bold', color: '#991b1b' }}>
+          <div style={{ background: '#fee2e2', padding: '6px', textAlign: 'center', fontSize: '10px', fontWeight: 'bold', color: '#991b1b' }}>
             bKash / Nagad
           </div>
         </div>
@@ -266,11 +270,11 @@ export default function ProcessedOrderPage() {
           <div style={{ background: '#ef4444', color: '#ffffff', fontSize: '9px', fontWeight: '900', textAlign: 'center', padding: '3px 0' }}>
             ⚠️ Not Recommended
           </div>
-          <div style={{ padding: '12px 6px', textAlign: 'center', minHeight: '74px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <img src={LOGO_TRC20} alt="USDT" style={{ height: '22px', width: '22px', marginBottom: '6px' }} />
+          <div style={{ padding: '10px 4px', textAlign: 'center', minHeight: '74px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <img src={LOGO_TRC20} alt="USDT" style={{ height: '20px', width: '20px', marginBottom: '4px' }} />
             <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#64748b' }}>Crypto Pay</span>
           </div>
-          <div style={{ background: '#fee2e2', padding: '6px', textAlign: 'center', fontSize: '11px', fontWeight: 'bold', color: '#991b1b' }}>
+          <div style={{ background: '#fee2e2', padding: '6px', textAlign: 'center', fontSize: '10px', fontWeight: 'bold', color: '#991b1b' }}>
             Auto (TRC20)
           </div>
         </div>
@@ -290,11 +294,11 @@ export default function ProcessedOrderPage() {
           <div style={{ background: '#16a34a', color: '#ffffff', fontSize: '9px', fontWeight: '900', textAlign: 'center', padding: '3px 0' }}>
             ⭐ RECOMMENDED
           </div>
-          <div style={{ padding: '12px 6px', textAlign: 'center', minHeight: '74px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <img src={LOGO_HUB_CART} alt="Hub Cart" style={{ width: '28px', height: '28px', marginBottom: '6px' }} />
+          <div style={{ padding: '10px 4px', textAlign: 'center', minHeight: '74px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <img src={LOGO_HUB_CART} alt="Hub Cart" style={{ width: '26px', height: '26px', marginBottom: '4px' }} />
             <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a' }}>TBC Pay</span>
           </div>
-          <div style={{ background: '#dcfce7', padding: '6px', textAlign: 'center', fontSize: '11px', fontWeight: 'bold', color: '#166534' }}>
+          <div style={{ background: '#dcfce7', padding: '6px', textAlign: 'center', fontSize: '10px', fontWeight: 'bold', color: '#166534' }}>
             Manual Contact
           </div>
         </div>
