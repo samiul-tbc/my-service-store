@@ -9,11 +9,20 @@ const LOGO_HUB_CART = 'https://i.postimg.cc/4Y3TK6bN/5707.png';
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://mieygzqgoekinxppdepb.supabase.co';
 const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
 
+const COUNTRY_CODES = [
+  { code: '+880', flag: '🇧🇩', name: 'BD', placeholder: '1XXXXXXXXX' },
+  { code: '+977', flag: '🇳🇵', name: 'NP', placeholder: '98XXXXXXXX' },
+  { code: '+91',  flag: '🇮🇳', name: 'IN', placeholder: '9XXXXXXXXX' },
+  { code: '+1',   flag: '🇺🇸', name: 'US', placeholder: 'XXXXXXXXXX' },
+  { code: '+44',  flag: '🇬🇧', name: 'UK', placeholder: 'XXXXXXXXXX' },
+];
+
 export default function SignUpPage() {
   const router = useRouter();
 
   // ইনপুট স্টেট
   const [fullName, setFullName] = useState('');
+  const [selectedCountry, setSelectedCountry] = useState(COUNTRY_CODES[0]);
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -30,6 +39,10 @@ export default function SignUpPage() {
     setSuccessMsg('');
 
     try {
+      // শুরুতে 0 থাকলে তা বাদ দিয়ে আন্তর্জাতিক ফরম্যাট তৈরি করা (+8801..., +97798...)
+      const cleanPhone = phone.trim().replace(/^0+/, '');
+      const fullPhoneNumber = `${selectedCountry.code}${cleanPhone}`;
+
       const res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
         method: 'POST',
         headers: {
@@ -41,7 +54,7 @@ export default function SignUpPage() {
           password: password,
           data: {
             full_name: fullName.trim(),
-            phone: phone.trim(),
+            phone: fullPhoneNumber,
           },
         }),
       });
@@ -52,7 +65,7 @@ export default function SignUpPage() {
         throw new Error(data.error_description || data.msg || data.message || 'রেজিস্ট্রেশন ব্যর্থ হয়েছে');
       }
 
-      setSuccessMsg('অ্যাকাউন্ট তৈরি সফল হয়েছে! লগইন পেজে নেওয়া হচ্ছে...');
+      setSuccessMsg('✅ অ্যাকাউন্ট তৈরি সফল হয়েছে! লগইন পেজে নেওয়া হচ্ছে...');
       setTimeout(() => {
         router.push('/login');
       }, 1500);
@@ -124,17 +137,45 @@ export default function SignUpPage() {
             />
           </div>
 
+          {/* WhatsApp নম্বর কান্ট্রি কোড সহ */}
           <div style={{ marginBottom: '12px' }}>
             <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px', color: '#94a3b8' }}>WhatsApp নম্বর *</label>
-            <input
-              required
-              type="text"
-              maxLength={11}
-              placeholder="017XXXXXXXX"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              style={inputStyle}
-            />
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <select
+                value={selectedCountry.code}
+                onChange={(e) => {
+                  const country = COUNTRY_CODES.find((c) => c.code === e.target.value);
+                  if (country) setSelectedCountry(country);
+                }}
+                style={{
+                  background: 'rgba(30, 41, 59, 0.7)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '12px',
+                  color: '#ffffff',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  padding: '11px 8px',
+                  outline: 'none',
+                  cursor: 'pointer',
+                  flexShrink: 0,
+                }}
+              >
+                {COUNTRY_CODES.map((c) => (
+                  <option key={c.code} value={c.code} style={{ backgroundColor: '#0f172a', color: '#ffffff' }}>
+                    {c.flag} {c.code}
+                  </option>
+                ))}
+              </select>
+
+              <input
+                required
+                type="tel"
+                placeholder={selectedCountry.placeholder}
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                style={{ ...inputStyle, flex: 1 }}
+              />
+            </div>
           </div>
 
           <div style={{ marginBottom: '12px' }}>
@@ -174,7 +215,7 @@ export default function SignUpPage() {
               borderRadius: '12px',
               fontWeight: 'bold',
               fontSize: '13px',
-              cursor: 'pointer',
+              cursor: loading ? 'not-allowed' : 'pointer',
               boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)',
             }}
           >
