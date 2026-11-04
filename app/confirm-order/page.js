@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useLanguage } from '../../context/LanguageContext';
 
 const COUNTRY_CODES = [
   { code: '+880', flag: '🇧🇩', name: 'BD', placeholder: '1XXXXXXXXX' },
@@ -12,12 +11,12 @@ const COUNTRY_CODES = [
   { code: '+44',  flag: '🇬🇧', name: 'UK', placeholder: 'XXXXXXXXXX' },
 ];
 
-export default function ConfirmOrderPage() {
+export default function ConfirmPage() {
   const router = useRouter();
 
   const [productData, setProductData] = useState({
     title: 'Test payment',
-    price: 5,
+    price: 10,
     id: `HC-${Date.now().toString().slice(-6)}`
   });
 
@@ -29,13 +28,11 @@ export default function ConfirmOrderPage() {
 
   useEffect(() => {
     try {
-      // ১. প্রোডাক্টের তথ্য লোড করা
       const savedProduct = localStorage.getItem('hubcart_selected_product');
       if (savedProduct) {
         setProductData(JSON.parse(savedProduct));
       }
 
-      // ২. কাস্টমারের পূর্বে সংরক্ষিত তথ্য থাকলে স্বয়ংক্রিয়ভাবে পূরণ করা
       const savedUser = localStorage.getItem('hubcart_user');
       if (savedUser) {
         const parsedUser = JSON.parse(savedUser);
@@ -70,24 +67,62 @@ export default function ConfirmOrderPage() {
       return;
     }
 
-    // আন্তর্জাতিক ফরম্যাটিং নিশ্চিত করা
     const cleanPhone = phoneNumber.trim().replace(/^0+/, '');
     const fullPhoneNumber = `${selectedCountry.code}${cleanPhone}`;
 
     setLoading(true);
 
-    const generatedOrderId = productData.id && productData.id.startsWith('HC-') 
+    const generatedOrderId = productData.id && String(productData.id).startsWith('HC-') 
       ? productData.id 
       : `HC-${Math.floor(1000 + Math.random() * 9000)}`;
 
     const productName = productData.title || productData.serviceName || 'Product Order';
-    const productPrice = Number(productData.price) || 0;
+    const productPrice = Number(productData.price) || 10;
 
+    const fullOrder = {
+      id: generatedOrderId,
+      orderId: generatedOrderId,
+      title: productName,
+      serviceName: productName,
+      price: productPrice,
+      customerName: name.trim(),
+      whatsappNumber: fullPhoneNumber,
+      telegramUsername: telegram.trim() || 'N/A',
+    };
+
+    // ১. সবার আগে লোকাল স্টোরেজে ডেটা সংরক্ষণ (যাতে ডেটা কোনো অবস্থাতেই না হারায়)
     try {
-      // ১. সরাসরি Supabase-এ অর্ডারটি সেভ করা (My Orders ও Admin Panel-এ তাৎক্ষণিক চলে আসবে)
+      localStorage.setItem('hubcart_current_order', JSON.stringify(fullOrder));
+      localStorage.setItem('hubcart_user', JSON.stringify({
+        name: name.trim(),
+        phone: fullPhoneNumber,
+        telegram: telegram.trim() || '',
+      }));
+    } catch (err) {
+      console.error('LocalStorage error:', err);
+    }
+
+    // ২. WhatsApp SMS ব্যাকগ্রাউন্ডে পাঠিয়ে দেওয়া (পেজ লোডিং আটকে থাকবে না)
+    fetch('/api/send-whatsapp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customerName: name.trim(),
+        phone: fullPhoneNumber,
+        orderId: generatedOrderId,
+        serviceName: productName,
+      }),
+    }).catch((waErr) => console.error('WhatsApp background send error:', waErr));
+
+    // ৩. ডাটাবেজে অর্ডার এন্ট্রি করা (সর্বোচ্চ ৩ সেকেন্ডের টাইমআউট)
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+
       await fetch('/api/order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
         body: JSON.stringify({
           orderId: generatedOrderId,
           serviceName: productName,
@@ -99,59 +134,19 @@ export default function ConfirmOrderPage() {
           trxId: 'Pending',
         }),
       });
-
-      // ২. সাথে সাথে WhatsApp-এ নিশ্চিতকরণ SMS পাঠানো
-      try {
-        await fetch('/api/send-whatsapp', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            customerName: name.trim(),
-            phone: fullPhoneNumber,
-            orderId: generatedOrderId,
-            serviceName: productName,
-          }),
-        });
-      } catch (waErr) {
-        console.error('WhatsApp send error:', waErr);
-      }
-
-      // ৩. পেমেন্ট পেজ এবং লোকাল হিস্ট্রির জন্য সংরক্ষণ করা
-      const fullOrder = {
-        id: generatedOrderId,
-        orderId: generatedOrderId,
-        title: productName,
-        serviceName: productName,
-        price: productPrice,
-        customerName: name.trim(),
-        whatsappNumber: fullPhoneNumber,
-        telegramUsername: telegram.trim() || 'N/A',
-      };
-
-      localStorage.setItem('hubcart_current_order', JSON.stringify(fullOrder));
-
-      localStorage.setItem('hubcart_user', JSON.stringify({
-        name: name.trim(),
-        phone: fullPhoneNumber,
-        telegram: telegram.trim() || '',
-      }));
-
-      // ৪. পেমেন্ট নির্বাচন পেজে নিয়ে যাওয়া
-      router.push('/processedorder');
-
-    } catch (err) {
-      console.error('Order submission error:', err);
-      alert('অর্ডার প্রসেসিংয়ে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।');
-    } finally {
-      setLoading(false);
+      clearTimeout(timeoutId);
+    } catch (orderErr) {
+      console.warn('Database save warning or timeout:', orderErr);
     }
+
+    // ৪. সরাসরি পেমেন্ট নির্বাচন পেজে রিডাইরেক্ট
+    window.location.href = '/processedorder';
   };
 
   return (
     <div style={{ minHeight: '90vh', backgroundColor: '#090d16', color: '#ffffff', padding: '24px 16px 90px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ maxWidth: '440px', width: '100%', backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '20px', padding: '24px 20px', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
         
-        {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
           <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#f8fafc', margin: 0 }}>
             অর্ডার কনফার্মেশন
@@ -168,7 +163,6 @@ export default function ConfirmOrderPage() {
           অর্ডারের জন্য প্রয়োজনীয় তথ্য দিন
         </p>
 
-        {/* Product Box */}
         <div style={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '12px', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <span style={{ fontSize: '14px', fontWeight: '600', color: '#f8fafc' }}>
             {productData.title}
@@ -179,8 +173,6 @@ export default function ConfirmOrderPage() {
         </div>
 
         <form onSubmit={handleOrderSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          
-          {/* Customer Name */}
           <div>
             <label style={{ display: 'block', fontSize: '13px', color: '#cbd5e1', marginBottom: '6px', fontWeight: '600' }}>
               আপনার নাম *
@@ -205,14 +197,11 @@ export default function ConfirmOrderPage() {
             />
           </div>
 
-          {/* WhatsApp with Country Code */}
           <div>
             <label style={{ display: 'block', fontSize: '13px', color: '#cbd5e1', marginBottom: '6px', fontWeight: '600' }}>
               WhatsApp নম্বর *
             </label>
             <div style={{ display: 'flex', gap: '8px' }}>
-              
-              {/* Country Code Dropdown */}
               <select
                 value={selectedCountry.code}
                 onChange={(e) => {
@@ -239,7 +228,6 @@ export default function ConfirmOrderPage() {
                 ))}
               </select>
 
-              {/* Number Input */}
               <input
                 type="tel"
                 required
@@ -264,7 +252,6 @@ export default function ConfirmOrderPage() {
             </span>
           </div>
 
-          {/* Telegram Username */}
           <div>
             <label style={{ display: 'block', fontSize: '13px', color: '#cbd5e1', marginBottom: '6px', fontWeight: '600' }}>
               Telegram ইউজারনেম (@username)
@@ -288,7 +275,6 @@ export default function ConfirmOrderPage() {
             />
           </div>
 
-          {/* Submit Button */}
           <button
             type="submit"
             disabled={loading}
@@ -304,7 +290,6 @@ export default function ConfirmOrderPage() {
               borderRadius: '12px',
               cursor: loading ? 'not-allowed' : 'pointer',
               boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)',
-              transition: 'background-color 0.2s',
             }}
           >
             {loading ? 'প্রসেসিং হচ্ছে...' : 'অর্ডার Confirm করুন →'}
