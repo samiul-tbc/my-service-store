@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 
 const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
@@ -9,6 +9,25 @@ const CATEGORIES = [
   { id: 'android-panel', name: 'Android Panel' },
   { id: 'social-package', name: 'Social Boost' },
   { id: 'subscriptions', name: 'VIP Subs' },
+];
+
+const QUICK_TEMPLATES = [
+  {
+    label: '🔑 Login / Key Access',
+    text: '✅ আপনার সার্ভিসের লগইন বিবরণ:\nইউজার/কী: \nপাসওয়ার্ড: \nডাউনলোড লিংক: ',
+  },
+  {
+    label: '📱 Root সম্পন্ন',
+    text: '⚡ আপনার ডিভাইসের রুট সফলভাবে সম্পন্ন করা হয়েছে। রুট চেকার অ্যাপ দিয়ে স্ট্যাটাস নিশ্চিত করে নিন।',
+  },
+  {
+    label: '💎 VIP Subscription',
+    text: '🎉 আপনার ভিআইপি সাবস্ক্রিপশন চালু হয়েছে। মেয়াদের শেষ তারিখ পর্যন্ত যেকোনো সাপোর্টে মেসেজ দিন।',
+  },
+  {
+    label: '⚠️ অতিরিক্ত তথ্য প্রয়োজন',
+    text: 'হ্যালো, আপনার অর্ডারটি প্রসেস করতে কিছু অতিরিক্ত তথ্য প্রয়োজন। দয়া করে এই মেসেজে রিপ্লাই দিন।',
+  },
 ];
 
 export default function SecretAdminPage() {
@@ -26,16 +45,23 @@ export default function SecretAdminPage() {
   // প্রোডাক্ট স্টেট
   const [products, setProducts] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null); // প্রোডাক্ট এডিট মডাল
 
   // অর্ডার স্টেট
   const [orders, setOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
+  const previousOrderCount = useRef(0);
+
+  // ফিল্টার ও লাইভ সার্চ স্টেট
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [methodFilter, setMethodFilter] = useState('all');
 
   // WhatsApp ডেলিভারি মডাল
   const [deliveryModalOrder, setDeliveryModalOrder] = useState(null);
   const [deliveryExtraNote, setDeliveryExtraNote] = useState('');
 
-  // প্রোডাক্ট ইনপুট স্টেট
+  // নতুন প্রোডাক্ট ইনপুট স্টেট
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('android-root');
   const [uploadMode, setUploadMode] = useState('file');
@@ -47,9 +73,45 @@ export default function SecretAdminPage() {
   const [originalPrice, setOriginalPrice] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // পিন যাচাই
-  const handlePinSubmit = async (e) => {
-    e.preventDefault();
+  // ১. স্বয়ংক্রিয় নোটিফিকেশন সাউন্ড সিন্থেসাইজার (কোনো অডিও ফাইল ছাড়াই বিপ সাউন্ড)
+  const playAlertSound = () => {
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+      osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.35);
+    } catch (e) {
+      console.error('Audio play error:', e);
+    }
+  };
+
+  // ২. সেশন রিস্টোর (পেজ রিলোড দিলে পিন যেন বারবার না চায়)
+  useEffect(() => {
+    const savedPin = sessionStorage.getItem('hubcart_admin_pin');
+    if (savedPin) {
+      setPinInput(savedPin);
+      validatePin(savedPin, false);
+    }
+  }, []);
+
+  // ৩. রিয়েল-টাইম অর্ডার অটো-পোলিং (প্রতি ২৫ সেকেন্ড পর নতুন অর্ডার চেক)
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const interval = setInterval(() => {
+      fetchOrders(pinInput, true);
+    }, 25000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated, pinInput]);
+
+  const validatePin = async (pinToTest, showAlert = true) => {
     setPinError(false);
     setVerifying(true);
 
@@ -57,21 +119,36 @@ export default function SecretAdminPage() {
       const res = await fetch('/api/verify-pin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin: pinInput }),
+        body: JSON.stringify({ pin: pinToTest }),
       });
 
       const data = await res.json();
 
       if (res.ok && data.success) {
         setIsAuthenticated(true);
-        loadAllData(pinInput);
+        sessionStorage.setItem('hubcart_admin_pin', pinToTest);
+        loadAllData(pinToTest);
       } else {
         setPinError(true);
+        if (showAlert) alert('ভুল পিন কোড!');
       }
     } catch (err) {
-      alert('ভেরিফিকেশন এরর!');
+      if (showAlert) alert('সার্ভার ভেরিফিকেশন এরর!');
     } finally {
       setVerifying(false);
+    }
+  };
+
+  const handlePinSubmit = (e) => {
+    e.preventDefault();
+    validatePin(pinInput, true);
+  };
+
+  const handleLogout = () => {
+    if (confirm('অ্যাডমিন প্যানেল থেকে লগআউট করতে চান?')) {
+      sessionStorage.removeItem('hubcart_admin_pin');
+      setIsAuthenticated(false);
+      setPinInput('');
     }
   };
 
@@ -81,23 +158,30 @@ export default function SecretAdminPage() {
     fetchNotice(pin);
   };
 
-  // ১. অর্ডার ফেচ (নিরাপদ সার্ভার কল)
-  const fetchOrders = async (pin = pinInput) => {
-    setLoadingOrders(true);
+  // অর্ডার ফেচ
+  const fetchOrders = async (pin = pinInput, isSilent = false) => {
+    if (!isSilent) setLoadingOrders(true);
     try {
       const res = await fetch('/api/admin?type=orders', {
         headers: { 'x-admin-pin': pin },
       });
       const data = await res.json();
-      if (Array.isArray(data)) setOrders(data);
+      if (Array.isArray(data)) {
+        // নতুন অর্ডার আসলে শব্দ করা
+        if (previousOrderCount.current > 0 && data.length > previousOrderCount.current) {
+          playAlertSound();
+        }
+        previousOrderCount.current = data.length;
+        setOrders(data);
+      }
     } catch (err) {
       console.error(err);
     } finally {
-      setLoadingOrders(false);
+      if (!isSilent) setLoadingOrders(false);
     }
   };
 
-  // ২. প্রোডাক্ট ফেচ (নিরাপদ সার্ভার কল)
+  // প্রোডাক্ট ফেচ
   const fetchProducts = async (pin = pinInput) => {
     setLoadingProducts(true);
     try {
@@ -113,7 +197,7 @@ export default function SecretAdminPage() {
     }
   };
 
-  // ৩. নোটিশ ফেচ
+  // নোটিশ ফেচ
   const fetchNotice = async (pin = pinInput) => {
     try {
       const res = await fetch('/api/admin?type=notice', {
@@ -126,7 +210,7 @@ export default function SecretAdminPage() {
     }
   };
 
-  // নোটিশ সেভ (নিরাপদ সার্ভার কল)
+  // নোটিশ সেভ
   const handleSaveNotice = async (e) => {
     e.preventDefault();
     setSavingNotice(true);
@@ -152,7 +236,7 @@ export default function SecretAdminPage() {
     }
   };
 
-  // অর্ডার স্ট্যাটাস আপডেট (নিরাপদ সার্ভার কল)
+  // অর্ডার স্ট্যাটাস আপডেট
   const handleUpdateOrderStatus = async (orderDbId, newStatus) => {
     try {
       const res = await fetch('/api/admin', {
@@ -176,7 +260,7 @@ export default function SecretAdminPage() {
     }
   };
 
-  // সম্পূর্ণ অর্ডার ডিলিট (নিরাপদ সার্ভার কল)
+  // অর্ডার ডিলিট
   const handleDeleteOrder = async (orderDbId, orderIdText) => {
     if (!confirm(`আপনি কি নিশ্চিত অর্ডার "${orderIdText}" মুছে ফেলতে চান?`)) return;
 
@@ -197,18 +281,25 @@ export default function SecretAdminPage() {
     }
   };
 
-  // WhatsApp ডেলিভারি
+  // আন্তর্জাতিক নম্বর অনুযায়ী সঠিক WhatsApp ডেলিভারি
   const handleSendWhatsAppDelivery = () => {
     if (!deliveryModalOrder) return;
 
     const ord = deliveryModalOrder;
-    const cleanPhone = ord.whatsapp_number.replace(/[^0-9]/g, '');
-    const phone = cleanPhone.startsWith('88') ? cleanPhone : `88${cleanPhone}`;
+
+    // ক্লিন নম্বর এবং আন্তর্জাতিক ফরম্যাট ডিটেকশন
+    let digits = String(ord.whatsapp_number || '').replace(/[^0-9]/g, '');
+    if (digits.startsWith('0') && digits.length === 11) {
+      digits = `88${digits}`;
+    } else if (/^1[3-9]\d{8}$/.test(digits)) {
+      digits = `880${digits}`;
+    }
+
     const host = typeof window !== 'undefined' ? window.location.origin : 'https://hubcart.vercel.app';
     const invoiceUrl = `${host}/invoice/${ord.order_id}`;
 
-    let message = ` ${ord.customer_name}! 👋\n\n` +
-      `Hub Cart থেকে আপনার অর্ডারটি সফলভাবে সম্পন্ন করা হয়েছে। ✅\n\n` +
+    let message = `প্রিয় ${ord.customer_name || 'গ্রাহক'}! 👋\n\n` +
+      `Hub Cart থেকে আপনার অর্ডারটি সফলভাবে ডেলিভারি করা হয়েছে। ✅\n\n` +
       `📦 সার্ভিস: ${ord.service_name}\n` +
       `🆔 অর্ডার আইডি: ${ord.order_id}\n` +
       `💰 মূল্য: ৳${ord.price}\n\n` +
@@ -220,20 +311,13 @@ export default function SecretAdminPage() {
 
     message += `যেকোনো সহায়তায় আমাদের জানান। Hub Cart-এর সাথে থাকার জন্য ধন্যবাদ! 🌟`;
 
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+    window.open(`https://wa.me/${digits}?text=${encodeURIComponent(message)}`, '_blank');
     handleUpdateOrderStatus(ord.id, 'completed');
     setDeliveryModalOrder(null);
     setDeliveryExtraNote('');
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
-    }
-  };
-
+  // ইমেজ কম্প্রেশন
   const compressImage = (file) => {
     return new Promise((resolve, reject) => {
       const blobUrl = URL.createObjectURL(file);
@@ -271,7 +355,15 @@ export default function SecretAdminPage() {
     });
   };
 
-  // প্রোডাক্ট যোগ (নিরাপদ সার্ভার কল)
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  // নতুন প্রোডাক্ট যোগ করা
   const handleAddProduct = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -334,7 +426,46 @@ export default function SecretAdminPage() {
     }
   };
 
-  // প্রোডাক্ট ডিলিট (নিরাপদ সার্ভার কল)
+  // প্রোডাক্ট এডিট সেভ করা
+  const handleSaveProductEdit = async (e) => {
+    e.preventDefault();
+    if (!editingProduct) return;
+
+    try {
+      const res = await fetch('/api/admin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-pin': pinInput,
+        },
+        body: JSON.stringify({
+          action: 'update-product',
+          payload: {
+            id: editingProduct.id,
+            title: editingProduct.title,
+            price: Number(editingProduct.price),
+            original_price: editingProduct.original_price ? Number(editingProduct.original_price) : null,
+            description: editingProduct.description,
+            category: editingProduct.category,
+          },
+        }),
+      });
+
+      if (res.ok) {
+        alert('✅ প্রোডাক্ট তথ্য আপডেট সম্পন্ন!');
+        setProducts((prev) =>
+          prev.map((p) => (p.id === editingProduct.id ? editingProduct : p))
+        );
+        setEditingProduct(null);
+      } else {
+        alert('আপডেট করা যায়নি!');
+      }
+    } catch (err) {
+      alert('সার্ভার এরর!');
+    }
+  };
+
+  // প্রোডাক্ট ডিলিট
   const handleDeleteProduct = async (id, prodTitle) => {
     if (!confirm(`আপনি কি নিশ্চিত "${prodTitle}" ডিলিট করতে চান?`)) return;
 
@@ -354,6 +485,45 @@ export default function SecretAdminPage() {
     }
   };
 
+  // ড্যাশবোর্ড মেট্রিক্স ক্যালকুলেশন
+  const totalRevenue = orders
+    .filter((o) => o.status === 'completed')
+    .reduce((sum, o) => sum + (Number(o.price) || 0), 0);
+
+  const todayDateStr = new Date().toDateString();
+  const todayRevenue = orders
+    .filter((o) => o.status === 'completed' && new Date(o.created_at).toDateString() === todayDateStr)
+    .reduce((sum, o) => sum + (Number(o.price) || 0), 0);
+
+  const pendingCount = orders.filter(
+    (o) => !o.status || o.status === 'pending' || o.status === 'verifying'
+  ).length;
+
+  const completedCount = orders.filter((o) => o.status === 'completed').length;
+
+  // সার্চ ও ফিল্টারিং লজিক
+  const filteredOrders = orders.filter((ord) => {
+    const q = searchQuery.toLowerCase().trim();
+    const matchQuery =
+      !q ||
+      ord.order_id?.toLowerCase().includes(q) ||
+      ord.customer_name?.toLowerCase().includes(q) ||
+      ord.whatsapp_number?.includes(q) ||
+      ord.trx_id?.toLowerCase().includes(q) ||
+      ord.service_name?.toLowerCase().includes(q);
+
+    const matchStatus =
+      statusFilter === 'all' ||
+      (statusFilter === 'pending' && (!ord.status || ord.status === 'pending')) ||
+      ord.status?.toLowerCase() === statusFilter;
+
+    const matchMethod =
+      methodFilter === 'all' ||
+      ord.payment_method?.toLowerCase().includes(methodFilter);
+
+    return matchQuery && matchStatus && matchMethod;
+  });
+
   const inputStyle = {
     width: '100%',
     boxSizing: 'border-box',
@@ -366,6 +536,7 @@ export default function SecretAdminPage() {
     outline: 'none',
   };
 
+  // পিন ইনপুট ভিউ
   if (!isAuthenticated) {
     return (
       <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
@@ -382,7 +553,7 @@ export default function SecretAdminPage() {
         }}>
           <img src={LOGO_HUB_CART} alt="Hub Cart" style={{ width: '48px', height: '48px', objectFit: 'contain', margin: '0 auto 12px', filter: 'drop-shadow(0 2px 8px rgba(56, 189, 248, 0.4))' }} />
           <h2 style={{ fontSize: '20px', fontWeight: '900', margin: '0 0 6px', color: '#f8fafc' }}>Hub Cart (tbcadsa)</h2>
-          <p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 20px' }}>মাস্টার পিন কোড দিয়ে ড্যাশবোর্ডে প্রবেশ করুন</p>
+          <p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 20px' }}>মাস্টার পিন কোড দিয়ে প্রবেশ করুন</p>
 
           <form onSubmit={handlePinSubmit}>
             <input
@@ -433,7 +604,7 @@ export default function SecretAdminPage() {
   }
 
   return (
-    <div style={{ maxWidth: '720px', margin: '14px auto', padding: '0 14px 100px' }}>
+    <div style={{ maxWidth: '800px', margin: '14px auto', padding: '0 14px 100px' }}>
       
       {/* ড্যাশবোর্ড হেডার */}
       <div style={{
@@ -448,28 +619,65 @@ export default function SecretAdminPage() {
         marginBottom: '16px',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <img src={LOGO_HUB_CART} alt="Hub Cart" style={{ width: '32px', height: '32px', objectFit: 'contain' }} />
+          <img src={LOGO_HUB_CART} alt="Hub Cart" style={{ width: '34px', height: '34px', objectFit: 'contain' }} />
           <div>
             <h2 style={{ fontSize: '16px', fontWeight: '900', margin: 0, color: '#f8fafc' }}>Hub Cart Manager</h2>
-            <span style={{ fontSize: '10px', color: '#4ade80', fontWeight: 'bold' }}>● Secure Server API Protected</span>
+            <span style={{ fontSize: '10px', color: '#4ade80', fontWeight: 'bold' }}>● Auto Sync & Protected</span>
           </div>
         </div>
 
-        <Link
-          href="/"
-          style={{
-            textDecoration: 'none',
-            background: 'rgba(30, 41, 59, 0.8)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            color: '#38bdf8',
-            padding: '6px 12px',
-            borderRadius: '10px',
-            fontSize: '11px',
-            fontWeight: 'bold',
-          }}
-        >
-          Live Store ↗
-        </Link>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <Link
+            href="/"
+            style={{
+              textDecoration: 'none',
+              background: 'rgba(30, 41, 59, 0.8)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              color: '#38bdf8',
+              padding: '6px 12px',
+              borderRadius: '10px',
+              fontSize: '11px',
+              fontWeight: 'bold',
+            }}
+          >
+            Live Store ↗
+          </Link>
+          <button
+            onClick={handleLogout}
+            style={{
+              background: 'rgba(239, 68, 68, 0.15)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              color: '#f87171',
+              padding: '6px 12px',
+              borderRadius: '10px',
+              fontSize: '11px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+            }}
+          >
+            লগআউট
+          </button>
+        </div>
+      </div>
+
+      {/* রেভিনিউ ও ড্যাশবোর্ড মেট্রিক্স কার্ডসমূহ */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '16px' }}>
+        <div style={{ background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(56, 189, 248, 0.2)', borderRadius: '16px', padding: '12px', textAlign: 'center' }}>
+          <span style={{ fontSize: '10px', color: '#94a3b8', display: 'block', fontWeight: 'bold' }}>মোট সেলস</span>
+          <span style={{ fontSize: '16px', fontWeight: '900', color: '#38bdf8' }}>৳{totalRevenue}</span>
+        </div>
+        <div style={{ background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(34, 197, 94, 0.2)', borderRadius: '16px', padding: '12px', textAlign: 'center' }}>
+          <span style={{ fontSize: '10px', color: '#94a3b8', display: 'block', fontWeight: 'bold' }}>আজকের সেল</span>
+          <span style={{ fontSize: '16px', fontWeight: '900', color: '#4ade80' }}>৳{todayRevenue}</span>
+        </div>
+        <div style={{ background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(251, 191, 36, 0.2)', borderRadius: '16px', padding: '12px', textAlign: 'center' }}>
+          <span style={{ fontSize: '10px', color: '#94a3b8', display: 'block', fontWeight: 'bold' }}>পেন্ডিং অর্ডার</span>
+          <span style={{ fontSize: '16px', fontWeight: '900', color: '#fbbf24' }}>{pendingCount}</span>
+        </div>
+        <div style={{ background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(168, 85, 247, 0.2)', borderRadius: '16px', padding: '12px', textAlign: 'center' }}>
+          <span style={{ fontSize: '10px', color: '#94a3b8', display: 'block', fontWeight: 'bold' }}>ডেলিভারি সম্পন্ন</span>
+          <span style={{ fontSize: '16px', fontWeight: '900', color: '#c084fc' }}>{completedCount}</span>
+        </div>
       </div>
 
       {/* নোটিশ কন্ট্রোল বক্স */}
@@ -478,16 +686,16 @@ export default function SecretAdminPage() {
         backdropFilter: 'blur(16px)',
         border: '1px solid rgba(56, 189, 248, 0.25)',
         borderRadius: '18px',
-        padding: '16px',
+        padding: '14px 16px',
         marginBottom: '16px',
       }}>
-        <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#38bdf8', display: 'block', marginBottom: '8px' }}>
+        <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#38bdf8', display: 'block', marginBottom: '8px' }}>
           📢 হোমপেজ নোটিশ ব্যানার
         </span>
         <form onSubmit={handleSaveNotice} style={{ display: 'flex', gap: '8px' }}>
           <input
             type="text"
-            placeholder="হোমপেজে দেখানোর নোটিশ টেক্সট লিখুন..."
+            placeholder="হোমপেজে নোটিশ টেক্সট লিখুন..."
             value={noticeText}
             onChange={(e) => setNoticeText(e.target.value)}
             style={{ ...inputStyle, flex: 1 }}
@@ -513,7 +721,7 @@ export default function SecretAdminPage() {
       </div>
 
       {/* ট্যাব সিলেকশন */}
-      <div style={{ display: 'flex', gap: '8px', background: 'rgba(15, 23, 42, 0.7)', padding: '6px', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.06)', marginBottom: '20px' }}>
+      <div style={{ display: 'flex', gap: '8px', background: 'rgba(15, 23, 42, 0.7)', padding: '6px', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.06)', marginBottom: '16px' }}>
         <button
           type="button"
           onClick={() => setActiveTab('orders')}
@@ -553,8 +761,68 @@ export default function SecretAdminPage() {
       {/* লাইভ অর্ডার ট্যাব */}
       {activeTab === 'orders' && (
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: 0, color: '#f8fafc' }}>কাস্টমারদের অর্ডার তালিকা</h3>
+          {/* সার্চ ও ফিল্টার বার */}
+          <div style={{ background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', padding: '12px', marginBottom: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <input
+              type="text"
+              placeholder="🔍 অর্ডার আইডি, TrxID, ফোন নম্বর বা নাম দিয়ে খুঁজুন..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={inputStyle}
+            />
+
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
+              {/* স্ট্যাটাস ফিল্টার */}
+              <div style={{ display: 'flex', gap: '4px', overflowX: 'auto', paddingBottom: '4px' }}>
+                {['all', 'pending', 'verifying', 'processing', 'completed', 'cancelled'].map((st) => (
+                  <button
+                    key={st}
+                    onClick={() => setStatusFilter(st)}
+                    style={{
+                      background: statusFilter === st ? '#2563eb' : 'rgba(30, 41, 59, 0.6)',
+                      border: 'none',
+                      color: statusFilter === st ? '#fff' : '#94a3b8',
+                      padding: '4px 10px',
+                      borderRadius: '8px',
+                      fontSize: '11px',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      textTransform: 'capitalize',
+                    }}
+                  >
+                    {st}
+                  </button>
+                ))}
+              </div>
+
+              {/* মেথড ফিল্টার */}
+              <select
+                value={methodFilter}
+                onChange={(e) => setMethodFilter(e.target.value)}
+                style={{
+                  background: '#0b0f19',
+                  color: '#cbd5e1',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '8px',
+                  padding: '5px 8px',
+                  fontSize: '11px',
+                  outline: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                <option value="all">সকল মেথড</option>
+                <option value="bkash">bKash</option>
+                <option value="nagad">Nagad</option>
+                <option value="crypto">Crypto</option>
+                <option value="tbc">TBC Pay</option>
+              </select>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+            <span style={{ fontSize: '12px', color: '#94a3b8' }}>
+              পাওয়া গেছে: <strong>{filteredOrders.length}</strong> টি অর্ডার
+            </span>
             <button
               onClick={() => fetchOrders()}
               style={{ background: 'none', border: 'none', color: '#38bdf8', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
@@ -564,14 +832,14 @@ export default function SecretAdminPage() {
           </div>
 
           {loadingOrders ? (
-            <div style={{ textAlign: 'center', padding: '40px', color: '#64748b', fontSize: '13px' }}>অর্ডার তালিকা লোড হচ্ছে...</div>
-          ) : orders.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: '#64748b', fontSize: '13px' }}>অর্ডার লোড হচ্ছে...</div>
+          ) : filteredOrders.length === 0 ? (
             <div style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255, 255, 255, 0.06)', borderRadius: '18px', padding: '36px', textAlign: 'center', color: '#64748b' }}>
-              এখনো কোনো অর্ডার আসেনি।
+              কোনো অর্ডার পাওয়া যায়নি।
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {orders.map((ord) => (
+              {filteredOrders.map((ord) => (
                 <div
                   key={ord.id}
                   style={{
@@ -592,7 +860,7 @@ export default function SecretAdminPage() {
 
                   <div style={{ background: 'rgba(30, 41, 59, 0.5)', padding: '10px 12px', borderRadius: '12px', fontSize: '12px', color: '#cbd5e1', lineHeight: '1.6', marginBottom: '12px' }}>
                     <div>👤 <strong>নাম:</strong> {ord.customer_name}</div>
-                    <div>📞 <strong>WhatsApp:</strong> <a href={`https://wa.me/88${ord.whatsapp_number}`} target="_blank" rel="noreferrer" style={{ color: '#4ade80', textDecoration: 'none' }}>{ord.whatsapp_number}</a></div>
+                    <div>📞 <strong>WhatsApp:</strong> <span style={{ color: '#4ade80' }}>{ord.whatsapp_number}</span></div>
                     {ord.telegram_username && <div>✈️ <strong>Telegram:</strong> {ord.telegram_username}</div>}
                     <div>💳 <strong>পেমেন্ট:</strong> {ord.payment_method}</div>
                     <div>🔢 <strong>TrxID:</strong> <code style={{ color: '#f8fafc', background: '#0b0f19', padding: '2px 6px', borderRadius: '4px' }}>{ord.trx_id}</code></div>
@@ -822,12 +1090,20 @@ export default function SecretAdminPage() {
                       <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#f8fafc' }}>{prod.title}</div>
                       <div style={{ fontSize: '11px', color: '#94a3b8' }}>৳{prod.price} • {prod.category}</div>
                     </div>
-                    <button
-                      onClick={() => handleDeleteProduct(prod.id, prod.title)}
-                      style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#f87171', padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
-                    >
-                      Delete
-                    </button>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <button
+                        onClick={() => setEditingProduct(prod)}
+                        style={{ background: 'rgba(56, 189, 248, 0.15)', border: '1px solid rgba(56, 189, 248, 0.3)', color: '#38bdf8', padding: '6px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteProduct(prod.id, prod.title)}
+                        style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#f87171', padding: '6px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -836,7 +1112,102 @@ export default function SecretAdminPage() {
         </div>
       )}
 
-      {/* WhatsApp ডেলিভারি মডাল */}
+      {/* প্রোডাক্ট এডিট মডাল */}
+      {editingProduct && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.8)',
+          backdropFilter: 'blur(8px)',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px',
+        }}>
+          <div style={{
+            width: '100%',
+            maxWidth: '440px',
+            background: '#0f172a',
+            border: '1px solid rgba(56, 189, 248, 0.3)',
+            borderRadius: '24px',
+            padding: '24px',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <h3 style={{ margin: 0, fontSize: '16px', color: '#f8fafc', fontWeight: 'bold' }}>
+                ✏️ প্রোডাক্ট এডিট করুন
+              </h3>
+              <button onClick={() => setEditingProduct(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '16px', cursor: 'pointer' }}>✕</button>
+            </div>
+
+            <form onSubmit={handleSaveProductEdit}>
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '4px', fontWeight: 'bold' }}>প্রোডাক্ট নাম</label>
+                <input
+                  type="text"
+                  value={editingProduct.title}
+                  onChange={(e) => setEditingProduct({ ...editingProduct, title: e.target.value })}
+                  style={inputStyle}
+                  required
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '4px', fontWeight: 'bold' }}>বিক্রয় মূল্য (৳)</label>
+                  <input
+                    type="number"
+                    value={editingProduct.price}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, price: e.target.value })}
+                    style={inputStyle}
+                    required
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '4px', fontWeight: 'bold' }}>আগের মূল্য (৳)</label>
+                  <input
+                    type="number"
+                    value={editingProduct.original_price || ''}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, original_price: e.target.value })}
+                    style={inputStyle}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '4px', fontWeight: 'bold' }}>বিবরণ</label>
+                <textarea
+                  rows={3}
+                  value={editingProduct.description || ''}
+                  onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
+                  style={inputStyle}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setEditingProduct(null)}
+                  style={{ flex: 1, padding: '11px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.1)', background: 'transparent', color: '#94a3b8', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer' }}
+                >
+                  বাতিল
+                </button>
+                <button
+                  type="submit"
+                  style={{ flex: 1, padding: '11px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', color: '#ffffff', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer' }}
+                >
+                  আপডেট করুন
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* WhatsApp ডেলিভারি মডাল (টেমপ্লেট সহ) */}
       {deliveryModalOrder && (
         <div style={{
           position: 'fixed',
@@ -854,7 +1225,7 @@ export default function SecretAdminPage() {
         }}>
           <div style={{
             width: '100%',
-            maxWidth: '420px',
+            maxWidth: '440px',
             background: '#0f172a',
             border: '1px solid rgba(34, 197, 94, 0.4)',
             borderRadius: '24px',
@@ -870,15 +1241,41 @@ export default function SecretAdminPage() {
               </button>
             </div>
 
-            <div style={{ background: 'rgba(30, 41, 59, 0.6)', padding: '10px 14px', borderRadius: '12px', fontSize: '12px', color: '#cbd5e1', marginBottom: '14px', lineHeight: 1.5 }}>
+            <div style={{ background: 'rgba(30, 41, 59, 0.6)', padding: '10px 14px', borderRadius: '12px', fontSize: '12px', color: '#cbd5e1', marginBottom: '12px', lineHeight: 1.5 }}>
               <div>👤 <strong>গ্রাহক:</strong> {deliveryModalOrder.customer_name} ({deliveryModalOrder.whatsapp_number})</div>
               <div>📦 <strong>সার্ভিস:</strong> {deliveryModalOrder.service_name}</div>
               <div>🆔 <strong>অর্ডার:</strong> {deliveryModalOrder.order_id}</div>
             </div>
 
+            {/* কুইক টেমপ্লেট বাটন */}
+            <div style={{ marginBottom: '10px' }}>
+              <span style={{ fontSize: '10px', color: '#94a3b8', display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>কুইক টেমপ্লেট নির্বাচন করুন:</span>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                {QUICK_TEMPLATES.map((tmpl, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setDeliveryExtraNote(tmpl.text)}
+                    style={{
+                      background: 'rgba(56, 189, 248, 0.1)',
+                      border: '1px solid rgba(56, 189, 248, 0.3)',
+                      color: '#38bdf8',
+                      padding: '4px 8px',
+                      borderRadius: '6px',
+                      fontSize: '10px',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {tmpl.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div style={{ marginBottom: '16px' }}>
               <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', fontWeight: 'bold', marginBottom: '6px' }}>
-                সার্ভিস এক্সেস তথ্য / নোট (ঐচ্ছিক):
+                সার্ভিস এক্সেস তথ্য / ডেলিভারি নোট:
               </label>
               <textarea
                 rows={3}
