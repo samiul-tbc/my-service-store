@@ -204,7 +204,7 @@ export default function ConfirmPage() {
               />
             </div>
             <span style={{ fontSize: '11px', color: '#64748b', marginTop: '4px', display: 'block' }}>
-              কান্ট্রি কোড বাদে বাকি অংশ লিখুন (যেমন: 1893432478)
+              কান্ট্রি কোড বাদে বাকি অংশ লিখুন (যেমন: 17XXXXXXXX)
             </span>
           </div>
 
