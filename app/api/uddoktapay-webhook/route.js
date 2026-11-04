@@ -4,46 +4,46 @@ export async function POST(req) {
   try {
     const body = await req.json();
 
-    // UddoktaPay পেমেন্ট সম্পন্ন হলে 'COMPLETED' স্ট্যাটাস পাঠায়
+    // UddoktaPay payment status check
     const status = body.status;
     if (status !== 'COMPLETED') {
       return NextResponse.json({ message: 'Payment not completed yet' }, { status: 200 });
     }
 
-    // মেটাডাটা থেকে গ্রাহক ও অর্ডারের তথ্য সংগ্রহ
     const metadata = body.metadata || {};
     const orderId = metadata.order_id || body.invoice_id || `HC-${Date.now().toString().slice(-6)}`;
     const customerName = metadata.customer_name || body.full_name || 'Customer';
-    const whatsappNumber = metadata.customer_phone || '';
+    const whatsappNumber = metadata.customer_phone || body.phone || '';
     const serviceName = metadata.service_name || 'Product Order';
+    const telegramUsername = metadata.telegram_username || 'নেই';
     const amount = Number(body.amount) || 0;
-    const trxId = body.transaction_id || body.invoice_id || 'UddoktaPay';
-    const paymentChannel = body.payment_method || 'bKash/Nagad Auto';
+    const trxId = body.transaction_id || body.invoice_id || 'Auto-Payment';
+    const paymentMethod = `bKash/Nagad Auto (${body.payment_method || 'Online'})`;
 
     const host = process.env.NEXT_PUBLIC_SITE_URL || 'https://hubcart.vercel.app';
 
-    // ১. ডাটাবেজে অর্ডার এন্ট্রি করা (/api/order কল করা)
-    try {
-      await fetch(`${host}/api/order`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          orderId: orderId,
-          serviceName: serviceName,
-          price: amount,
-          customerName: customerName,
-          whatsappNumber: whatsappNumber,
-          telegramUsername: 'N/A',
-          paymentMethod: `${paymentChannel} (Auto)`,
-          trxId: trxId,
-          status: 'Paid',
-        }),
-      });
-    } catch (dbErr) {
-      console.error('Database save error via webhook:', dbErr);
-    }
+    // ১. bKash code-er moto Database-e order save kora
+    const res = await fetch(`${host}/api/order`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        serviceName: serviceName,
+        price: amount,
+        customerName: customerName,
+        whatsappNumber: whatsappNumber,
+        telegramUsername: telegramUsername,
+        paymentMethod: paymentMethod,
+        trxId: trxId,
+        status: 'Paid',
+      }),
+    });
 
-    // ২. WhatsApp-এ কনফার্মেশন SMS পাঠানো
+    const data = await res.json();
+
+    // bKash code-er moto generatedOrderId dhora
+    const generatedOrderId = data.orderId || data.order_id || data.id || orderId;
+
+    // ২. bKash code-er moto WhatsApp SMS alert pathano
     if (whatsappNumber) {
       try {
         await fetch(`${host}/api/send-whatsapp`, {
@@ -52,16 +52,16 @@ export async function POST(req) {
           body: JSON.stringify({
             customerName: customerName,
             phone: whatsappNumber,
-            orderId: orderId,
+            orderId: generatedOrderId,
             serviceName: serviceName,
           }),
         });
       } catch (waErr) {
-        console.error('WhatsApp send error via webhook:', waErr);
+        console.error('WhatsApp alert error:', waErr);
       }
     }
 
-    return NextResponse.json({ success: true, message: 'Order created and SMS triggered successfully' }, { status: 200 });
+    return NextResponse.json({ success: true, orderId: generatedOrderId }, { status: 200 });
   } catch (error) {
     console.error('UddoktaPay Webhook Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
