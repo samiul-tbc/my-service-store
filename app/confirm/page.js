@@ -3,48 +3,84 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-export default function ConfirmOrderPage() {
+const COUNTRY_CODES = [
+  { code: '+880', flag: '🇧🇩', name: 'BD', placeholder: '1XXXXXXXXX' },
+  { code: '+977', flag: '🇳🇵', name: 'NP', placeholder: '98XXXXXXXX' },
+  { code: '+91',  flag: '🇮🇳', name: 'IN', placeholder: '9XXXXXXXXX' },
+  { code: '+1',   flag: '🇺🇸', name: 'US', placeholder: 'XXXXXXXXXX' },
+  { code: '+44',  flag: '🇬🇧', name: 'UK', placeholder: 'XXXXXXXXXX' },
+];
+
+export default function ConfirmPage() {
   const router = useRouter();
-  const [product, setProduct] = useState(null);
+
+  const [productData, setProductData] = useState({
+    title: 'Test payment',
+    price: 10,
+    id: `HC-${Date.now().toString().slice(-6)}`
+  });
+
   const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [countryCode, setCountryCode] = useState('+880');
+  const [selectedCountry, setSelectedCountry] = useState(COUNTRY_CODES[0]);
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [telegram, setTelegram] = useState('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const savedProduct = localStorage.getItem('hubcart_selected_product');
-    if (savedProduct) {
-      try {
-        setProduct(JSON.parse(savedProduct));
-      } catch (e) {
-        console.error(e);
+    try {
+      const savedProduct = localStorage.getItem('hubcart_selected_product');
+      if (savedProduct) {
+        setProductData(JSON.parse(savedProduct));
       }
+
+      const savedUser = localStorage.getItem('hubcart_user');
+      if (savedUser) {
+        const parsedUser = JSON.parse(savedUser);
+        if (parsedUser.name) setName(parsedUser.name);
+        if (parsedUser.telegram) setTelegram(parsedUser.telegram);
+
+        if (parsedUser.phone) {
+          const matchedCountry = COUNTRY_CODES.find((c) => parsedUser.phone.startsWith(c.code));
+          if (matchedCountry) {
+            setSelectedCountry(matchedCountry);
+            setPhoneNumber(parsedUser.phone.replace(matchedCountry.code, ''));
+          } else {
+            setPhoneNumber(parsedUser.phone.replace(/^\+880|^0/, ''));
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Error loading data from localStorage:', e);
     }
   }, []);
 
-  const handleConfirmOrder = async (e) => {
-    if (e) e.preventDefault();
+  const handleOrderSubmit = async (e) => {
+    e.preventDefault();
 
     if (!name.trim()) {
-      alert('আপনার নাম লিখুন');
+      alert('দয়া করে আপনার নাম লিখুন');
       return;
     }
-    if (!phone.trim()) {
-      alert('WhatsApp নম্বর লিখুন');
+
+    if (!phoneNumber.trim()) {
+      alert('দয়া করে WhatsApp নম্বরটি লিখুন');
       return;
     }
+
+    const cleanPhone = phoneNumber.trim().replace(/^0+/, '');
+    const fullPhoneNumber = `${selectedCountry.code}${cleanPhone}`;
 
     setLoading(true);
 
-    // ১. ইউনিক Hub Cart Order ID এবং আন্তর্জাতিক ফোন নম্বর তৈরি
-    const generatedOrderId = `HC-${Math.floor(1000 + Math.random() * 9000)}`;
-    const fullPhone = `${countryCode}${phone.trim().replace(/^0+/, '')}`;
-    const productName = product?.title || product?.name || 'Test Product';
-    const productPrice = Number(product?.price) || 10;
+    const generatedOrderId = productData.id && String(productData.id).startsWith('HC-') 
+      ? productData.id 
+      : `HC-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const productName = productData.title || productData.serviceName || 'Product Order';
+    const productPrice = Number(productData.price) || 10;
 
     try {
-      // ২. সরাসরি Supabase-এ অর্ডার সেভ করা (Admin Panel ও Orders পেজে দৃশ্যমান হবে)
+      // ১. ডাটাবেজে (Supabase) সরাসরি অর্ডার সেভ করা
       await fetch('/api/order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -53,21 +89,21 @@ export default function ConfirmOrderPage() {
           serviceName: productName,
           price: productPrice,
           customerName: name.trim(),
-          whatsappNumber: fullPhone,
-          telegramUsername: telegram.trim() || 'নেই',
+          whatsappNumber: fullPhoneNumber,
+          telegramUsername: telegram.trim() || 'N/A',
           paymentMethod: 'Processing Payment',
           trxId: 'Pending',
         }),
       });
 
-      // ৩. সাথে সাথে WhatsApp-এ নিশ্চিতকরণ SMS পাঠানো
+      // ২. WhatsApp-এ ইনস্ট্যান্ট কনফার্মেশন মেসেজ পাঠানো
       try {
         await fetch('/api/send-whatsapp', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             customerName: name.trim(),
-            phone: fullPhone,
+            phone: fullPhoneNumber,
             orderId: generatedOrderId,
             serviceName: productName,
           }),
@@ -76,86 +112,84 @@ export default function ConfirmOrderPage() {
         console.error('WhatsApp Error:', waErr);
       }
 
-      // ৪. পরের পেমেন্ট পেজের জন্য অর্ডারের তথ্য সেভ রাখা
-      localStorage.setItem(
-        'hubcart_current_order',
-        JSON.stringify({
-          id: generatedOrderId,
-          orderId: generatedOrderId,
-          serviceName: productName,
-          price: productPrice,
-          customerName: name.trim(),
-          whatsappNumber: fullPhone,
-          telegramUsername: telegram.trim() || 'নেই',
-        })
-      );
+      // ৩. লোকাল স্টোরেজ আপডেট
+      const fullOrder = {
+        id: generatedOrderId,
+        orderId: generatedOrderId,
+        title: productName,
+        serviceName: productName,
+        price: productPrice,
+        customerName: name.trim(),
+        whatsappNumber: fullPhoneNumber,
+        telegramUsername: telegram.trim() || 'N/A',
+      };
 
-      // ৫. পেমেন্ট অপশন পেজে পাঠানো
+      localStorage.setItem('hubcart_current_order', JSON.stringify(fullOrder));
+      localStorage.setItem('hubcart_user', JSON.stringify({
+        name: name.trim(),
+        phone: fullPhoneNumber,
+        telegram: telegram.trim() || '',
+      }));
+
+      // ৪. পেমেন্ট পেজে পাঠানো
       router.push('/processedorder');
 
     } catch (err) {
-      console.error(err);
-      alert('অর্ডার প্রসেস করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।');
+      console.error('Order submission error:', err);
+      alert('অর্ডার প্রসেসিংয়ে সমস্যা হয়েছে। আবার চেষ্টা করুন।');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ maxWidth: '440px', margin: '20px auto', padding: '16px 16px 80px' }}>
-      <div style={{
-        background: 'rgba(15, 23, 42, 0.95)',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
-        borderRadius: '24px',
-        padding: '24px 20px',
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <div>
-            <h2 style={{ fontSize: '18px', fontWeight: '900', color: '#f8fafc', margin: 0 }}>
-              অর্ডার কনফার্মেশন
-            </h2>
-            <p style={{ fontSize: '12px', color: '#94a3b8', margin: '4px 0 0' }}>
-              অর্ডারের জন্য প্রয়োজনীয় তথ্য দিন
-            </p>
-          </div>
-          <button onClick={() => router.back()} style={{ background: 'transparent', border: 'none', color: '#94a3b8', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+    <div style={{ minHeight: '90vh', backgroundColor: '#090d16', color: '#ffffff', padding: '24px 16px 90px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ maxWidth: '440px', width: '100%', backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '20px', padding: '24px 20px', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
+        
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#f8fafc', margin: 0 }}>
+            অর্ডার কনফার্মেশন
+          </h2>
+          <button 
+            type="button" 
+            onClick={() => router.back()} 
+            style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '20px', cursor: 'pointer', lineHeight: 1 }}
+          >
+            ✕
+          </button>
         </div>
+        <p style={{ fontSize: '13px', color: '#94a3b8', margin: '0 0 18px 0' }}>
+          অর্ডারের জন্য প্রয়োজনীয় তথ্য দিন
+        </p>
 
-        {/* সার্ভিস সামারি */}
-        <div style={{
-          background: 'rgba(30, 41, 59, 0.6)',
-          borderRadius: '14px',
-          padding: '14px 16px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '20px',
-        }}>
-          <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#f8fafc' }}>
-            {product?.title || product?.name || 'Test Product'}
+        <div style={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '12px', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <span style={{ fontSize: '14px', fontWeight: '600', color: '#f8fafc' }}>
+            {productData.title}
           </span>
-          <span style={{ fontSize: '16px', fontWeight: '900', color: '#38bdf8' }}>
-            ৳{product?.price || 10}
+          <span style={{ fontSize: '16px', fontWeight: '800', color: '#38bdf8' }}>
+            ৳{productData.price}
           </span>
         </div>
 
-        {/* ইনপুট ফর্ম */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <form onSubmit={handleOrderSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
-            <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '6px' }}>আপনার নাম *</label>
+            <label style={{ display: 'block', fontSize: '13px', color: '#cbd5e1', marginBottom: '6px', fontWeight: '600' }}>
+              আপনার নাম *
+            </label>
             <input
               type="text"
-              placeholder="Samiul Islam"
+              required
+              placeholder="আপনার পুরো নাম"
               value={name}
               onChange={(e) => setName(e.target.value)}
               style={{
                 width: '100%',
                 boxSizing: 'border-box',
                 padding: '12px 14px',
-                borderRadius: '12px',
-                background: 'rgba(30, 41, 59, 0.5)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                color: '#fff',
+                backgroundColor: '#0b1120',
+                border: '1px solid #334155',
+                borderRadius: '10px',
+                color: '#ffffff',
                 fontSize: '14px',
                 outline: 'none',
               }}
@@ -163,50 +197,64 @@ export default function ConfirmOrderPage() {
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '6px' }}>WhatsApp নম্বর *</label>
+            <label style={{ display: 'block', fontSize: '13px', color: '#cbd5e1', marginBottom: '6px', fontWeight: '600' }}>
+              WhatsApp নম্বর *
+            </label>
             <div style={{ display: 'flex', gap: '8px' }}>
               <select
-                value={countryCode}
-                onChange={(e) => setCountryCode(e.target.value)}
+                value={selectedCountry.code}
+                onChange={(e) => {
+                  const country = COUNTRY_CODES.find((c) => c.code === e.target.value);
+                  if (country) setSelectedCountry(country);
+                }}
                 style={{
+                  backgroundColor: '#0b1120',
+                  border: '1px solid #334155',
+                  borderRadius: '10px',
+                  color: '#ffffff',
+                  fontSize: '14px',
+                  fontWeight: '700',
                   padding: '12px 8px',
-                  borderRadius: '12px',
-                  background: 'rgba(30, 41, 59, 0.5)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  color: '#fff',
-                  fontSize: '13px',
                   outline: 'none',
+                  cursor: 'pointer',
+                  flexShrink: 0,
                 }}
               >
-                <option value="+880">🇧🇩 +880 (BD)</option>
-                <option value="+91">🇮🇳 +91 (IN)</option>
-                <option value="+1">🇺🇸 +1 (US)</option>
+                {COUNTRY_CODES.map((c) => (
+                  <option key={c.code} value={c.code} style={{ backgroundColor: '#111827', color: '#ffffff' }}>
+                    {c.flag} {c.code} ({c.name})
+                  </option>
+                ))}
               </select>
+
               <input
-                type="text"
-                placeholder="1893432478"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                type="tel"
+                required
+                placeholder={selectedCountry.placeholder}
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
                 style={{
-                  flex: 1,
+                  width: '100%',
                   boxSizing: 'border-box',
                   padding: '12px 14px',
-                  borderRadius: '12px',
-                  background: 'rgba(30, 41, 59, 0.5)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  color: '#fff',
+                  backgroundColor: '#0b1120',
+                  border: '1px solid #334155',
+                  borderRadius: '10px',
+                  color: '#ffffff',
                   fontSize: '14px',
                   outline: 'none',
                 }}
               />
             </div>
-            <span style={{ fontSize: '10px', color: '#64748b', marginTop: '4px', display: 'block' }}>
+            <span style={{ fontSize: '11px', color: '#64748b', marginTop: '4px', display: 'block' }}>
               কান্ট্রি কোড বাদে বাকি অংশ লিখুন (যেমন: 1893432478)
             </span>
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '6px' }}>Telegram ইউজারনেম (@username)</label>
+            <label style={{ display: 'block', fontSize: '13px', color: '#cbd5e1', marginBottom: '6px', fontWeight: '600' }}>
+              Telegram ইউজারনেম (@username)
+            </label>
             <input
               type="text"
               placeholder="@username (যদি থাকে)"
@@ -216,10 +264,10 @@ export default function ConfirmOrderPage() {
                 width: '100%',
                 boxSizing: 'border-box',
                 padding: '12px 14px',
-                borderRadius: '12px',
-                background: 'rgba(30, 41, 59, 0.5)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                color: '#fff',
+                backgroundColor: '#0b1120',
+                border: '1px solid #334155',
+                borderRadius: '10px',
+                color: '#ffffff',
                 fontSize: '14px',
                 outline: 'none',
               }}
@@ -227,24 +275,26 @@ export default function ConfirmOrderPage() {
           </div>
 
           <button
-            onClick={handleConfirmOrder}
+            type="submit"
             disabled={loading}
             style={{
               width: '100%',
+              marginTop: '8px',
               padding: '14px',
-              background: '#2563eb',
+              backgroundColor: '#2563eb',
               color: '#ffffff',
+              fontWeight: '700',
+              fontSize: '15px',
               border: 'none',
               borderRadius: '12px',
-              fontWeight: '900',
-              fontSize: '15px',
               cursor: loading ? 'not-allowed' : 'pointer',
-              marginTop: '10px',
+              boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)',
             }}
           >
             {loading ? 'প্রসেসিং হচ্ছে...' : 'অর্ডার Confirm করুন →'}
           </button>
-        </div>
+        </form>
+
       </div>
     </div>
   );
