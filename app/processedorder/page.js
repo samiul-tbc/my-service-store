@@ -71,7 +71,7 @@ export default function ProcessedOrderPage() {
         if (res.ok && data.paymentUrl) {
           window.location.href = data.paymentUrl;
         } else {
-          alert('Payment gateway error. Please use Manual Pay instead.');
+          alert(data.error || 'Payment gateway connection error');
         }
       } catch (err) {
         alert('Server connection error. Please try again.');
