@@ -168,7 +168,7 @@ export default function ProcessedOrderPage() {
             <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#0284c7' }}>Auto Pay</span>
           </div>
           <div style={{ background: '#f1f5f9', padding: '6px', textAlign: 'center', fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>
-            Instant Gateway
+            Instant Gateway (ব্যবহার করবেন না!🚫)
           </div>
         </div>
 
@@ -211,7 +211,7 @@ export default function ProcessedOrderPage() {
             <span style={{ fontSize: '12px', fontWeight: '900', color: '#16a34a' }}>USDT (TRC20)</span>
           </div>
           <div style={{ background: '#f1f5f9', padding: '6px', textAlign: 'center', fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>
-            Instant Crypto
+            Instant Crypto (ব্যবহার করবেন না!🚫)
           </div>
         </div>
 
