@@ -37,9 +37,12 @@ export default function ProcessedOrderPage() {
   const handleProceed = async () => {
     if (!orderData) return;
 
-    const orderId = orderData.orderId || orderData.id;
+    const orderId = orderData.orderId || orderData.id || `HC-${Date.now().toString().slice(-6)}`;
     const priceInBDT = Number(orderData.price) || 0;
     const productName = orderData.serviceName || orderData.title || 'Product Order';
+    const customerPhone = orderData.whatsappNumber || '';
+    const customerName = orderData.customerName || 'Customer';
+    const telegramUser = orderData.telegramUsername || 'N/A';
 
     // 1. Manual Pay -> app/payment/page.js
     if (selectedMethod === 'manual_mfs') {
@@ -47,7 +50,7 @@ export default function ProcessedOrderPage() {
       return;
     }
 
-    // 2. Auto Pay
+    // 2. Auto Pay (UddoktaPay)
     if (selectedMethod === 'instant') {
       setLoading(true);
       try {
@@ -57,9 +60,10 @@ export default function ProcessedOrderPage() {
           body: JSON.stringify({
             orderId: orderId,
             amount: priceInBDT,
-            customerName: orderData.customerName || 'Customer',
-            phone: orderData.whatsappNumber || '',
+            customerName: customerName,
+            phone: customerPhone,
             serviceName: productName,
+            telegram: telegramUser,
           }),
         });
 
@@ -88,8 +92,8 @@ export default function ProcessedOrderPage() {
           body: JSON.stringify({
             orderId: orderId,
             amountUSD: priceInUSD,
-            customerName: orderData.customerName,
-            phone: orderData.whatsappNumber,
+            customerName: customerName,
+            phone: customerPhone,
           }),
         });
 
@@ -117,9 +121,9 @@ export default function ProcessedOrderPage() {
           body: JSON.stringify({
             serviceName: productName,
             price: priceInBDT,
-            customerName: orderData.customerName || 'Customer',
-            whatsappNumber: orderData.whatsappNumber || '',
-            telegramUsername: orderData.telegramUsername || 'N/A',
+            customerName: customerName,
+            whatsappNumber: customerPhone,
+            telegramUsername: telegramUser,
             paymentMethod: 'TBC Pay (Manual)',
             trxId: 'Manual Contact',
           }),
@@ -128,15 +132,15 @@ export default function ProcessedOrderPage() {
         const data = await res.json();
 
         if (res.ok) {
-          const generatedOrderId = data.orderId || data.order_id || data.id || orderData.id || `HC-${Date.now().toString().slice(-6)}`;
+          const generatedOrderId = data.orderId || data.order_id || data.id || orderId;
 
           try {
             await fetch('/api/send-whatsapp', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                customerName: orderData.customerName,
-                phone: orderData.whatsappNumber,
+                customerName: customerName,
+                phone: customerPhone,
                 orderId: generatedOrderId,
                 serviceName: productName,
               }),
