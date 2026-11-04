@@ -1,11 +1,11 @@
 'use client';
 import { createContext, useContext, useState, useEffect } from 'react';
-import { translations } from '@/lib/translations';
+import { translations } from '../lib/translations';
 
 const LanguageContext = createContext();
 
 export function LanguageProvider({ children }) {
-  const [lang, setLang] = useState('bn'); // ডিফল্ট ভাষা বাংলা
+  const [lang, setLang] = useState('bn');
 
   useEffect(() => {
     const savedLang = localStorage.getItem('hubcart_lang');
