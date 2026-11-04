@@ -105,44 +105,53 @@ export default function ProcessedOrderPage() {
       return;
     }
 
-    // ৪. TBC Pay (Manual Pay) - RECOMMENDED
+    // ৪. TBC Pay (Manual Pay) - RECOMMENDED (বিকাশ পেজের মতো নিখুঁত ডাটাবেজ ও WhatsApp সিঙ্ক)
     if (selectedMethod === 'tbc') {
       setLoading(true);
       try {
-        // Database save
-        await fetch('/api/order', {
+        const res = await fetch('/api/order', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            orderId: orderId,
             serviceName: productName,
             price: priceInBDT,
-            customerName: orderData.customerName,
-            whatsappNumber: orderData.whatsappNumber,
-            telegramUsername: orderData.telegramUsername || 'N/A',
+            customerName: orderData.customerName || 'Customer',
+            whatsappNumber: orderData.whatsappNumber || '',
+            telegramUsername: orderData.telegramUsername || 'নেই',
             paymentMethod: 'TBC Pay (Manual)',
             trxId: 'Manual Contact',
           }),
         });
 
-        // WhatsApp SMS Send
-        try {
-          await fetch('/api/send-whatsapp', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              customerName: orderData.customerName,
-              phone: orderData.whatsappNumber,
-              orderId: orderId,
-              serviceName: productName,
-            }),
-          });
-        } catch (waErr) {}
+        const data = await res.json();
 
-        alert('✅ TBC Pay Order Confirm hoyeche!');
-        router.push('/orders');
+        if (res.ok) {
+          // বিকাশ পেজের মতো সার্ভার থেকে আসা আসল অর্ডার আইডি নেওয়া
+          const generatedOrderId = data.orderId || data.order_id || data.id || orderData.id || `HC-${Date.now().toString().slice(-6)}`;
+
+          // WhatsApp SMS পাঠানো (সঠিক Order ID সহ)
+          try {
+            await fetch('/api/send-whatsapp', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                customerName: orderData.customerName,
+                phone: orderData.whatsappNumber,
+                orderId: generatedOrderId,
+                serviceName: productName,
+              }),
+            });
+          } catch (waErr) {
+            console.error('WhatsApp send error:', waErr);
+          }
+
+          localStorage.removeItem('hubcart_current_order');
+          router.push(`/order-success?orderId=${generatedOrderId}`);
+        } else {
+          alert(data.error || data.message || 'অর্ডার সাবমিট করতে সমস্যা হয়েছে।');
+        }
       } catch (err) {
-        alert('Server error. Abar cheshta korun.');
+        alert('সার্ভার সংযোগ সমস্যা। আবার চেষ্টা করুন।');
       } finally {
         setLoading(false);
       }
@@ -153,7 +162,7 @@ export default function ProcessedOrderPage() {
   if (!orderData) {
     return (
       <div style={{ textAlign: 'center', padding: '80px 20px', color: '#94a3b8' }}>
-        <h3>Kono order pawa jayni!</h3>
+        <h3>কোনো অর্ডার পাওয়া যায়নি!</h3>
         <button
           onClick={() => router.push('/')}
           style={{
@@ -166,7 +175,7 @@ export default function ProcessedOrderPage() {
             cursor: 'pointer',
           }}
         >
-          Homepage-e phire jan
+          হোমপেজে ফিরে যান
         </button>
       </div>
     );
