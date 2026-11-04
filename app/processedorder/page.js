@@ -135,7 +135,7 @@ export default function ProcessedOrderPage() {
     );
   }
 
-  const usdtAmount = calculateUSDT(orderData.price);
+  const usdtAmount = calculateorderData.price);
 
   return (
     <div style={{ maxWidth: '480px', margin: '20px auto', padding: '0 16px 80px' }}>
@@ -165,7 +165,7 @@ export default function ProcessedOrderPage() {
               <img src={LOGO_BKASH} alt="bKash" style={{ height: '16px', objectFit: 'contain' }} />
               <img src={LOGO_NAGAD} alt="Nagad" style={{ height: '16px', objectFit: 'contain' }} />
             </div>
-            <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#0284c7' }}>Auto Pay</span>
+            <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#0284c7' }}>Auto Pay (Don’t Use!🚫)</span>
           </div>
           <div style={{ background: '#f1f5f9', padding: '6px', textAlign: 'center', fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>
             Instant Gateway (ব্যবহার করবেন না!🚫)
@@ -208,7 +208,7 @@ export default function ProcessedOrderPage() {
         >
           <div style={{ padding: '14px 6px', textAlign: 'center', minHeight: '82px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <img src={LOGO_TRC20} alt="USDT" style={{ height: '24px', width: '24px', marginBottom: '6px' }} />
-            <span style={{ fontSize: '12px', fontWeight: '900', color: '#16a34a' }}>USDT (TRC20)</span>
+            <span style={{ fontSize: '12px', fontWeight: '900', color: '#16a34a' }}>USDT (TRC20) [Don’t Use!🚫]</span>
           </div>
           <div style={{ background: '#f1f5f9', padding: '6px', textAlign: 'center', fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>
             Instant Crypto (ব্যবহার করবেন না!🚫)
