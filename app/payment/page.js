@@ -2,10 +2,11 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-// আপনার নতুন লোগোর ডিরেক্ট লিংকটি এখানে বসান
-const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png'; // আপনার Postimg Direct Link দিন
+const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
 const LOGO_BKASH = 'https://1000logos.net/wp-content/uploads/2021/02/Bkash-logo.png';
-const LOGO_NAGAD = 'https://download.logo.wine/logo/Nagad/Nagad-Logo.wine.png';
+const LOGO_NAGAD = 'https://i.postimg.cc/3xv1gSBL/Nagad-Logo-wine.png';
+const LOGO_ROCKET = 'https://i.postimg.cc/vBM08r5J/vecteezy-rocket-color-logo-mobile-banking-icon-68706013.png';
+const LOGO_UPAY = 'https://i.postimg.cc/Gh9qphTM/upay-logo-mobile-banking-app-icon-transparent-background-free-png.png';
 
 export default function PaymentGatewayPage() {
   const router = useRouter();
@@ -22,7 +23,6 @@ export default function PaymentGatewayPage() {
     }
   }, []);
 
-  // বিকাশ বা নগদ কার্ডে চাপ দিলেই সরাসরি সেই পেজে চলে যাবে
   const handleSelectMethod = (method) => {
     router.push(`/payment/${method}`);
   };
@@ -71,7 +71,7 @@ export default function PaymentGatewayPage() {
         মোবাইল ব্যাংকিং
       </div>
 
-      {/* bKash ও Nagad কার্ড (সরাসরি ওয়ান-ট্যাপ রিডাইরেক্ট) */}
+      {/* bKash, Nagad, Rocket, Upay কার্ড গ্রিড */}
       <div style={{ padding: '0 16px', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
         
         {/* bKash কার্ড */}
@@ -92,7 +92,7 @@ export default function PaymentGatewayPage() {
             transition: 'transform 0.15s ease',
           }}
         >
-          <img src={LOGO_BKASH} alt="bKash" style={{ maxHeight: '38px', maxWidth: '100%', objectFit: 'contain' }} />
+          <img src={LOGO_BKASH} alt="bKash" style={{ maxHeight: '36px', maxWidth: '100%', objectFit: 'contain' }} />
         </div>
 
         {/* Nagad কার্ড */}
@@ -113,7 +113,49 @@ export default function PaymentGatewayPage() {
             transition: 'transform 0.15s ease',
           }}
         >
-          <img src={LOGO_NAGAD} alt="Nagad" style={{ maxHeight: '38px', maxWidth: '100%', objectFit: 'contain' }} />
+          <img src={LOGO_NAGAD} alt="Nagad" style={{ maxHeight: '36px', maxWidth: '100%', objectFit: 'contain' }} />
+        </div>
+
+        {/* Rocket কার্ড */}
+        <div
+          onClick={() => handleSelectMethod('rocket')}
+          style={{
+            background: '#ffffff',
+            border: '1.5px solid #cbd5e1',
+            borderRadius: '12px',
+            padding: '14px 10px',
+            textAlign: 'center',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '62px',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
+            transition: 'transform 0.15s ease',
+          }}
+        >
+          <img src={LOGO_ROCKET} alt="Rocket" style={{ maxHeight: '38px', maxWidth: '100%', objectFit: 'contain' }} />
+        </div>
+
+        {/* Upay কার্ড */}
+        <div
+          onClick={() => handleSelectMethod('upay')}
+          style={{
+            background: '#ffffff',
+            border: '1.5px solid #cbd5e1',
+            borderRadius: '12px',
+            padding: '14px 10px',
+            textAlign: 'center',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '62px',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
+            transition: 'transform 0.15s ease',
+          }}
+        >
+          <img src={LOGO_UPAY} alt="Upay" style={{ maxHeight: '36px', maxWidth: '100%', objectFit: 'contain' }} />
         </div>
 
       </div>
