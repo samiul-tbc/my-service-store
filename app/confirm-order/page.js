@@ -24,7 +24,6 @@ export default function ConfirmPage() {
   const [selectedCountry, setSelectedCountry] = useState(COUNTRY_CODES[0]);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [telegram, setTelegram] = useState('');
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     try {
@@ -54,23 +53,21 @@ export default function ConfirmPage() {
     }
   }, []);
 
-  const handleOrderSubmit = async (e) => {
+  const handleOrderSubmit = (e) => {
     e.preventDefault();
 
     if (!name.trim()) {
-      alert('দয়া করে আপনার নাম লিখুন');
+      alert('Doya kore apnar nam likhun');
       return;
     }
 
     if (!phoneNumber.trim()) {
-      alert('দয়া করে WhatsApp নম্বরটি লিখুন');
+      alert('Doya kore WhatsApp number likhun');
       return;
     }
 
     const cleanPhone = phoneNumber.trim().replace(/^0+/, '');
     const fullPhoneNumber = `${selectedCountry.code}${cleanPhone}`;
-
-    setLoading(true);
 
     const generatedOrderId = productData.id && String(productData.id).startsWith('HC-') 
       ? productData.id 
@@ -90,56 +87,15 @@ export default function ConfirmPage() {
       telegramUsername: telegram.trim() || 'N/A',
     };
 
-    // ১. সবার আগে লোকাল স্টোরেজে ডেটা সংরক্ষণ (যাতে ডেটা কোনো অবস্থাতেই না হারায়)
-    try {
-      localStorage.setItem('hubcart_current_order', JSON.stringify(fullOrder));
-      localStorage.setItem('hubcart_user', JSON.stringify({
-        name: name.trim(),
-        phone: fullPhoneNumber,
-        telegram: telegram.trim() || '',
-      }));
-    } catch (err) {
-      console.error('LocalStorage error:', err);
-    }
+    // Data LocalStorage-e save kora
+    localStorage.setItem('hubcart_current_order', JSON.stringify(fullOrder));
+    localStorage.setItem('hubcart_user', JSON.stringify({
+      name: name.trim(),
+      phone: fullPhoneNumber,
+      telegram: telegram.trim() || '',
+    }));
 
-    // ২. WhatsApp SMS ব্যাকগ্রাউন্ডে পাঠিয়ে দেওয়া (পেজ লোডিং আটকে থাকবে না)
-    fetch('/api/send-whatsapp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        customerName: name.trim(),
-        phone: fullPhoneNumber,
-        orderId: generatedOrderId,
-        serviceName: productName,
-      }),
-    }).catch((waErr) => console.error('WhatsApp background send error:', waErr));
-
-    // ৩. ডাটাবেজে অর্ডার এন্ট্রি করা (সর্বোচ্চ ৩ সেকেন্ডের টাইমআউট)
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
-
-      await fetch('/api/order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: controller.signal,
-        body: JSON.stringify({
-          orderId: generatedOrderId,
-          serviceName: productName,
-          price: productPrice,
-          customerName: name.trim(),
-          whatsappNumber: fullPhoneNumber,
-          telegramUsername: telegram.trim() || 'N/A',
-          paymentMethod: 'Processing Payment',
-          trxId: 'Pending',
-        }),
-      });
-      clearTimeout(timeoutId);
-    } catch (orderErr) {
-      console.warn('Database save warning or timeout:', orderErr);
-    }
-
-    // ৪. সরাসরি পেমেন্ট নির্বাচন পেজে রিডাইরেক্ট
+    // Kono rokom API ba wait chara instant redirect!
     window.location.href = '/processedorder';
   };
 
@@ -277,7 +233,6 @@ export default function ConfirmPage() {
 
           <button
             type="submit"
-            disabled={loading}
             style={{
               width: '100%',
               marginTop: '8px',
@@ -288,11 +243,11 @@ export default function ConfirmPage() {
               fontSize: '15px',
               border: 'none',
               borderRadius: '12px',
-              cursor: loading ? 'not-allowed' : 'pointer',
+              cursor: 'pointer',
               boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)',
             }}
           >
-            {loading ? 'প্রসেসিং হচ্ছে...' : 'অর্ডার Confirm করুন →'}
+            অর্ডার Confirm করুন →
           </button>
         </form>
 
