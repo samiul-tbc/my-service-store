@@ -4,7 +4,9 @@ import { useRouter } from 'next/navigation';
 
 const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
 const LOGO_NAGAD = 'https://download.logo.wine/logo/Nagad/Nagad-Logo.wine.png';
-const NAGAD_NUMBER = '010';
+
+// আপনার ১১ ডিজিটের পার্সোনাল নগদ নম্বরটি এখানে দিন
+const NAGAD_NUMBER = '01894693890';
 
 export default function NagadPaymentPage() {
   const router = useRouter();
@@ -19,7 +21,7 @@ export default function NagadPaymentPage() {
       try {
         setOrderData(JSON.parse(saved));
       } catch (e) {
-        console.error(e);
+        console.error('Order load error:', e);
       }
     }
   }, []);
@@ -38,16 +40,19 @@ export default function NagadPaymentPage() {
 
     setSubmitting(true);
     try {
+      const productName = orderData.serviceName || orderData.title || 'Product Order';
+      const orderAmount = Number(orderData.price) || 0;
+
       const res = await fetch('/api/order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          serviceName: orderData.serviceName,
-          price: orderData.price,
-          customerName: orderData.customerName,
-          whatsappNumber: orderData.whatsappNumber,
-          telegramUsername: orderData.telegramUsername,
-          paymentMethod: 'Nagad (Instant Pay)',
+          serviceName: productName,
+          price: orderAmount,
+          customerName: orderData.customerName || 'Customer',
+          whatsappNumber: orderData.whatsappNumber || '',
+          telegramUsername: orderData.telegramUsername || 'নেই',
+          paymentMethod: 'Nagad (Send Money)',
           trxId: trxId.trim(),
         }),
       });
@@ -55,9 +60,9 @@ export default function NagadPaymentPage() {
       const data = await res.json();
 
       if (res.ok) {
-        const generatedOrderId = data.orderId || data.order_id || data.id;
+        const generatedOrderId = data.orderId || data.order_id || data.id || orderData.id || `HC-${Date.now().toString().slice(-6)}`;
 
-        // নগদ অর্ডারের জন্য WhatsApp অটো-মেসেজ ট্রিগার
+        // WhatsApp অর্ডার কনফার্মেশন অ্যালার্ট
         try {
           await fetch('/api/send-whatsapp', {
             method: 'POST',
@@ -65,34 +70,38 @@ export default function NagadPaymentPage() {
             body: JSON.stringify({
               customerName: orderData.customerName,
               phone: orderData.whatsappNumber,
-              orderId: generatedOrderId || 'HC-NAGAD',
-              serviceName: orderData.serviceName,
-              price: orderData.price,
+              orderId: generatedOrderId,
+              serviceName: productName,
             }),
           });
         } catch (waErr) {
           console.error('WhatsApp alert error:', waErr);
         }
 
-        alert('✅ আপনার নগদ পেমেন্ট অর্ডার সফলভাবে সাবমিট হয়েছে!');
         localStorage.removeItem('hubcart_current_order');
-        router.push('/');
+        router.push(`/order-success?orderId=${generatedOrderId}`);
       } else {
-        alert('অর্ডার সাবমিট করতে সমস্যা হয়েছে।');
+        alert(data.error || data.message || 'অর্ডার সাবমিট করতে সমস্যা হয়েছে।');
       }
     } catch (err) {
-      alert('সার্ভার এরর');
+      alert('সার্ভার সংযোগ সমস্যা। আবার চেষ্টা করুন।');
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (!orderData) return <div style={{ textAlign: 'center', padding: '50px' }}>লোড হচ্ছে...</div>;
+  if (!orderData) {
+    return (
+      <div style={{ textAlign: 'center', padding: '80px 20px', color: '#64748b' }}>
+        অর্ডার লোড হচ্ছে...
+      </div>
+    );
+  }
 
   return (
-    <div style={{ maxWidth: '440px', margin: '0 auto', background: '#f8fafc', minHeight: '100vh', padding: '16px' }}>
+    <div style={{ maxWidth: '440px', margin: '0 auto', background: '#f8fafc', minHeight: '100vh', padding: '16px 16px 80px' }}>
       
-      {/* হেডারে নগদ অফিসিয়াল লোগো */}
+      {/* হেডারে নগদ লোগো */}
       <div style={{ textAlign: 'center', padding: '12px', background: '#ffffff', borderRadius: '14px', border: '1px solid #e2e8f0', marginBottom: '14px' }}>
         <img src={LOGO_NAGAD} alt="Nagad" style={{ height: '36px', objectFit: 'contain' }} />
       </div>
@@ -111,14 +120,14 @@ export default function NagadPaymentPage() {
 
         <input
           type="text"
-          placeholder="ট্রানজেকশন আইডি দিন"
+          placeholder="TrxID (যেমন: 7K9N82P1)"
           value={trxId}
           onChange={(e) => setTrxId(e.target.value)}
           style={{ width: '100%', boxSizing: 'border-box', padding: '12px', borderRadius: '8px', border: 'none', fontSize: '14px', outline: 'none', color: '#000', marginBottom: '16px' }}
         />
 
         <div style={{ fontSize: '12px', lineHeight: '1.8', opacity: 0.95 }}>
-          <div>• *167# ডায়াল করে আপনার NAGAD মোবাইল মেনুতে যান অথবা NAGAD অ্যাপে যান।</div>
+          <div>• *167# ডায়াল করে নগদ মেনুতে যান অথবা নগদ অ্যাপ খুলুন।</div>
           <div>• Send Money -এ ক্লিক করুন।</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '4px 0' }}>
             <span>• এই নম্বরে টাকা পাঠান: <strong>{NAGAD_NUMBER}</strong></span>
@@ -126,8 +135,8 @@ export default function NagadPaymentPage() {
               {copied ? 'কপি হয়েছে' : 'কপি'}
             </button>
           </div>
-          <div>• টাকার পরিমাণ: <strong>{orderData.price}</strong></div>
-          <div>• নিশ্চিত করে এখন আপনার NAGAD মোবাইল মেনু PIN লিখুন।</div>
+          <div>• টাকার পরিমাণ: <strong>৳{orderData.price}</strong></div>
+          <div>• নিশ্চিত করে এখন আপনার নগদ PIN লিখুন।</div>
           <div>• টাকা পাঠান এবং ট্রানজ্যাকশন আইডি কপি করুন।</div>
           <div>• ট্রানজ্যাকশন আইডি লিখে ভেরিফাই চাপুন।</div>
         </div>
@@ -145,7 +154,7 @@ export default function NagadPaymentPage() {
           borderRadius: '12px',
           fontWeight: 'bold',
           fontSize: '16px',
-          cursor: 'pointer',
+          cursor: submitting ? 'not-allowed' : 'pointer',
         }}
       >
         {submitting ? 'যাচাই করা হচ্ছে...' : 'ভেরিফাই'}
