@@ -161,13 +161,12 @@ export default function ProcessedOrderPage() {
       return;
     }
 
-    // ৪. Crypto Pay (ডাটাবেজ অর্ডার তৈরি + WhatsApp মেসেজ + ইনভয়েস রিডাইরেক্ট)
+    // ৪. Crypto Pay
     if (selectedMethod === 'crypto') {
       setLoading(true);
       try {
         const priceInUSD = Number(calculateUSDT(orderData.price));
 
-        // ধাপ ১: আগে ডাটাবেজে ক্রিপ্টো অর্ডার তৈরি
         const orderRes = await fetch('/api/order', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -185,7 +184,6 @@ export default function ProcessedOrderPage() {
         const orderResult = await orderRes.json();
         const finalOrderId = orderResult.orderId || orderResult.order_id || orderResult.id || `HC-${Date.now().toString().slice(-6)}`;
 
-        // ধাপ ২: WhatsApp-এ সঠিক ইনভয়েস লিংকসহ মেসেজ পাঠানো
         try {
           await fetch('/api/send-whatsapp', {
             method: 'POST',
@@ -201,7 +199,6 @@ export default function ProcessedOrderPage() {
           console.error('WhatsApp alert error:', waErr);
         }
 
-        // ধাপ ৩: আসল অর্ডার আইডি দিয়ে ক্রিপ্টো ইনভয়েস তৈরি
         const res = await fetch('/api/create-crypto-invoice', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -219,7 +216,6 @@ export default function ProcessedOrderPage() {
         if (res.ok && data.invoiceUrl) {
           window.location.href = data.invoiceUrl;
         } else {
-          // গেটওয়ে থেকে লিংক না এলেও অর্ডার নষ্ট হবে না, সাকসেস পেজে নিয়ে যাবে
           router.push(`/order-success?orderId=${finalOrderId}`);
         }
       } catch (err) {
@@ -271,7 +267,7 @@ export default function ProcessedOrderPage() {
       {/* Grid Methods */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '20px' }}>
         
-        {/* 1. Manual Pay (bKash, Nagad, Rocket, Upay) */}
+        {/* ১. Manual Pay (RECOMMENDED রাখা হয়েছে) */}
         <div
           onClick={() => setSelectedMethod('manual_mfs')}
           style={{
@@ -281,12 +277,15 @@ export default function ProcessedOrderPage() {
             cursor: 'pointer',
             overflow: 'hidden',
             boxShadow: selectedMethod === 'manual_mfs' ? '0 0 10px rgba(22, 163, 74, 0.4)' : 'none',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
           }}
         >
           <div style={{ background: '#16a34a', color: '#ffffff', fontSize: '9px', fontWeight: '900', textAlign: 'center', padding: '3px 0' }}>
             ⭐ RECOMMENDED
           </div>
-          <div style={{ padding: '10px 4px', textAlign: 'center', minHeight: '74px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ padding: '12px 4px', textAlign: 'center', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', flexWrap: 'wrap', marginBottom: '6px' }}>
               <img src={LOGO_BKASH} alt="bKash" style={{ height: '14px', objectFit: 'contain' }} />
               <img src={LOGO_NAGAD} alt="Nagad" style={{ height: '14px', objectFit: 'contain' }} />
@@ -300,58 +299,58 @@ export default function ProcessedOrderPage() {
           </div>
         </div>
 
-        {/* 2. Auto Pay (bKash & Nagad) */}
+        {/* ২. Auto Pay (ব্যাজ রিমুভ করা হয়েছে) */}
         <div
           onClick={() => setSelectedMethod('instant')}
           style={{
             background: '#ffffff',
             borderRadius: '16px',
-            border: selectedMethod === 'instant' ? '2px solid #ef4444' : '1px solid #e2e8f0',
+            border: selectedMethod === 'instant' ? '2px solid #ff7a00' : '1px solid #e2e8f0',
             cursor: 'pointer',
             overflow: 'hidden',
-            opacity: selectedMethod === 'instant' ? 1 : 0.8,
+            boxShadow: selectedMethod === 'instant' ? '0 0 10px rgba(255, 122, 0, 0.3)' : 'none',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
           }}
         >
-          <div style={{ background: '#ef4444', color: '#ffffff', fontSize: '9px', fontWeight: '900', textAlign: 'center', padding: '3px 0' }}>
-            ⚠️ Not Recommended
-          </div>
-          <div style={{ padding: '10px 4px', textAlign: 'center', minHeight: '74px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ padding: '20px 4px 14px', textAlign: 'center', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginBottom: '6px' }}>
               <img src={LOGO_BKASH} alt="bKash" style={{ height: '15px', objectFit: 'contain' }} />
               <img src={LOGO_NAGAD} alt="Nagad" style={{ height: '15px', objectFit: 'contain' }} />
             </div>
-            <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#64748b' }}>Auto Pay</span>
+            <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#334155' }}>Auto Pay</span>
           </div>
-          <div style={{ background: '#fee2e2', padding: '6px', textAlign: 'center', fontSize: '10px', fontWeight: 'bold', color: '#991b1b' }}>
+          <div style={{ background: '#f1f5f9', padding: '6px', textAlign: 'center', fontSize: '10px', fontWeight: 'bold', color: '#475569' }}>
             bKash / Nagad
           </div>
         </div>
 
-        {/* 3. Crypto Pay (Auto) */}
+        {/* ৩. Crypto Pay (ব্যাজ রিমুভ করা হয়েছে) */}
         <div
           onClick={() => setSelectedMethod('crypto')}
           style={{
             background: '#ffffff',
             borderRadius: '16px',
-            border: selectedMethod === 'crypto' ? '2px solid #ef4444' : '1px solid #e2e8f0',
+            border: selectedMethod === 'crypto' ? '2px solid #ff7a00' : '1px solid #e2e8f0',
             cursor: 'pointer',
             overflow: 'hidden',
-            opacity: selectedMethod === 'crypto' ? 1 : 0.8,
+            boxShadow: selectedMethod === 'crypto' ? '0 0 10px rgba(255, 122, 0, 0.3)' : 'none',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
           }}
         >
-          <div style={{ background: '#ef4444', color: '#ffffff', fontSize: '9px', fontWeight: '900', textAlign: 'center', padding: '3px 0' }}>
-            ⚠️ Not Recommended
+          <div style={{ padding: '20px 4px 14px', textAlign: 'center', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <img src={LOGO_TRC20} alt="USDT" style={{ height: '22px', width: '22px', marginBottom: '6px' }} />
+            <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#334155' }}>Crypto Pay</span>
           </div>
-          <div style={{ padding: '10px 4px', textAlign: 'center', minHeight: '74px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <img src={LOGO_TRC20} alt="USDT" style={{ height: '20px', width: '20px', marginBottom: '4px' }} />
-            <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#64748b' }}>Crypto Pay</span>
-          </div>
-          <div style={{ background: '#fee2e2', padding: '6px', textAlign: 'center', fontSize: '10px', fontWeight: 'bold', color: '#991b1b' }}>
+          <div style={{ background: '#f1f5f9', padding: '6px', textAlign: 'center', fontSize: '10px', fontWeight: 'bold', color: '#475569' }}>
             Auto (TRC20)
           </div>
         </div>
 
-        {/* 4. TBC Pay (Manual Pay) */}
+        {/* ৪. TBC Pay (ব্যাজ রিমুভ করা হয়েছে) */}
         <div
           onClick={() => setSelectedMethod('tbc')}
           style={{
@@ -361,16 +360,16 @@ export default function ProcessedOrderPage() {
             cursor: 'pointer',
             overflow: 'hidden',
             boxShadow: selectedMethod === 'tbc' ? '0 0 10px rgba(22, 163, 74, 0.4)' : 'none',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
           }}
         >
-          <div style={{ background: '#16a34a', color: '#ffffff', fontSize: '9px', fontWeight: '900', textAlign: 'center', padding: '3px 0' }}>
-            ⭐ RECOMMENDED
-          </div>
-          <div style={{ padding: '10px 4px', textAlign: 'center', minHeight: '74px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <img src={LOGO_HUB_CART} alt="Hub Cart" style={{ width: '26px', height: '26px', marginBottom: '4px' }} />
+          <div style={{ padding: '20px 4px 14px', textAlign: 'center', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <img src={LOGO_HUB_CART} alt="Hub Cart" style={{ width: '26px', height: '26px', marginBottom: '6px' }} />
             <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a' }}>TBC Pay</span>
           </div>
-          <div style={{ background: '#dcfce7', padding: '6px', textAlign: 'center', fontSize: '10px', fontWeight: 'bold', color: '#166534' }}>
+          <div style={{ background: '#f1f5f9', padding: '6px', textAlign: 'center', fontSize: '10px', fontWeight: 'bold', color: '#475569' }}>
             Manual Contact
           </div>
         </div>
