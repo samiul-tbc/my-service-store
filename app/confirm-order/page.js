@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useLanguage } from '@/context/LanguageContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 const COUNTRY_CODES = [
   { code: '+880', flag: '🇧🇩', name: 'BD', placeholder: '1XXXXXXXXX' },
