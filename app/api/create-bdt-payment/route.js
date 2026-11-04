@@ -12,6 +12,7 @@ export async function POST(req) {
     }
 
     const host = process.env.NEXT_PUBLIC_SITE_URL || 'https://hubcart.vercel.app';
+    const finalOrderId = orderId || `HC-${Date.now().toString().slice(-6)}`;
 
     const response = await fetch(UDDOKTAPAY_BASE_URL, {
       method: 'POST',
@@ -24,12 +25,12 @@ export async function POST(req) {
         email: 'customer@hubcart.store',
         amount: String(amount),
         metadata: {
-          order_id: orderId,
-          customer_phone: phone,
-          customer_name: customerName,
-          service_name: serviceName,
+          order_id: finalOrderId,
+          customer_phone: phone || '',
+          customer_name: customerName || 'Customer',
+          service_name: serviceName || 'Product Order',
         },
-        redirect_url: `${host}/order-success?orderId=${orderId}`,
+        redirect_url: `${host}/order-success?orderId=${finalOrderId}`,
         cancel_url: `${host}/processedorder`,
         webhook_url: `${host}/api/uddoktapay-webhook`,
       }),
