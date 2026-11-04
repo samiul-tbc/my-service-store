@@ -39,13 +39,13 @@ export default function ProcessedOrderPage() {
     const priceInBDT = Number(orderData.price) || 0;
     const productName = orderData.serviceName || orderData.title || 'Product Order';
 
-    // ১. Manual Pay (Recommended)
+    // ১. bKash & Nagad (Manual Pay) - RECOMMENDED
     if (selectedMethod === 'manual_mfs') {
       router.push('/payment/bkash');
       return;
     }
 
-    // ২. Auto Pay
+    // ২. bKash & Nagad (Auto Pay) - Not Recommended
     if (selectedMethod === 'instant') {
       setLoading(true);
       try {
@@ -65,7 +65,7 @@ export default function ProcessedOrderPage() {
         if (res.ok && data.paymentUrl) {
           window.location.href = data.paymentUrl;
         } else {
-          alert('Payment gateway-te shomoshsha hoyeche. Manual pay bebohar korun.');
+          alert('Gateway server error. Manual Pay bebohar korun.');
         }
       } catch (err) {
         alert('Server connection error.');
@@ -75,7 +75,7 @@ export default function ProcessedOrderPage() {
       return;
     }
 
-    // ৩. Crypto Pay
+    // ৩. Crypto Pay (Auto) - Not Recommended
     if (selectedMethod === 'crypto') {
       setLoading(true);
       try {
@@ -105,10 +105,47 @@ export default function ProcessedOrderPage() {
       return;
     }
 
-    // ৪. TBC Pay
+    // ৪. TBC Pay (Manual Pay) - RECOMMENDED
     if (selectedMethod === 'tbc') {
-      alert('Order submit hoyeche! Shob info My Orders page-e dekhte paben.');
-      router.push('/orders');
+      setLoading(true);
+      try {
+        // Database save
+        const res = await fetch('/api/order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId: orderId,
+            serviceName: productName,
+            price: priceInBDT,
+            customerName: orderData.customerName,
+            whatsappNumber: orderData.whatsappNumber,
+            telegramUsername: orderData.telegramUsername || 'N/A',
+            paymentMethod: 'TBC Pay (Manual)',
+            trxId: 'Manual Contact',
+          }),
+        });
+
+        // WhatsApp SMS Send
+        try {
+          await fetch('/api/send-whatsapp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              customerName: orderData.customerName,
+              phone: orderData.whatsappNumber,
+              orderId: orderId,
+              serviceName: productName,
+            }),
+          });
+        } catch (waErr) {}
+
+        alert('✅ TBC Pay Order Confirm hoyeche!');
+        router.push('/orders');
+      } catch (err) {
+        alert('Server error. Abar cheshta korun.');
+      } finally {
+        setLoading(false);
+      }
       return;
     }
   };
@@ -116,7 +153,7 @@ export default function ProcessedOrderPage() {
   if (!orderData) {
     return (
       <div style={{ textAlign: 'center', padding: '80px 20px', color: '#94a3b8' }}>
-        <h3>Kono order pawa jayni!</h3>
+        <h3>কোনো অর্ডার পাওয়া যায়নি!</h3>
         <button
           onClick={() => router.push('/')}
           style={{
@@ -129,7 +166,7 @@ export default function ProcessedOrderPage() {
             cursor: 'pointer',
           }}
         >
-          Homepage-e phire jan
+          হোমপেজে ফিরে যান
         </button>
       </div>
     );
@@ -139,6 +176,8 @@ export default function ProcessedOrderPage() {
 
   return (
     <div style={{ maxWidth: '480px', margin: '20px auto', padding: '0 16px 80px' }}>
+      
+      {/* Title */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
         <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#ff7a00', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
           3
@@ -148,21 +187,10 @@ export default function ProcessedOrderPage() {
         </h2>
       </div>
 
-      <div style={{
-        background: 'rgba(234, 179, 8, 0.1)',
-        border: '1px solid rgba(234, 179, 8, 0.3)',
-        borderRadius: '12px',
-        padding: '12px 14px',
-        marginBottom: '18px',
-        fontSize: '12px',
-        color: '#fef08a',
-        lineHeight: '1.5',
-      }}>
-        💡 <strong>Poramorsho:</strong> Druto ebong nishchit verification-er jonno <strong>Manual Pay (Send Money)</strong> method bebohar korar onurodh kora hocche.
-      </div>
-
+      {/* Grid Methods */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '20px' }}>
-        {/* ১. Manual Pay */}
+        
+        {/* ১. bKash & Nagad (Manual) - RECOMMENDED */}
         <div
           onClick={() => setSelectedMethod('manual_mfs')}
           style={{
@@ -171,13 +199,13 @@ export default function ProcessedOrderPage() {
             border: selectedMethod === 'manual_mfs' ? '2px solid #16a34a' : '1px solid #e2e8f0',
             cursor: 'pointer',
             overflow: 'hidden',
-            position: 'relative',
+            boxShadow: selectedMethod === 'manual_mfs' ? '0 0 10px rgba(22, 163, 74, 0.4)' : 'none',
           }}
         >
-          <div style={{ background: '#16a34a', color: '#ffffff', fontSize: '9px', fontWeight: '900', textAlign: 'center', padding: '2px 0' }}>
+          <div style={{ background: '#16a34a', color: '#ffffff', fontSize: '9px', fontWeight: '900', textAlign: 'center', padding: '3px 0' }}>
             ⭐ RECOMMENDED
           </div>
-          <div style={{ padding: '12px 6px', textAlign: 'center', minHeight: '76px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ padding: '12px 6px', textAlign: 'center', minHeight: '74px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '6px' }}>
               <img src={LOGO_BKASH} alt="bKash" style={{ height: '16px', objectFit: 'contain' }} />
               <img src={LOGO_NAGAD} alt="Nagad" style={{ height: '16px', objectFit: 'contain' }} />
@@ -185,11 +213,11 @@ export default function ProcessedOrderPage() {
             <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#15803d' }}>Manual Pay</span>
           </div>
           <div style={{ background: '#dcfce7', padding: '6px', textAlign: 'center', fontSize: '11px', fontWeight: 'bold', color: '#166534' }}>
-            Send Money (TrxID)
+            bKash / Nagad
           </div>
         </div>
 
-        {/* ২. Auto Pay */}
+        {/* ২. bKash & Nagad (Auto) - NOT RECOMMENDED */}
         <div
           onClick={() => setSelectedMethod('instant')}
           style={{
@@ -198,14 +226,13 @@ export default function ProcessedOrderPage() {
             border: selectedMethod === 'instant' ? '2px solid #ef4444' : '1px solid #e2e8f0',
             cursor: 'pointer',
             overflow: 'hidden',
-            position: 'relative',
-            opacity: 0.85,
+            opacity: selectedMethod === 'instant' ? 1 : 0.8,
           }}
         >
-          <div style={{ background: '#ef4444', color: '#ffffff', fontSize: '9px', fontWeight: '900', textAlign: 'center', padding: '2px 0' }}>
+          <div style={{ background: '#ef4444', color: '#ffffff', fontSize: '9px', fontWeight: '900', textAlign: 'center', padding: '3px 0' }}>
             ⚠️ Not Recommended
           </div>
-          <div style={{ padding: '12px 6px', textAlign: 'center', minHeight: '76px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ padding: '12px 6px', textAlign: 'center', minHeight: '74px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '6px' }}>
               <img src={LOGO_BKASH} alt="bKash" style={{ height: '16px', objectFit: 'contain' }} />
               <img src={LOGO_NAGAD} alt="Nagad" style={{ height: '16px', objectFit: 'contain' }} />
@@ -213,11 +240,11 @@ export default function ProcessedOrderPage() {
             <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#64748b' }}>Auto Pay</span>
           </div>
           <div style={{ background: '#fee2e2', padding: '6px', textAlign: 'center', fontSize: '11px', fontWeight: 'bold', color: '#991b1b' }}>
-            Gateway Issues
+            bKash / Nagad
           </div>
         </div>
 
-        {/* ৩. Crypto Pay */}
+        {/* ৩. Crypto Pay (Auto) - NOT RECOMMENDED */}
         <div
           onClick={() => setSelectedMethod('crypto')}
           style={{
@@ -226,49 +253,51 @@ export default function ProcessedOrderPage() {
             border: selectedMethod === 'crypto' ? '2px solid #ef4444' : '1px solid #e2e8f0',
             cursor: 'pointer',
             overflow: 'hidden',
-            position: 'relative',
-            opacity: 0.85,
+            opacity: selectedMethod === 'crypto' ? 1 : 0.8,
           }}
         >
-          <div style={{ background: '#ef4444', color: '#ffffff', fontSize: '9px', fontWeight: '900', textAlign: 'center', padding: '2px 0' }}>
+          <div style={{ background: '#ef4444', color: '#ffffff', fontSize: '9px', fontWeight: '900', textAlign: 'center', padding: '3px 0' }}>
             ⚠️ Not Recommended
           </div>
-          <div style={{ padding: '12px 6px', textAlign: 'center', minHeight: '76px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ padding: '12px 6px', textAlign: 'center', minHeight: '74px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <img src={LOGO_TRC20} alt="USDT" style={{ height: '22px', width: '22px', marginBottom: '6px' }} />
-            <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#64748b' }}>USDT (TRC20)</span>
+            <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#64748b' }}>Crypto Pay</span>
           </div>
           <div style={{ background: '#fee2e2', padding: '6px', textAlign: 'center', fontSize: '11px', fontWeight: 'bold', color: '#991b1b' }}>
-            Instant Crypto
+            Auto (TRC20)
           </div>
         </div>
 
-        {/* ৪. TBC Pay */}
+        {/* ৪. TBC Pay (Manual Pay) - RECOMMENDED */}
         <div
           onClick={() => setSelectedMethod('tbc')}
           style={{
             background: '#ffffff',
             borderRadius: '16px',
-            border: selectedMethod === 'tbc' ? '2px solid #ff7a00' : '1px solid #e2e8f0',
+            border: selectedMethod === 'tbc' ? '2px solid #16a34a' : '1px solid #e2e8f0',
             cursor: 'pointer',
             overflow: 'hidden',
+            boxShadow: selectedMethod === 'tbc' ? '0 0 10px rgba(22, 163, 74, 0.4)' : 'none',
           }}
         >
-          <div style={{ background: '#f1f5f9', color: '#64748b', fontSize: '9px', fontWeight: '900', textAlign: 'center', padding: '2px 0' }}>
-            💬 Direct Support
+          <div style={{ background: '#16a34a', color: '#ffffff', fontSize: '9px', fontWeight: '900', textAlign: 'center', padding: '3px 0' }}>
+            ⭐ RECOMMENDED
           </div>
-          <div style={{ padding: '12px 6px', textAlign: 'center', minHeight: '76px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ padding: '12px 6px', textAlign: 'center', minHeight: '74px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <img src={LOGO_HUB_CART} alt="Hub Cart" style={{ width: '28px', height: '28px', marginBottom: '6px' }} />
             <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a' }}>TBC Pay</span>
           </div>
-          <div style={{ background: '#f1f5f9', padding: '6px', textAlign: 'center', fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>
-            Direct Contact
+          <div style={{ background: '#dcfce7', padding: '6px', textAlign: 'center', fontSize: '11px', fontWeight: 'bold', color: '#166534' }}>
+            Manual Contact
           </div>
         </div>
+
       </div>
 
+      {/* Product Price Summary */}
       <div style={{ background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', padding: '16px', marginBottom: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1', fontSize: '13px' }}>
-          <span>ℹ️ Product Mullo:</span>
+          <span>ℹ️ প্রোডাক্ট মূল্য:</span>
           <span style={{ fontWeight: 'bold', color: '#f8fafc' }}>
             ৳ {orderData.price}
             {selectedMethod === 'crypto' && ` (≈ $${usdtAmount} USDT)`}
@@ -276,13 +305,14 @@ export default function ProcessedOrderPage() {
         </div>
       </div>
 
+      {/* Button */}
       <button
         onClick={handleProceed}
         disabled={loading}
         style={{
           width: '100%',
           padding: '14px',
-          background: selectedMethod === 'manual_mfs' ? '#16a34a' : '#ff7a00',
+          background: (selectedMethod === 'manual_mfs' || selectedMethod === 'tbc') ? '#16a34a' : '#ff7a00',
           color: '#ffffff',
           border: 'none',
           borderRadius: '12px',
@@ -292,15 +322,16 @@ export default function ProcessedOrderPage() {
         }}
       >
         {loading
-          ? 'Processing hocche...'
+          ? 'প্রসেসিং হচ্ছে...'
           : selectedMethod === 'manual_mfs'
-            ? 'Manual Payment Korun (Recommended)'
-            : selectedMethod === 'instant'
-              ? `Pay ৳${orderData.price} (Auto)`
-              : selectedMethod === 'crypto'
-                ? `Pay $${usdtAmount} USDT`
-                : 'Order Nishchit Korun'}
+            ? 'ম্যানুয়াল পেমেন্ট করুন'
+            : selectedMethod === 'tbc'
+              ? 'TBC Pay নিশ্চিত করুন'
+              : selectedMethod === 'instant'
+                ? `Pay ৳${orderData.price} (Auto)`
+                : `Pay $${usdtAmount} USDT`}
       </button>
+
     </div>
   );
 }
