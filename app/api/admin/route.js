@@ -42,7 +42,7 @@ export async function GET(req) {
   }
 }
 
-// ২. ডাটা তৈরি (নতুন প্রোডাক্ট ও নোটিশ আপডেট)
+// ২. ডাটা তৈরি ও আপডেট (Add Product, Update Product, Notice)
 export async function POST(req) {
   if (!verifyAuth(req)) {
     return NextResponse.json({ error: 'অননুমোদিত অ্যাক্সেস' }, { status: 401 });
@@ -52,6 +52,7 @@ export async function POST(req) {
     const body = await req.json();
     const { action, payload } = body;
 
+    // নতুন প্রোডাক্ট যোগ করা
     if (action === 'add-product') {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/products`, {
         method: 'POST',
@@ -68,6 +69,36 @@ export async function POST(req) {
       return NextResponse.json({ success: true });
     }
 
+    // প্রোডাক্ট এডিট ও আপডেট করা
+    if (action === 'update-product') {
+      const { id, title, price, original_price, description, category } = payload;
+
+      if (!id) {
+        return NextResponse.json({ error: 'প্রোডাক্ট ID প্রয়োজন' }, { status: 400 });
+      }
+
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/products?id=eq.${id}`, {
+        method: 'PATCH',
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json',
+          Prefer: 'return=minimal',
+        },
+        body: JSON.stringify({
+          title,
+          price: Number(price),
+          original_price: original_price ? Number(original_price) : null,
+          description: description || '',
+          category: category || 'android-root',
+        }),
+      });
+
+      if (!res.ok) throw new Error(await res.text());
+      return NextResponse.json({ success: true });
+    }
+
+    // হোমপেজ নোটিশ আপডেট
     if (action === 'update-notice') {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/site_settings`, {
         method: 'POST',
