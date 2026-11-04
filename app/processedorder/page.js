@@ -35,13 +35,31 @@ export default function ProcessedOrderPage() {
   const handleProceed = async () => {
     if (!orderData) return;
 
-    const generatedOrderId = orderData.id || `HC-${Date.now().toString().slice(-6)}`;
+    const generatedOrderId = orderData.id || `HC-${Math.floor(1000 + Math.random() * 9000)}`;
     const priceInBDT = Number(orderData.price) || 0;
+    const productName = orderData.serviceName || orderData.title || 'Product Order';
 
-    // ১. লোকাল Auto Pay (bKash/Nagad Automated via Gateway)
+    // ১. লোকাল Auto Pay (bKash/Nagad Instant via UddoktaPay)
     if (selectedMethod === 'instant') {
       setLoading(true);
       try {
+        // Shobar age database-e order create kora jate /orders page-e dekha jay
+        await fetch('/api/order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId: generatedOrderId,
+            serviceName: productName,
+            price: priceInBDT,
+            customerName: orderData.customerName || 'Customer',
+            whatsappNumber: orderData.whatsappNumber || '',
+            telegramUsername: orderData.telegramUsername || 'nei',
+            paymentMethod: 'Auto Pay (UddoktaPay)',
+            trxId: 'Processing Online Payment',
+          }),
+        });
+
+        // UddoktaPay-te pathano
         const res = await fetch('/api/create-bdt-payment', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -50,6 +68,7 @@ export default function ProcessedOrderPage() {
             amount: priceInBDT,
             customerName: orderData.customerName || 'Valued Customer',
             phone: orderData.whatsappNumber || '',
+            serviceName: productName,
           }),
         });
 
@@ -76,7 +95,7 @@ export default function ProcessedOrderPage() {
 
     // ২. লোকাল Manual Pay (bKash / Nagad Manual TrxID page)
     if (selectedMethod === 'manual_mfs') {
-      router.push('/payment');
+      router.push('/payment/bkash');
       return;
     }
 
@@ -128,8 +147,8 @@ export default function ProcessedOrderPage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            serviceName: orderData.serviceName || orderData.title || 'Product Order',
-            price: orderData.price,
+            serviceName: productName,
+            price: priceInBDT,
             customerName: orderData.customerName,
             whatsappNumber: orderData.whatsappNumber,
             telegramUsername: orderData.telegramUsername || 'N/A',
@@ -152,6 +171,7 @@ export default function ProcessedOrderPage() {
                 customerName: orderData.customerName,
                 phone: orderData.whatsappNumber,
                 orderId: newOrderId,
+                serviceName: productName,
               }),
             });
           } catch (waErr) {
@@ -160,7 +180,7 @@ export default function ProcessedOrderPage() {
 
           alert('✅ TBC Pay order submit hoyeche! Amader team apnar sathe jogajog korbe.');
           localStorage.removeItem('hubcart_current_order');
-          router.push('/');
+          router.push(`/order-success?orderId=${newOrderId}`);
         } else {
           alert(data.error || 'Order submit korte problem hoyeche.');
         }
