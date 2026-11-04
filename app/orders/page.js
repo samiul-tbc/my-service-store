@@ -4,7 +4,6 @@ import Link from 'next/link';
 
 const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
 
-// Vercel Environment Variables থেকে ডাটা নেওয়া হচ্ছে
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://mieygzqgoekinxppdepb.supabase.co';
 const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
 const SUPPORT_WHATSAPP = '8801893432478';
@@ -17,20 +16,38 @@ export default function OrderHistoryPage() {
   const [searched, setSearched] = useState(false);
 
   useEffect(() => {
+    let targetPhone = '';
+
+    // ১. Profile / Login User থেকে ফোন নম্বর নেওয়া
     const savedUser = localStorage.getItem('hubcart_user');
     if (savedUser) {
       try {
         const parsed = JSON.parse(savedUser);
         setUser(parsed);
-        if (parsed.phone) {
-          fetchOrders(parsed.phone);
-          return;
-        }
+        if (parsed.phone) targetPhone = parsed.phone;
       } catch (e) {
         console.error(e);
       }
     }
-    setLoading(false);
+
+    // ২. প্রোফাইলে না পেলে সর্বশেষ অর্ডার থেকে চেক করা
+    if (!targetPhone) {
+      const currentOrder = localStorage.getItem('hubcart_current_order');
+      if (currentOrder) {
+        try {
+          const parsedOrder = JSON.parse(currentOrder);
+          if (parsedOrder.whatsappNumber) targetPhone = parsedOrder.whatsappNumber;
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+
+    if (targetPhone) {
+      fetchOrders(targetPhone);
+    } else {
+      setLoading(false);
+    }
   }, []);
 
   const fetchOrders = async (queryText) => {
@@ -39,10 +56,32 @@ export default function OrderHistoryPage() {
 
     setLoading(true);
     try {
-      const isOrderId = query.toUpperCase().startsWith('HC-');
-      const filter = isOrderId
-        ? `order_id=eq.${query.toUpperCase()}`
-        : `whatsapp_number=eq.${query}`;
+      const isOrderId = query.toUpperCase().startsWith('HC');
+
+      let filter = '';
+      if (isOrderId) {
+        // Order ID দিয়ে সার্চ
+        const cleanId = query.toUpperCase().replace(/[^A-Z0-9-]/g, '');
+        filter = `order_id=ilike.*${cleanId}*`;
+      } else {
+        // নম্বরের শেষ ১০ ডিজিট বের করা
+        const digitsOnly = query.replace(/[^0-9]/g, '');
+        const last10 = digitsOnly.length >= 10 ? digitsOnly.slice(-10) : digitsOnly;
+        
+        // URL-এ '+' চিহ্ন সুরক্ষিত রাখতে encodeURIComponent ব্যবহার করা হয়েছে (%2B)
+        const encodedRaw = encodeURIComponent(query);
+
+        // চারটি সম্ভাব্য ফরম্যাটই একসাথে OR দিয়ে চেক করা হবে:
+        const orConditions = [
+          `whatsapp_number.ilike.*${last10}*`,
+          `whatsapp_number.eq.0${last10}`,
+          `whatsapp_number.eq.%2B880${last10}`,
+          `whatsapp_number.eq.880${last10}`,
+          `whatsapp_number.eq.${encodedRaw}`
+        ];
+
+        filter = `or=(${orConditions.join(',')})`;
+      }
 
       const res = await fetch(
         `${SUPABASE_URL}/rest/v1/orders?${filter}&select=*&order=id.desc`,
@@ -54,6 +93,7 @@ export default function OrderHistoryPage() {
           },
         }
       );
+
       const data = await res.json();
       if (Array.isArray(data)) {
         setOrders(data);
@@ -61,7 +101,7 @@ export default function OrderHistoryPage() {
         setOrders([]);
       }
     } catch (err) {
-      console.error(err);
+      console.error('Fetch error:', err);
       setOrders([]);
     } finally {
       setLoading(false);
@@ -78,6 +118,7 @@ export default function OrderHistoryPage() {
   const getStatusBadge = (status) => {
     switch (status?.toLowerCase()) {
       case 'completed':
+      case 'paid':
         return { label: 'Completed', bg: 'rgba(34, 197, 94, 0.15)', text: '#4ade80', border: 'rgba(34, 197, 94, 0.3)' };
       case 'processing':
         return { label: 'Processing', bg: 'rgba(56, 189, 248, 0.15)', text: '#38bdf8', border: 'rgba(56, 189, 248, 0.3)' };
@@ -93,7 +134,7 @@ export default function OrderHistoryPage() {
   return (
     <div style={{ maxWidth: '560px', margin: '0 auto', padding: '16px 14px 100px' }}>
       
-      {/* পেজ হেডার */}
+      {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <img
@@ -102,7 +143,7 @@ export default function OrderHistoryPage() {
             style={{ width: '40px', height: '40px', objectFit: 'contain' }}
           />
           <div>
-            <h1 style={{ fontSize: '20px', fontWeight: '900', color: '#f8fafc', margin: 0, letterSpacing: '-0.3px' }}>
+            <h1 style={{ fontSize: '20px', fontWeight: '900', color: '#f8fafc', margin: 0 }}>
               My Orders
             </h1>
             <p style={{ margin: 0, fontSize: '11px', color: '#64748b' }}>
@@ -123,7 +164,7 @@ export default function OrderHistoryPage() {
         </button>
       </div>
 
-      {/* সার্চ বক্স */}
+      {/* Search Box */}
       <div style={{
         background: 'rgba(15, 23, 42, 0.75)',
         backdropFilter: 'blur(16px)',
@@ -133,7 +174,7 @@ export default function OrderHistoryPage() {
         marginBottom: '20px',
       }}>
         <p style={{ fontSize: '12px', color: '#94a3b8', margin: '0 0 10px' }}>
-          {user ? 'অন্য কোনো অর্ডার দেখতে নম্বর বা Order ID লিখুন:' : 'অর্ডারের বিবরণ দেখতে WhatsApp নম্বর বা Order ID দিন:'}
+          অন্য কোনো অর্ডার দেখতে নম্বর বা Order ID লিখুন:
         </p>
         <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '8px' }}>
           <input
@@ -170,7 +211,7 @@ export default function OrderHistoryPage() {
         </form>
       </div>
 
-      {/* অর্ডার তালিকা লোডিং বা কার্ড ভিউ */}
+      {/* Orders List View */}
       {loading ? (
         <div style={{ textAlign: 'center', padding: '60px 0', color: '#64748b', fontSize: '13px' }}>
           অর্ডার বিবরণ যাচাই করা হচ্ছে...
@@ -187,7 +228,7 @@ export default function OrderHistoryPage() {
           <div style={{ fontSize: '36px', marginBottom: '10px' }}>📦</div>
           <h3 style={{ fontSize: '16px', color: '#f8fafc', margin: '0 0 4px' }}>কোনো পূর্ববর্তী অর্ডার পাওয়া যায়নি</h3>
           <p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 20px' }}>
-            {searched ? 'এই তথ্য দিয়ে ডাটাবেজে কোনো অর্ডার নেই।' : 'আপনি এখনো কোনো সার্ভিস বা প্যাকেজ অর্ডার করেননি।'}
+            {searched ? 'এই তথ্য দিয়ে কোনো অর্ডার রেকর্ড নেই।' : 'আপনি এখনো কোনো সার্ভিস অর্ডার করেননি।'}
           </p>
           <Link
             href="/"
@@ -224,7 +265,7 @@ export default function OrderHistoryPage() {
                   boxShadow: '0 4px 15px rgba(0, 0, 0, 0.25)',
                 }}
               >
-                {/* কার্ডের শীর্ষভাগ */}
+                {/* Order Top Bar */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', paddingBottom: '10px', borderBottom: '1px solid rgba(255, 255, 255, 0.06)' }}>
                   <div>
                     <span style={{ fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>ORDER ID</span>
@@ -245,7 +286,7 @@ export default function OrderHistoryPage() {
                   </span>
                 </div>
 
-                {/* সার্ভিস ও প্রাইস */}
+                {/* Service & Price */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                   <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 'bold', color: '#f8fafc' }}>
                     {ord.service_name}
@@ -255,7 +296,7 @@ export default function OrderHistoryPage() {
                   </span>
                 </div>
 
-                {/* পেমেন্ট বিবরণ */}
+                {/* Payment Meta */}
                 <div style={{ fontSize: '11px', color: '#94a3b8', lineHeight: 1.6, marginBottom: '14px' }}>
                   <div>পেমেন্ট মেথড: <strong style={{ color: '#cbd5e1' }}>{ord.payment_method}</strong></div>
                   {ord.trx_id && ord.trx_id !== 'N/A' && (
@@ -268,7 +309,7 @@ export default function OrderHistoryPage() {
                   )}
                 </div>
 
-                {/* অ্যাকশন বাটনসমূহ */}
+                {/* Action Buttons */}
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {!isCancelled && (
                     <Link
@@ -295,7 +336,6 @@ export default function OrderHistoryPage() {
                     </Link>
                   )}
 
-                  {/* ক্যাশ মেমো / ইনভয়েস স্লিপ বাটন */}
                   <Link
                     href={`/invoice/${ord.order_id}`}
                     style={{
