@@ -4,10 +4,10 @@ export async function POST(req) {
   try {
     const body = await req.json();
 
-    // UddoktaPay payment status check
+    // 1. Payment shofol hoyeche kina check kora
     const status = body.status;
     if (status !== 'COMPLETED') {
-      return NextResponse.json({ message: 'Payment not completed yet' }, { status: 200 });
+      return NextResponse.json({ message: 'Payment not completed' }, { status: 200 });
     }
 
     const metadata = body.metadata || {};
@@ -17,12 +17,12 @@ export async function POST(req) {
     const serviceName = metadata.service_name || 'Product Order';
     const telegramUsername = metadata.telegram_username || 'নেই';
     const amount = Number(body.amount) || 0;
-    const trxId = body.transaction_id || body.invoice_id || 'Auto-Payment';
-    const paymentMethod = `bKash/Nagad Auto (${body.payment_method || 'Online'})`;
+    const trxId = body.transaction_id || body.invoice_id || 'UddoktaPay';
+    const paymentMethod = `Auto Gateway (${body.payment_method || 'bKash/Nagad'})`;
 
     const host = process.env.NEXT_PUBLIC_SITE_URL || 'https://hubcart.vercel.app';
 
-    // ১. bKash code-er moto Database-e order save kora
+    // 2. Taka pawar POR Database-e order insert kora
     const res = await fetch(`${host}/api/order`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -39,11 +39,9 @@ export async function POST(req) {
     });
 
     const data = await res.json();
+    const finalOrderId = data.orderId || data.order_id || data.id || orderId;
 
-    // bKash code-er moto generatedOrderId dhora
-    const generatedOrderId = data.orderId || data.order_id || data.id || orderId;
-
-    // ২. bKash code-er moto WhatsApp SMS alert pathano
+    // 3. Shothik Order ID diye WhatsApp confirmation SMS pathano
     if (whatsappNumber) {
       try {
         await fetch(`${host}/api/send-whatsapp`, {
@@ -52,16 +50,16 @@ export async function POST(req) {
           body: JSON.stringify({
             customerName: customerName,
             phone: whatsappNumber,
-            orderId: generatedOrderId,
+            orderId: finalOrderId,
             serviceName: serviceName,
           }),
         });
       } catch (waErr) {
-        console.error('WhatsApp alert error:', waErr);
+        console.error('Webhook WhatsApp alert error:', waErr);
       }
     }
 
-    return NextResponse.json({ success: true, orderId: generatedOrderId }, { status: 200 });
+    return NextResponse.json({ success: true, orderId: finalOrderId }, { status: 200 });
   } catch (error) {
     console.error('UddoktaPay Webhook Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
