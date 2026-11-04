@@ -39,9 +39,9 @@ export default function ProcessedOrderPage() {
     const priceInBDT = Number(orderData.price) || 0;
     const productName = orderData.serviceName || orderData.title || 'Product Order';
 
-    // ১. bKash & Nagad (Manual Pay) - RECOMMENDED
+    // ১. bKash & Nagad (Manual Pay) -> app/payment/page.js
     if (selectedMethod === 'manual_mfs') {
-      router.push('/payment/bkash');
+      router.push('/payment');
       return;
     }
 
@@ -110,7 +110,7 @@ export default function ProcessedOrderPage() {
       setLoading(true);
       try {
         // Database save
-        const res = await fetch('/api/order', {
+        await fetch('/api/order', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -153,7 +153,7 @@ export default function ProcessedOrderPage() {
   if (!orderData) {
     return (
       <div style={{ textAlign: 'center', padding: '80px 20px', color: '#94a3b8' }}>
-        <h3>কোনো অর্ডার পাওয়া যায়নি!</h3>
+        <h3>Kono order pawa jayni!</h3>
         <button
           onClick={() => router.push('/')}
           style={{
@@ -166,7 +166,7 @@ export default function ProcessedOrderPage() {
             cursor: 'pointer',
           }}
         >
-          হোমপেজে ফিরে যান
+          Homepage-e phire jan
         </button>
       </div>
     );
@@ -297,7 +297,7 @@ export default function ProcessedOrderPage() {
       {/* Product Price Summary */}
       <div style={{ background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', padding: '16px', marginBottom: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1', fontSize: '13px' }}>
-          <span>ℹ️ প্রোডাক্ট মূল্য:</span>
+          <span>ℹ️ Product Mullo:</span>
           <span style={{ fontWeight: 'bold', color: '#f8fafc' }}>
             ৳ {orderData.price}
             {selectedMethod === 'crypto' && ` (≈ $${usdtAmount} USDT)`}
@@ -322,11 +322,11 @@ export default function ProcessedOrderPage() {
         }}
       >
         {loading
-          ? 'প্রসেসিং হচ্ছে...'
+          ? 'Processing hocche...'
           : selectedMethod === 'manual_mfs'
-            ? 'ম্যানুয়াল পেমেন্ট করুন'
+            ? 'Manual Payment Korun'
             : selectedMethod === 'tbc'
-              ? 'TBC Pay নিশ্চিত করুন'
+              ? 'TBC Pay Nishchit Korun'
               : selectedMethod === 'instant'
                 ? `Pay ৳${orderData.price} (Auto)`
                 : `Pay $${usdtAmount} USDT`}
