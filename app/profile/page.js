@@ -14,7 +14,7 @@ export default function ProfilePage() {
       try {
         setUser(JSON.parse(savedUser));
       } catch (e) {
-        console.error(e);
+        console.error('User parse error:', e);
       }
     }
     setLoading(false);
@@ -28,24 +28,54 @@ export default function ProfilePage() {
   };
 
   if (loading) {
-    return <div style={{ textAlign: 'center', padding: '80px 20px', color: '#64748b' }}>প্রোফাইল লোড হচ্ছে...</div>;
+    return (
+      <div style={{ textAlign: 'center', padding: '80px 20px', color: '#64748b', fontSize: '13px' }}>
+        প্রোফাইল লোড হচ্ছে...
+      </div>
+    );
   }
 
   if (!user) {
     return (
-      <div style={{ maxWidth: '400px', margin: '50px auto', padding: '32px 20px', textAlign: 'center', background: 'rgba(15, 23, 42, 0.8)', borderRadius: '24px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-        <img src={LOGO_HUB_CART} alt="Hub Cart" style={{ width: '56px', height: '56px', objectFit: 'contain', marginBottom: '14px' }} />
-        <h3 style={{ margin: '0 0 6px', color: '#f8fafc', fontSize: '18px' }}>অ্যাকাউন্টে লগইন নেই</h3>
-        <p style={{ fontSize: '13px', color: '#64748b', margin: '0 0 20px' }}>অর্ডার হিস্ট্রি ও প্রোফাইল দেখতে লগইন করুন।</p>
-        <Link href="/login" style={{ display: 'inline-block', width: '80%', padding: '12px', background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', color: '#ffffff', textDecoration: 'none', borderRadius: '12px', fontWeight: 'bold', fontSize: '13px' }}>
-          লগইন / সাইন-আপ
-        </Link>
+      <div style={{ minHeight: '75vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+        <div style={{
+          width: '100%',
+          maxWidth: '380px',
+          padding: '32px 20px',
+          textAlign: 'center',
+          background: 'rgba(15, 23, 42, 0.8)',
+          backdropFilter: 'blur(16px)',
+          borderRadius: '24px',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          boxShadow: '0 12px 30px rgba(0,0,0,0.4)',
+        }}>
+          <img src={LOGO_HUB_CART} alt="Hub Cart" style={{ width: '56px', height: '56px', objectFit: 'contain', marginBottom: '14px' }} />
+          <h3 style={{ margin: '0 0 6px', color: '#f8fafc', fontSize: '18px', fontWeight: 'bold' }}>অ্যাকাউন্টে লগইন নেই</h3>
+          <p style={{ fontSize: '13px', color: '#64748b', margin: '0 0 20px' }}>অর্ডার হিস্ট্রি ও প্রোফাইল বিবরণ দেখতে লগইন করুন।</p>
+          <Link
+            href="/login"
+            style={{
+              display: 'inline-block',
+              width: '80%',
+              padding: '12px',
+              background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+              color: '#ffffff',
+              textDecoration: 'none',
+              borderRadius: '12px',
+              fontWeight: 'bold',
+              fontSize: '13px',
+              boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)',
+            }}
+          >
+            লগইন / সাইন-আপ
+          </Link>
+        </div>
       </div>
     );
   }
 
   return (
-    <div style={{ maxWidth: '460px', margin: '14px auto', padding: '0 14px 80px' }}>
+    <div style={{ maxWidth: '460px', margin: '14px auto', padding: '0 14px 90px' }}>
       
       {/* ভিআইপি মেম্বার কার্ড */}
       <div style={{
@@ -69,7 +99,19 @@ export default function ProfilePage() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', fontWeight: '900', color: '#fff' }}>
+          <div style={{
+            width: '56px',
+            height: '56px',
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '22px',
+            fontWeight: '900',
+            color: '#fff',
+            boxShadow: '0 4px 12px rgba(37, 99, 235, 0.4)'
+          }}>
             {user.name ? user.name[0].toUpperCase() : 'U'}
           </div>
           <div>
@@ -83,7 +125,7 @@ export default function ProfilePage() {
       <div style={{ background: 'rgba(15, 23, 42, 0.75)', borderRadius: '20px', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '18px', marginBottom: '14px' }}>
         <div style={{ paddingBottom: '12px', borderBottom: '1px solid rgba(255, 255, 255, 0.05)', fontSize: '13px' }}>
           <span style={{ display: 'block', fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>ইমেইল</span>
-          <span style={{ color: '#f8fafc' }}>{user.email}</span>
+          <span style={{ color: '#f8fafc' }}>{user.email || 'যুক্ত করা নেই'}</span>
         </div>
         <div style={{ paddingTop: '12px', fontSize: '13px' }}>
           <span style={{ display: 'block', fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>WhatsApp নম্বর</span>
@@ -91,7 +133,30 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* লগআউট */}
+      {/* My Orders শর্টকাট বাটন */}
+      <Link
+        href="/orders"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          background: 'rgba(30, 41, 59, 0.7)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          borderRadius: '16px',
+          padding: '14px 18px',
+          textDecoration: 'none',
+          marginBottom: '14px',
+          color: '#ffffff'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ fontSize: '16px' }}>📦</span>
+          <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#f8fafc' }}>আমার অর্ডারসমূহ (My Orders)</span>
+        </div>
+        <span style={{ color: '#64748b', fontSize: '14px' }}>→</span>
+      </Link>
+
+      {/* লগআউট বাটন */}
       <button
         onClick={handleLogout}
         style={{
@@ -103,7 +168,8 @@ export default function ProfilePage() {
           borderRadius: '12px',
           fontWeight: 'bold',
           cursor: 'pointer',
-          fontSize: '13px'
+          fontSize: '13px',
+          transition: 'background 0.2s',
         }}
       >
         লগআউট করুন
