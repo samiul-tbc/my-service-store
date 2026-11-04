@@ -1,68 +1,49 @@
 import { NextResponse } from 'next/server';
 
-export async function GET() {
-  return NextResponse.json({ status: 'API Route Active!' });
-}
+const UDDOKTAPAY_API_KEY = process.env.UDDOKTAPAY_API_KEY;
+const UDDOKTAPAY_BASE_URL = process.env.UDDOKTAPAY_BASE_URL || 'https://pay.uddoktapay.com/api/checkout-v2';
 
 export async function POST(req) {
   try {
-    const body = await req.json();
-    const { orderId, amount, customerName, phone } = body;
+    const { orderId, amount, customerName, phone, serviceName } = await req.json();
 
-    const cleanOrderId = orderId || `HC-${Date.now().toString().slice(-6)}`;
-
-    // Vercel theke API key ebong URL read kora
-    const apiKey = process.env.UDDOKTAPAY_API_KEY;
-    const rawUrl = process.env.UDDOKTAPAY_API_URL || 'https://hubcart.paymently.io/api';
-
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: 'Vercel environment variables-e UDDOKTAPAY_API_KEY pawa jayni!' },
-        { status: 500 }
-      );
+    if (!amount) {
+      return NextResponse.json({ error: 'Amount is required' }, { status: 400 });
     }
 
-    // Base URL er sheshe checkout endpoint auto-adjust kora
-    const cleanBaseUrl = rawUrl.replace(/\/+$/, ''); // Shesh-er slash bad deya
-    const apiUrl = cleanBaseUrl.endsWith('/checkout-v2')
-      ? cleanBaseUrl
-      : `${cleanBaseUrl}/checkout-v2`;
+    const host = process.env.NEXT_PUBLIC_SITE_URL || 'https://hubcart.vercel.app';
 
-    const response = await fetch(apiUrl, {
+    const response = await fetch(UDDOKTAPAY_BASE_URL, {
       method: 'POST',
       headers: {
-        'RT-UDDOKTAPAY-API-KEY': apiKey,
-        'RT-PAYMENTLY-API-KEY': apiKey,
-        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
+        'RT-UDDOKTAPAY-API-KEY': UDDOKTAPAY_API_KEY,
       },
       body: JSON.stringify({
-        full_name: customerName || 'Valued Customer',
-        email: 'customer@hubcart.com',
+        full_name: customerName || 'Hub Cart Customer',
+        email: 'customer@hubcart.store',
         amount: String(amount),
         metadata: {
-          order_id: String(cleanOrderId),
-          customer_phone: String(phone || ''),
-          customer_name: String(customerName || ''),
+          order_id: orderId,
+          customer_phone: phone,
+          customer_name: customerName,
+          service_name: serviceName,
         },
-        redirect_url: `https://hubcart.vercel.app/order-success?orderId=${cleanOrderId}`,
-        cancel_url: `https://hubcart.vercel.app/processedorder`,
-        webhook_url: `https://hubcart.vercel.app/api/uddoktapay-webhook`,
+        redirect_url: `${host}/order-success?orderId=${orderId}`,
+        cancel_url: `${host}/processedorder`,
+        webhook_url: `${host}/api/uddoktapay-webhook`,
       }),
     });
 
     const data = await response.json();
 
-    if (data?.status && data?.payment_url) {
+    if (data.payment_url) {
       return NextResponse.json({ paymentUrl: data.payment_url });
     }
 
-    return NextResponse.json(
-      { error: data?.message || 'Payment gateway response error' },
-      { status: 400 }
-    );
-  } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: data.message || 'Payment URL তৈরি করা যায়নি' }, { status: 400 });
+  } catch (err) {
+    console.error('BDT Payment Route Error:', err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
