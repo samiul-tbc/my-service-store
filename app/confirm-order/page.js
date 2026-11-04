@@ -57,7 +57,7 @@ export default function ConfirmOrderPage() {
     }
   }, []);
 
-  const handleOrderSubmit = (e) => {
+  const handleOrderSubmit = async (e) => {
     e.preventDefault();
 
     if (!name.trim()) {
@@ -70,33 +70,81 @@ export default function ConfirmOrderPage() {
       return;
     }
 
-    // নম্বরের শুরুতে ভুল করে 0 দিলে তা বাদ দিয়ে আন্তর্জাতিক ফরম্যাট তৈরি করা
+    // আন্তর্জাতিক ফরম্যাটিং নিশ্চিত করা
     const cleanPhone = phoneNumber.trim().replace(/^0+/, '');
     const fullPhoneNumber = `${selectedCountry.code}${cleanPhone}`;
 
     setLoading(true);
 
-    const fullOrder = {
-      id: productData.id || `HC-${Date.now().toString().slice(-6)}`,
-      title: productData.title,
-      price: productData.price,
-      customerName: name.trim(),
-      whatsappNumber: fullPhoneNumber,
-      telegramUsername: telegram.trim() || 'N/A',
-    };
+    const generatedOrderId = productData.id && productData.id.startsWith('HC-') 
+      ? productData.id 
+      : `HC-${Math.floor(1000 + Math.random() * 9000)}`;
 
-    // ১. চলমান পেমেন্ট সম্পন্ন করার জন্য বর্তমান অর্ডার সংরক্ষণ
-    localStorage.setItem('hubcart_current_order', JSON.stringify(fullOrder));
+    const productName = productData.title || productData.serviceName || 'Product Order';
+    const productPrice = Number(productData.price) || 0;
 
-    // ২. কাস্টমারের প্রোফাইল হিসেবে স্থায়ীভাবে সংরক্ষণ (My Orders পেজে অটো-লোডের জন্য)
-    localStorage.setItem('hubcart_user', JSON.stringify({
-      name: name.trim(),
-      phone: fullPhoneNumber,
-      telegram: telegram.trim() || '',
-    }));
+    try {
+      // ১. সরাসরি Supabase-এ অর্ডারটি সেভ করা (My Orders ও Admin Panel-এ তাৎক্ষণিক চলে আসবে)
+      await fetch('/api/order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: generatedOrderId,
+          serviceName: productName,
+          price: productPrice,
+          customerName: name.trim(),
+          whatsappNumber: fullPhoneNumber,
+          telegramUsername: telegram.trim() || 'N/A',
+          paymentMethod: 'Processing Payment',
+          trxId: 'Pending',
+        }),
+      });
 
-    // পেমেন্ট নির্বাচন পেজে রিডাইরেক্ট
-    router.push('/processedorder');
+      // ২. সাথে সাথে WhatsApp-এ নিশ্চিতকরণ SMS পাঠানো
+      try {
+        await fetch('/api/send-whatsapp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customerName: name.trim(),
+            phone: fullPhoneNumber,
+            orderId: generatedOrderId,
+            serviceName: productName,
+          }),
+        });
+      } catch (waErr) {
+        console.error('WhatsApp send error:', waErr);
+      }
+
+      // ৩. পেমেন্ট পেজ এবং লোকাল হিস্ট্রির জন্য সংরক্ষণ করা
+      const fullOrder = {
+        id: generatedOrderId,
+        orderId: generatedOrderId,
+        title: productName,
+        serviceName: productName,
+        price: productPrice,
+        customerName: name.trim(),
+        whatsappNumber: fullPhoneNumber,
+        telegramUsername: telegram.trim() || 'N/A',
+      };
+
+      localStorage.setItem('hubcart_current_order', JSON.stringify(fullOrder));
+
+      localStorage.setItem('hubcart_user', JSON.stringify({
+        name: name.trim(),
+        phone: fullPhoneNumber,
+        telegram: telegram.trim() || '',
+      }));
+
+      // ৪. পেমেন্ট নির্বাচন পেজে নিয়ে যাওয়া
+      router.push('/processedorder');
+
+    } catch (err) {
+      console.error('Order submission error:', err);
+      alert('অর্ডার প্রসেসিংয়ে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
