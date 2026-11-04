@@ -5,7 +5,7 @@ const UDDOKTAPAY_BASE_URL = process.env.UDDOKTAPAY_BASE_URL || 'https://pay.uddo
 
 export async function POST(req) {
   try {
-    const { orderId, amount, customerName, phone, serviceName } = await req.json();
+    const { orderId, amount, customerName, phone, serviceName, telegram } = await req.json();
 
     if (!amount) {
       return NextResponse.json({ error: 'Amount is required' }, { status: 400 });
@@ -26,9 +26,10 @@ export async function POST(req) {
         amount: String(amount),
         metadata: {
           order_id: finalOrderId,
-          customer_phone: phone || '',
           customer_name: customerName || 'Customer',
+          customer_phone: phone || '',
           service_name: serviceName || 'Product Order',
+          telegram_username: telegram || 'নেই',
         },
         redirect_url: `${host}/order-success?orderId=${finalOrderId}`,
         cancel_url: `${host}/processedorder`,
@@ -42,7 +43,7 @@ export async function POST(req) {
       return NextResponse.json({ paymentUrl: data.payment_url });
     }
 
-    return NextResponse.json({ error: data.message || 'Payment URL তৈরি করা যায়নি' }, { status: 400 });
+    return NextResponse.json({ error: data.message || 'Payment URL toiri kora jayni' }, { status: 400 });
   } catch (err) {
     console.error('BDT Payment Route Error:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });
