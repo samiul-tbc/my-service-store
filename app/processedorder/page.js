@@ -39,13 +39,13 @@ export default function ProcessedOrderPage() {
     const priceInBDT = Number(orderData.price) || 0;
     const productName = orderData.serviceName || orderData.title || 'Product Order';
 
-    // ১. bKash & Nagad (Manual Pay) -> app/payment/page.js
+    // 1. Manual Pay -> app/payment/page.js
     if (selectedMethod === 'manual_mfs') {
       router.push('/payment');
       return;
     }
 
-    // ২. bKash & Nagad (Auto Pay) - Not Recommended
+    // 2. Auto Pay
     if (selectedMethod === 'instant') {
       setLoading(true);
       try {
@@ -65,17 +65,17 @@ export default function ProcessedOrderPage() {
         if (res.ok && data.paymentUrl) {
           window.location.href = data.paymentUrl;
         } else {
-          alert('Gateway server error. Manual Pay bebohar korun.');
+          alert('Payment gateway error. Please use Manual Pay instead.');
         }
       } catch (err) {
-        alert('Server connection error.');
+        alert('Server connection error. Please try again.');
       } finally {
         setLoading(false);
       }
       return;
     }
 
-    // ৩. Crypto Pay (Auto) - Not Recommended
+    // 3. Crypto Pay
     if (selectedMethod === 'crypto') {
       setLoading(true);
       try {
@@ -95,17 +95,17 @@ export default function ProcessedOrderPage() {
         if (res.ok && data.invoiceUrl) {
           window.location.href = data.invoiceUrl;
         } else {
-          alert('Crypto invoice toiri kora jayni.');
+          alert('Could not generate crypto invoice. Please try again.');
         }
       } catch (err) {
-        alert('Crypto server error.');
+        alert('Crypto server connection error.');
       } finally {
         setLoading(false);
       }
       return;
     }
 
-    // ৪. TBC Pay (Manual Pay) - RECOMMENDED (বিকাশ পেজের মতো নিখুঁত ডাটাবেজ ও WhatsApp সিঙ্ক)
+    // 4. TBC Pay
     if (selectedMethod === 'tbc') {
       setLoading(true);
       try {
@@ -117,7 +117,7 @@ export default function ProcessedOrderPage() {
             price: priceInBDT,
             customerName: orderData.customerName || 'Customer',
             whatsappNumber: orderData.whatsappNumber || '',
-            telegramUsername: orderData.telegramUsername || 'নেই',
+            telegramUsername: orderData.telegramUsername || 'N/A',
             paymentMethod: 'TBC Pay (Manual)',
             trxId: 'Manual Contact',
           }),
@@ -126,10 +126,8 @@ export default function ProcessedOrderPage() {
         const data = await res.json();
 
         if (res.ok) {
-          // বিকাশ পেজের মতো সার্ভার থেকে আসা আসল অর্ডার আইডি নেওয়া
           const generatedOrderId = data.orderId || data.order_id || data.id || orderData.id || `HC-${Date.now().toString().slice(-6)}`;
 
-          // WhatsApp SMS পাঠানো (সঠিক Order ID সহ)
           try {
             await fetch('/api/send-whatsapp', {
               method: 'POST',
@@ -148,10 +146,10 @@ export default function ProcessedOrderPage() {
           localStorage.removeItem('hubcart_current_order');
           router.push(`/order-success?orderId=${generatedOrderId}`);
         } else {
-          alert(data.error || data.message || 'অর্ডার সাবমিট করতে সমস্যা হয়েছে।');
+          alert(data.error || data.message || 'Failed to submit order. Please try again.');
         }
       } catch (err) {
-        alert('সার্ভার সংযোগ সমস্যা। আবার চেষ্টা করুন।');
+        alert('Server connection error. Please try again.');
       } finally {
         setLoading(false);
       }
@@ -162,7 +160,7 @@ export default function ProcessedOrderPage() {
   if (!orderData) {
     return (
       <div style={{ textAlign: 'center', padding: '80px 20px', color: '#94a3b8' }}>
-        <h3>কোনো অর্ডার পাওয়া যায়নি!</h3>
+        <h3>No order found!</h3>
         <button
           onClick={() => router.push('/')}
           style={{
@@ -175,7 +173,7 @@ export default function ProcessedOrderPage() {
             cursor: 'pointer',
           }}
         >
-          হোমপেজে ফিরে যান
+          Back to Home
         </button>
       </div>
     );
@@ -199,7 +197,7 @@ export default function ProcessedOrderPage() {
       {/* Grid Methods */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '20px' }}>
         
-        {/* ১. bKash & Nagad (Manual) - RECOMMENDED */}
+        {/* 1. bKash & Nagad (Manual) */}
         <div
           onClick={() => setSelectedMethod('manual_mfs')}
           style={{
@@ -226,7 +224,7 @@ export default function ProcessedOrderPage() {
           </div>
         </div>
 
-        {/* ২. bKash & Nagad (Auto) - NOT RECOMMENDED */}
+        {/* 2. bKash & Nagad (Auto) */}
         <div
           onClick={() => setSelectedMethod('instant')}
           style={{
@@ -253,7 +251,7 @@ export default function ProcessedOrderPage() {
           </div>
         </div>
 
-        {/* ৩. Crypto Pay (Auto) - NOT RECOMMENDED */}
+        {/* 3. Crypto Pay (Auto) */}
         <div
           onClick={() => setSelectedMethod('crypto')}
           style={{
@@ -277,7 +275,7 @@ export default function ProcessedOrderPage() {
           </div>
         </div>
 
-        {/* ৪. TBC Pay (Manual Pay) - RECOMMENDED */}
+        {/* 4. TBC Pay (Manual Pay) */}
         <div
           onClick={() => setSelectedMethod('tbc')}
           style={{
@@ -306,7 +304,7 @@ export default function ProcessedOrderPage() {
       {/* Product Price Summary */}
       <div style={{ background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', padding: '16px', marginBottom: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1', fontSize: '13px' }}>
-          <span>ℹ️ Product Mullo:</span>
+          <span>ℹ️ প্রোডাক্ট মূল্য:</span>
           <span style={{ fontWeight: 'bold', color: '#f8fafc' }}>
             ৳ {orderData.price}
             {selectedMethod === 'crypto' && ` (≈ $${usdtAmount} USDT)`}
@@ -331,11 +329,11 @@ export default function ProcessedOrderPage() {
         }}
       >
         {loading
-          ? 'Processing hocche...'
+          ? 'Processing...'
           : selectedMethod === 'manual_mfs'
-            ? 'Manual Payment Korun'
+            ? 'Manual Pay'
             : selectedMethod === 'tbc'
-              ? 'TBC Pay Nishchit Korun'
+              ? 'TBC Pay'
               : selectedMethod === 'instant'
                 ? `Pay ৳${orderData.price} (Auto)`
                 : `Pay $${usdtAmount} USDT`}
