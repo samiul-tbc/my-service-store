@@ -6,7 +6,7 @@ const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://mieygzqgoekinxppdepb.supabase.co';
 const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
-const SUPPORT_WHATSAPP = '8801893432478';
+const SUPPORT_WHATSAPP = '8801319760720';
 
 export default function OrderHistoryPage() {
   const [user, setUser] = useState(null);
