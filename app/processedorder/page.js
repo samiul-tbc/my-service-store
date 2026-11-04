@@ -24,7 +24,7 @@ export default function ProcessedOrderPage() {
       try {
         setOrderData(JSON.parse(saved));
       } catch (e) {
-        console.error('Order load error:', e);
+        console.error('Order parse error:', e);
       }
     }
   }, []);
@@ -39,6 +39,7 @@ export default function ProcessedOrderPage() {
 
     const productName = orderData.serviceName || orderData.title || 'Product Order';
     const orderAmount = Number(orderData.price) || 0;
+    const finalOrderId = orderData.orderId || orderData.id || `HC-${Date.now().toString().slice(-6)}`;
 
     // ১. Manual Pay -> app/payment/page.js
     if (selectedMethod === 'manual_mfs') {
@@ -46,11 +47,42 @@ export default function ProcessedOrderPage() {
       return;
     }
 
-    // ২. TBC Pay (নগদ পেজের কোডের হুবহু নিয়মে)
+    // ২. Auto Pay (Shudhu gateway-te redirect hobe; kono order ba sms ekhon jabe na)
+    if (selectedMethod === 'instant') {
+      setLoading(true);
+      try {
+        const res = await fetch('/api/create-bdt-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId: finalOrderId,
+            amount: orderAmount,
+            customerName: orderData.customerName || 'Customer',
+            phone: orderData.whatsappNumber || '',
+            serviceName: productName,
+            telegram: orderData.telegramUsername || 'নেই',
+          }),
+        });
+
+        const data = await res.json();
+        if (res.ok && data.paymentUrl) {
+          localStorage.removeItem('hubcart_current_order');
+          window.location.href = data.paymentUrl;
+        } else {
+          alert(data.error || 'Payment gateway connection error. Please use Manual Pay.');
+        }
+      } catch (err) {
+        alert('Server connection error. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    // ৩. TBC Pay (Manual contact - TrxID charai instant confirm)
     if (selectedMethod === 'tbc') {
       setLoading(true);
       try {
-        // ধাপ ১: আগে ডাটাবেজে অর্ডার তৈরি
         const res = await fetch('/api/order', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -68,10 +100,8 @@ export default function ProcessedOrderPage() {
         const data = await res.json();
 
         if (res.ok) {
-          // ধাপ ২: ডাটাবেজ থেকে আসল অর্ডার আইডি গ্রহণ
-          const generatedOrderId = data.orderId || data.order_id || data.id || orderData.id || `HC-${Date.now().toString().slice(-6)}`;
+          const generatedOrderId = data.orderId || data.order_id || data.id || finalOrderId;
 
-          // ধাপ ৩: WhatsApp মেসেজ পাঠানো (সঠিক অর্ডার আইডি দিয়ে)
           try {
             await fetch('/api/send-whatsapp', {
               method: 'POST',
@@ -84,81 +114,13 @@ export default function ProcessedOrderPage() {
               }),
             });
           } catch (waErr) {
-            console.error('WhatsApp alert error:', waErr);
+            console.error('WhatsApp send error:', waErr);
           }
 
-          // ধাপ ৪: লোকাল স্টোরেজ ক্লিয়ার ও সাকসেস পেজে রিডাইরেক্ট
           localStorage.removeItem('hubcart_current_order');
           router.push(`/order-success?orderId=${generatedOrderId}`);
         } else {
-          alert(data.error || data.message || 'Failed to submit order. Please try again.');
-        }
-      } catch (err) {
-        alert('Server connection error. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-      return;
-    }
-
-    // ৩. Auto Pay (গেটওয়েতে যাওয়ার আগেই ডাটাবেজ ও আইডি কনফার্ম করা)
-    if (selectedMethod === 'instant') {
-      setLoading(true);
-      try {
-        // ধাপ ১: ডাটাবেজে অর্ডার আগে বুক করা
-        const orderRes = await fetch('/api/order', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            serviceName: productName,
-            price: orderAmount,
-            customerName: orderData.customerName || 'Customer',
-            whatsappNumber: orderData.whatsappNumber || '',
-            telegramUsername: orderData.telegramUsername || 'নেই',
-            paymentMethod: 'bKash/Nagad (Auto)',
-            trxId: 'Pending Gateway',
-          }),
-        });
-
-        const orderResult = await orderRes.json();
-        const finalOrderId = orderResult.orderId || orderResult.order_id || orderResult.id || `HC-${Date.now().toString().slice(-6)}`;
-
-        // ধাপ ২: WhatsApp-এ ইনভয়েস লিংকসহ মেসেজ পাঠানো
-        try {
-          await fetch('/api/send-whatsapp', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              customerName: orderData.customerName,
-              phone: orderData.whatsappNumber,
-              orderId: finalOrderId,
-              serviceName: productName,
-            }),
-          });
-        } catch (waErr) {
-          console.error('WhatsApp alert error:', waErr);
-        }
-
-        // ধাপ ৩: সেই আসল আইডি নিয়ে গেটওয়ে পেমেন্ট লিংক তৈরি করা
-        const payRes = await fetch('/api/create-bdt-payment', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            orderId: finalOrderId,
-            amount: orderAmount,
-            customerName: orderData.customerName || 'Customer',
-            phone: orderData.whatsappNumber || '',
-            serviceName: productName,
-            telegram: orderData.telegramUsername || 'নেই',
-          }),
-        });
-
-        const payData = await payRes.json();
-        if (payRes.ok && payData.paymentUrl) {
-          localStorage.removeItem('hubcart_current_order');
-          window.location.href = payData.paymentUrl;
-        } else {
-          alert(payData.error || 'Payment gateway connection error. Please use Manual Pay.');
+          alert(data.error || data.message || 'Failed to submit order.');
         }
       } catch (err) {
         alert('Server connection error. Please try again.');
@@ -177,7 +139,7 @@ export default function ProcessedOrderPage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            orderId: orderData.id || `HC-${Date.now().toString().slice(-6)}`,
+            orderId: finalOrderId,
             amountUSD: priceInUSD,
             customerName: orderData.customerName,
             phone: orderData.whatsappNumber,
@@ -188,7 +150,7 @@ export default function ProcessedOrderPage() {
         if (res.ok && data.invoiceUrl) {
           window.location.href = data.invoiceUrl;
         } else {
-          alert('Could not generate crypto invoice. Please try again.');
+          alert('Could not generate crypto invoice.');
         }
       } catch (err) {
         alert('Crypto server connection error.');
@@ -239,7 +201,7 @@ export default function ProcessedOrderPage() {
       {/* Grid Methods */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '20px' }}>
         
-        {/* 1. Manual Pay (bKash, Nagad, Rocket, Upay) */}
+        {/* 1. Manual Pay */}
         <div
           onClick={() => setSelectedMethod('manual_mfs')}
           style={{
@@ -268,7 +230,7 @@ export default function ProcessedOrderPage() {
           </div>
         </div>
 
-        {/* 2. Auto Pay (bKash & Nagad) */}
+        {/* 2. Auto Pay */}
         <div
           onClick={() => setSelectedMethod('instant')}
           style={{
@@ -295,7 +257,7 @@ export default function ProcessedOrderPage() {
           </div>
         </div>
 
-        {/* 3. Crypto Pay (Auto) */}
+        {/* 3. Crypto Pay */}
         <div
           onClick={() => setSelectedMethod('crypto')}
           style={{
@@ -319,7 +281,7 @@ export default function ProcessedOrderPage() {
           </div>
         </div>
 
-        {/* 4. TBC Pay (Manual Pay) */}
+        {/* 4. TBC Pay */}
         <div
           onClick={() => setSelectedMethod('tbc')}
           style={{
