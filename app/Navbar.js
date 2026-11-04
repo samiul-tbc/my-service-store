@@ -7,14 +7,16 @@ const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
 
 export default function Navbar() {
   const [user, setUser] = useState(null);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const saved = localStorage.getItem('hubcart_user');
     if (saved) {
       try {
         setUser(JSON.parse(saved));
       } catch (e) {
-        console.error(e);
+        console.error('User parse error:', e);
       }
     }
   }, []);
@@ -74,38 +76,61 @@ export default function Navbar() {
             </svg>
           </Link>
 
-          {/* ইউজার ব্যাজ */}
-          <Link
-            href="/profile"
-            style={{
-              textDecoration: 'none',
-              background: 'rgba(37, 99, 235, 0.2)',
-              border: '1px solid rgba(37, 99, 235, 0.4)',
-              borderRadius: '20px',
-              padding: '3px 8px 3px 4px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px',
-            }}
-          >
-            <div style={{
-              width: '20px',
-              height: '20px',
-              borderRadius: '50%',
-              background: '#2563eb',
-              color: '#ffffff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '11px',
-              fontWeight: '900',
-            }}>
-              {user?.name ? user.name[0].toUpperCase() : 'S'}
-            </div>
-            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#f8fafc', maxWidth: '65px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {user?.name ? user.name.split(' ')[0] : 'Samiul'}
-            </span>
-          </Link>
+          {/* ইউজার স্টেট বাটন (লগইন থাকলে নাম, না থাকলে Login বাটন) */}
+          {mounted && (
+            user ? (
+              <Link
+                href="/profile"
+                style={{
+                  textDecoration: 'none',
+                  background: 'rgba(37, 99, 235, 0.2)',
+                  border: '1px solid rgba(37, 99, 235, 0.4)',
+                  borderRadius: '20px',
+                  padding: '3px 8px 3px 4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                }}
+              >
+                <div style={{
+                  width: '20px',
+                  height: '20px',
+                  borderRadius: '50%',
+                  background: '#2563eb',
+                  color: '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '11px',
+                  fontWeight: '900',
+                }}>
+                  {(user.name || user.full_name || 'U')[0].toUpperCase()}
+                </div>
+                <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#f8fafc', maxWidth: '65px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {(user.name || user.full_name || 'User').split(' ')[0]}
+                </span>
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                style={{
+                  textDecoration: 'none',
+                  background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+                  borderRadius: '16px',
+                  padding: '5px 12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#ffffff',
+                  fontSize: '11px',
+                  fontWeight: 'bold',
+                  boxShadow: '0 2px 8px rgba(37, 99, 235, 0.3)',
+                }}
+              >
+                Login
+              </Link>
+            )
+          )}
 
         </div>
 
