@@ -92,7 +92,7 @@ export default function ProductDetailPage() {
       title: product.title,
       price: product.price,
       original_price: product.original_price,
-      image: product.image,
+      image: productImageSrc(product, ''),
       category: product.category,
     };
 

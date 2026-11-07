@@ -213,7 +213,7 @@ export default function CategoriesPage() {
               >
                 <div style={{ width: '100%', height: '150px', background: '#0b0f19' }}>
                   <img
-                    src={productImageSrc(prod, LOGO_HUB_CART)}
+                    src={`/api/img/${prod.id}`}
                     alt={prod.title}
                     loading="lazy"
                     onError={(e) => { e.currentTarget.src = LOGO_HUB_CART; }}
