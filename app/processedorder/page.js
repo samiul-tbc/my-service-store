@@ -40,13 +40,19 @@ export default function ProcessedOrderPage() {
     const productName = orderData.serviceName || orderData.title || 'Product Order';
     const orderAmount = Number(orderData.price) || 0;
 
-    // ১. Manual Pay -> app/payment/page.js
+    // ১. Manual Pay -> সরাসরি বিকাশ/নগদ পেমেন্ট পেজে যাবে (অর্ডার ও মেসেজ পরে হবে)
     if (selectedMethod === 'manual_mfs') {
       router.push('/payment');
       return;
     }
 
-    // ২. TBC Pay
+    // ২. Crypto Pay -> সরাসরি ক্রিপ্টো পেজে যাবে (অর্ডার ও মেসেজ TrxID দেওয়ার পর হবে)
+    if (selectedMethod === 'crypto') {
+      router.push('/crypto-pay');
+      return;
+    }
+
+    // ৩. TBC Pay -> সরাসরি ডাটাবেজে এন্ট্রি ও মেসেজ
     if (selectedMethod === 'tbc') {
       setLoading(true);
       try {
@@ -96,71 +102,6 @@ export default function ProcessedOrderPage() {
       }
       return;
     }
-
-    // ৩. Crypto Pay
-    if (selectedMethod === 'crypto') {
-      setLoading(true);
-      try {
-        const priceInUSD = Number(calculateUSDT(orderData.price));
-
-        const orderRes = await fetch('/api/order', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            serviceName: productName,
-            price: orderAmount,
-            customerName: orderData.customerName || 'Customer',
-            whatsappNumber: orderData.whatsappNumber || '',
-            telegramUsername: orderData.telegramUsername || 'নেই',
-            paymentMethod: 'Crypto Pay (TRC20)',
-            trxId: 'Pending Crypto',
-          }),
-        });
-
-        const orderResult = await orderRes.json();
-        const finalOrderId = orderResult.orderId || orderResult.order_id || orderResult.id || `HC-${Date.now().toString().slice(-6)}`;
-
-        try {
-          await fetch('/api/send-whatsapp', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              customerName: orderData.customerName,
-              phone: orderData.whatsappNumber,
-              orderId: finalOrderId,
-              serviceName: productName,
-            }),
-          });
-        } catch (waErr) {
-          console.error('WhatsApp alert error:', waErr);
-        }
-
-        const res = await fetch('/api/create-crypto-invoice', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            orderId: finalOrderId,
-            amountUSD: priceInUSD,
-            customerName: orderData.customerName,
-            phone: orderData.whatsappNumber,
-          }),
-        });
-
-        const data = await res.json();
-        localStorage.removeItem('hubcart_current_order');
-
-        if (res.ok && data.invoiceUrl) {
-          window.location.href = data.invoiceUrl;
-        } else {
-          router.push(`/order-success?orderId=${finalOrderId}`);
-        }
-      } catch (err) {
-        alert('Crypto server connection error. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-      return;
-    }
   };
 
   if (!orderData) {
@@ -203,7 +144,7 @@ export default function ProcessedOrderPage() {
       {/* Grid Methods */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '20px' }}>
         
-        {/* ১. Manual Pay (ফুল উইডথ / স্প্যান ২) */}
+        {/* ১. Manual Pay */}
         <div
           onClick={() => setSelectedMethod('manual_mfs')}
           style={{
@@ -256,7 +197,7 @@ export default function ProcessedOrderPage() {
             <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#334155' }}>Crypto Pay</span>
           </div>
           <div style={{ background: '#f1f5f9', padding: '6px', textAlign: 'center', fontSize: '10px', fontWeight: 'bold', color: '#475569' }}>
-            Auto (TRC20)
+            Bybit / TRC20
           </div>
         </div>
 
@@ -297,7 +238,7 @@ export default function ProcessedOrderPage() {
         </div>
       </div>
 
-      {/* Button */}
+      {/* Action Button */}
       <button
         onClick={handleProceed}
         disabled={loading}
@@ -319,7 +260,7 @@ export default function ProcessedOrderPage() {
             ? 'Manual Pay'
             : selectedMethod === 'tbc'
               ? 'TBC Pay'
-              : `Pay $${usdtAmount} USDT`}
+              : `Pay $${usdtAmount} USDT (Crypto)`}
       </button>
 
     </div>
