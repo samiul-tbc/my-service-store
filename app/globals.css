@@ -12,6 +12,10 @@
 ::-webkit-scrollbar-thumb:hover{background:#a6f36a}
 
 /* === Phase 2: desktop nav, bottom-nav hide, motion polish === */
+@media(min-width:1024px){
+  .hc-shell{ padding-bottom:44px }
+}
+@media(min-width:901px){ .hc-pop-grid{ grid-template-columns:repeat(3,minmax(0,1fr)) } }
 .hc-desktop-nav{display:none}
 @media(min-width:1024px){
   .hc-desktop-nav{display:flex;gap:26px;align-items:center}

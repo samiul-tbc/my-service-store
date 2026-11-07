@@ -125,8 +125,8 @@ export default function ProcessedOrderPage() {
           style={{
             marginTop: '10px',
             padding: '8px 16px',
-            background: '#ff7a00',
-            color: '#fff',
+            background: '#a6f36a',
+            color: '#10170c',
             border: 'none',
             borderRadius: '8px',
             cursor: 'pointer',
@@ -145,7 +145,7 @@ export default function ProcessedOrderPage() {
       
       {/* Title */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-        <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#ff7a00', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+        <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#a6f36a', color: '#10170c', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
           3
         </div>
         <h2 style={{ fontSize: '20px', fontWeight: '900', color: '#f8fafc', margin: 0 }}>
@@ -257,8 +257,8 @@ export default function ProcessedOrderPage() {
         style={{
           width: '100%',
           padding: '14px',
-          background: (selectedMethod === 'manual_mfs' || selectedMethod === 'tbc') ? '#16a34a' : '#ff7a00',
-          color: '#ffffff',
+          background: (selectedMethod === 'manual_mfs' || selectedMethod === 'tbc') ? '#16a34a' : '#f59e0b',
+          color: (selectedMethod === 'manual_mfs' || selectedMethod === 'tbc') ? '#ffffff' : '#1c1005',
           border: 'none',
           borderRadius: '12px',
           fontWeight: '900',

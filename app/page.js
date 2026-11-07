@@ -208,6 +208,7 @@ export default function HomePage() {
         .hc-product-grid{
           display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px;
         }
+        @media(min-width:901px){ .hc-pop-grid{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
         .hc-product{
           position:relative; min-width:0; overflow:hidden;
           display:flex; flex-direction:column;
@@ -391,7 +392,7 @@ export default function HomePage() {
         </div>
 
         {loading ? (
-          <div className="hc-product-grid">
+          <div className="hc-product-grid hc-pop-grid">
             {[1, 2, 3, 4].map((n) => (
               <div className="hc-skeleton" key={n} />
             ))}
@@ -405,7 +406,7 @@ export default function HomePage() {
             <span>{t.home.emptySub}</span>
           </div>
         ) : (
-          <div className="hc-product-grid">
+          <div className="hc-product-grid hc-pop-grid">
             {products.map((prod) => (
               <Link key={prod.id} href={`/product/${prod.id}`} className="hc-product">
                 <div className="hc-product-media">
