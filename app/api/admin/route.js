@@ -21,6 +21,28 @@ export async function GET(req) {
   const type = searchParams.get('type');
 
   try {
+    // সব প্রোডাক্টের রিভিউ (site_settings-এ reviews_<id> কী-তে JSON)
+    if (type === 'reviews') {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/site_settings?select=key,value`, {
+        cache: 'no-store',
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+        },
+      });
+      const rows = await res.json();
+      const groups = [];
+      if (Array.isArray(rows)) {
+        for (const row of rows) {
+          if (!row.key || !row.key.startsWith('reviews_')) continue;
+          let reviews = [];
+          try { const p = JSON.parse(row.value); if (Array.isArray(p)) reviews = p; } catch {}
+          groups.push({ productId: Number(row.key.replace('reviews_', '')), reviews });
+        }
+      }
+      return NextResponse.json({ groups });
+    }
+
     let endpoint = '';
     if (type === 'orders') endpoint = `${SUPABASE_URL}/rest/v1/orders?select=*&order=id.desc`;
     else if (type === 'products') endpoint = `${SUPABASE_URL}/rest/v1/products?select=*&order=id.desc`;
@@ -158,6 +180,44 @@ export async function DELETE(req) {
     const { searchParams } = new URL(req.url);
     const type = searchParams.get('type');
     const id = searchParams.get('id');
+
+    // একটি রিভিউ ডিলিট (reviews_<productId> JSON থেকে index সরানো)
+    if (type === 'review') {
+      const productId = searchParams.get('productId');
+      const index = Number(searchParams.get('index'));
+      if (!productId || Number.isNaN(index)) {
+        return NextResponse.json({ error: 'productId/index মিসিং' }, { status: 400 });
+      }
+      const key = `reviews_${productId}`;
+      const getRes = await fetch(`${SUPABASE_URL}/rest/v1/site_settings?key=eq.${encodeURIComponent(key)}&select=value`, {
+        cache: 'no-store',
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+        },
+      });
+      const rows = await getRes.json();
+      let reviews = [];
+      if (Array.isArray(rows) && rows.length && rows[0].value) {
+        try { const p = JSON.parse(rows[0].value); if (Array.isArray(p)) reviews = p; } catch {}
+      }
+      if (index < 0 || index >= reviews.length) {
+        return NextResponse.json({ error: 'রিভিউ পাওয়া যায়নি' }, { status: 404 });
+      }
+      reviews.splice(index, 1);
+      const upRes = await fetch(`${SUPABASE_URL}/rest/v1/site_settings?on_conflict=key`, {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json',
+          Prefer: 'resolution=merge-duplicates',
+        },
+        body: JSON.stringify([{ key, value: JSON.stringify(reviews) }]),
+      });
+      if (!upRes.ok) throw new Error(await upRes.text());
+      return NextResponse.json({ success: true, count: reviews.length });
+    }
 
     if (!type || !id) return NextResponse.json({ error: 'ID মিসিং' }, { status: 400 });
 

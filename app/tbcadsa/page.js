@@ -50,6 +50,9 @@ export default function SecretAdminPage() {
 
   // অর্ডার স্টেট
   const [orders, setOrders] = useState([]);
+  const [reviewsByProduct, setReviewsByProduct] = useState([]);
+  const [loadingReviews, setLoadingReviews] = useState(false);
+  const [copiedTrxId, setCopiedTrxId] = useState(null);
   const [loadingOrders, setLoadingOrders] = useState(false);
   const previousOrderCount = useRef(0);
 
@@ -157,6 +160,7 @@ export default function SecretAdminPage() {
     fetchOrders(pin);
     fetchProducts(pin);
     fetchNotice(pin);
+    fetchReviews(pin);
   };
 
   const fetchOrders = async (pin = pinInput, isSilent = false) => {
@@ -205,6 +209,73 @@ export default function SecretAdminPage() {
     } catch (err) {
       console.error(err);
     }
+  };
+
+  const fetchReviews = async (pin = pinInput) => {
+    setLoadingReviews(true);
+    try {
+      const res = await fetch('/api/admin?type=reviews', {
+        headers: { 'x-admin-pin': pin },
+      });
+      const data = await res.json();
+      if (data && Array.isArray(data.groups)) setReviewsByProduct(data.groups);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingReviews(false);
+    }
+  };
+
+  const handleDeleteReview = async (productId, index, reviewerName) => {
+    if (!confirm(`"${reviewerName}"-এর রিভিউটি ডিলিট করবেন?`)) return;
+    try {
+      const pin = sessionStorage.getItem('hubcart_admin_pin') || pinInput;
+      const res = await fetch(`/api/admin?type=review&productId=${productId}&index=${index}`, {
+        method: 'DELETE',
+        headers: { 'x-admin-pin': pin },
+      });
+      const data = await res.json();
+      if (data.success) {
+        setReviewsByProduct((prev) =>
+          prev.map((g) =>
+            g.productId === productId
+              ? { ...g, reviews: g.reviews.filter((_, i) => i !== index) }
+              : g
+          )
+        );
+      } else {
+        alert('রিভিউ ডিলিট করা যায়নি!');
+      }
+    } catch (err) {
+      alert('নেটওয়ার্ক সমস্যা!');
+    }
+  };
+
+  const handleCopyTrx = async (trxId, orderDbId) => {
+    try {
+      await navigator.clipboard.writeText(String(trxId || ''));
+      setCopiedTrxId(orderDbId);
+      setTimeout(() => setCopiedTrxId(null), 1500);
+    } catch (e) { console.error(e); }
+  };
+
+  const handleExportCSV = () => {
+    const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const rows = [
+      ['Order ID', 'Date', 'Service', 'Customer', 'WhatsApp', 'Payment Method', 'TrxID', 'Price (BDT)', 'Status'].join(','),
+      ...filteredOrders.map((o) => [
+        esc(o.order_id), esc(o.created_at ? new Date(o.created_at).toLocaleString('en-GB') : ''),
+        esc(o.service_name), esc(o.customer_name), esc(o.whatsapp_number),
+        esc(o.payment_method), esc(o.trx_id), esc(o.price), esc(o.status || 'pending'),
+      ].join(',')),
+    ];
+    const blob = new Blob(['\ufeff' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'hubcart-orders.csv';
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleSaveNotice = async (e) => {
@@ -317,7 +388,7 @@ export default function SecretAdminPage() {
         URL.revokeObjectURL(blobUrl);
         try {
           const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 420;
+          const MAX_WIDTH = 900;
           let width = img.width;
           let height = img.height;
 
@@ -330,7 +401,7 @@ export default function SecretAdminPage() {
           canvas.height = height;
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, width, height);
-          resolve(canvas.toDataURL('image/jpeg', 0.65));
+          resolve(canvas.toDataURL('image/jpeg', 0.78));
         } catch (e) {
           reject(new Error('ছবি প্রসেস করা যায়নি'));
         }
@@ -490,6 +561,36 @@ export default function SecretAdminPage() {
   ).length;
 
   const completedCount = orders.filter((o) => o.status === 'completed').length;
+
+  const nowD = new Date();
+  const monthRevenue = orders
+    .filter((o) => o.status === 'completed' && (() => { const d = new Date(o.created_at); return d.getMonth() === nowD.getMonth() && d.getFullYear() === nowD.getFullYear(); })())
+    .reduce((sum, o) => sum + (Number(o.price) || 0), 0);
+
+  const last7Days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    const key = d.toDateString();
+    const amount = orders
+      .filter((o) => o.status === 'completed' && new Date(o.created_at).toDateString() === key)
+      .reduce((sum, o) => sum + (Number(o.price) || 0), 0);
+    return { label: d.toLocaleDateString('bn-BD', { weekday: 'short' }), amount };
+  });
+  const maxDayAmount = Math.max(...last7Days.map((d) => d.amount), 1);
+
+  const topProducts = Object.values(
+    orders
+      .filter((o) => o.status === 'completed')
+      .reduce((acc, o) => {
+        const name = o.service_name || 'Unknown';
+        if (!acc[name]) acc[name] = { name, count: 0, revenue: 0 };
+        acc[name].count += 1;
+        acc[name].revenue += Number(o.price) || 0;
+        return acc;
+      }, {})
+  ).sort((a, b) => b.count - a.count).slice(0, 5);
+
+  const totalReviewCount = reviewsByProduct.reduce((n, g) => n + g.reviews.length, 0);
 
   const filteredOrders = orders.filter((ord) => {
     const q = searchQuery.toLowerCase().trim();
@@ -668,6 +769,34 @@ export default function SecretAdminPage() {
         </div>
       </div>
 
+      {/* ইনসাইটস: মাসের সেল, ৭ দিনের চার্ট, টপ প্রোডাক্ট */}
+      <div style={{ background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', padding: '14px 16px', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '6px' }}>
+          <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#f8fafc' }}>📊 সেলস ইনসাইটস</span>
+          <span style={{ fontSize: '12px', color: '#94a3b8' }}>এই মাসের সেল: <strong style={{ color: '#a6f36a', fontSize: '14px' }}>৳{monthRevenue}</strong></span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px', height: '72px', marginBottom: '4px' }}>
+          {last7Days.map((d, i) => (
+            <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', height: '100%', justifyContent: 'flex-end' }}>
+              <span style={{ fontSize: '9px', color: '#94a3b8' }}>{d.amount > 0 ? `৳${d.amount}` : ''}</span>
+              <div style={{ width: '100%', maxWidth: '34px', height: `${Math.max(6, Math.round((d.amount / maxDayAmount) * 44))}px`, background: d.amount > 0 ? 'linear-gradient(180deg, #a6f36a, #4d7c0f)' : 'rgba(255,255,255,0.08)', borderRadius: '6px 6px 3px 3px' }}></div>
+              <span style={{ fontSize: '9px', color: '#64748b' }}>{d.label}</span>
+            </div>
+          ))}
+        </div>
+        {topProducts.length > 0 && (
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '10px', marginTop: '8px' }}>
+            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#94a3b8', display: 'block', marginBottom: '6px' }}>🏆 টপ সেলিং প্রোডাক্ট</span>
+            {topProducts.map((p, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#cbd5e1', padding: '3px 0' }}>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '65%' }}>{i + 1}. {p.name}</span>
+                <span>{p.count}টি • <strong style={{ color: '#a6f36a' }}>৳{p.revenue}</strong></span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* নোটিশ */}
       <div style={{
         background: 'rgba(15, 23, 42, 0.8)',
@@ -725,7 +854,9 @@ export default function SecretAdminPage() {
             cursor: 'pointer',
           }}
         >
-          🛒 লাইভ অর্ডার ({orders.length})
+          🛒 লাইভ অর্ডার ({orders.length}){pendingCount > 0 && (
+            <span style={{ marginLeft: '6px', background: '#f59e0b', color: '#111', borderRadius: '999px', padding: '1px 7px', fontSize: '11px', fontWeight: '900' }}>{pendingCount} পেন্ডিং</span>
+          )}
         </button>
         <button
           type="button"
@@ -744,6 +875,23 @@ export default function SecretAdminPage() {
         >
           📦 প্রোডাক্ট লিস্ট ({products.length})
         </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('reviews')}
+          style={{
+            flex: 1,
+            padding: '10px',
+            borderRadius: '12px',
+            border: 'none',
+            background: activeTab === 'reviews' ? 'linear-gradient(135deg, #a6f36a, #d2ffad)' : 'transparent',
+            color: activeTab === 'reviews' ? '#ffffff' : '#94a3b8',
+            fontWeight: 'bold',
+            fontSize: '13px',
+            cursor: 'pointer',
+          }}
+        >
+          ⭐ রিভিউ ({totalReviewCount})
+        </button>
       </div>
 
       {/* লাইভ অর্ডার ট্যাব */}
@@ -757,6 +905,15 @@ export default function SecretAdminPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
               style={inputStyle}
             />
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={handleExportCSV}
+                style={{ background: 'rgba(166, 243, 106, 0.12)', border: '1px solid rgba(166, 243, 106, 0.35)', color: '#a6f36a', padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+              >
+                ⬇️ CSV এক্সপোর্ট ({filteredOrders.length})
+              </button>
+            </div>
 
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', gap: '4px', overflowX: 'auto', paddingBottom: '4px' }}>
@@ -845,10 +1002,13 @@ export default function SecretAdminPage() {
 
                   <div style={{ background: 'rgba(30, 41, 59, 0.5)', padding: '10px 12px', borderRadius: '12px', fontSize: '12px', color: '#cbd5e1', lineHeight: '1.6', marginBottom: '12px' }}>
                     <div>👤 <strong>নাম:</strong> {ord.customer_name}</div>
-                    <div>📞 <strong>WhatsApp:</strong> <span style={{ color: '#4ade80' }}>{ord.whatsapp_number}</span></div>
+                    <div>📞 <strong>WhatsApp:</strong> <span style={{ color: '#4ade80' }}>{ord.whatsapp_number}</span>{' '}
+                      <a href={`https://wa.me/${String(ord.whatsapp_number || '').replace(/\D/g, '')}`} target="_blank" rel="noreferrer" style={{ color: '#4ade80', textDecoration: 'none', fontWeight: 'bold' }}>💬 চ্যাট</a>
+                    </div>
                     {ord.telegram_username && <div>✈️ <strong>Telegram:</strong> {ord.telegram_username}</div>}
                     <div>💳 <strong>পেমেন্ট:</strong> {ord.payment_method}</div>
-                    <div>🔢 <strong>TrxID:</strong> <code style={{ color: '#f8fafc', background: '#0b0f19', padding: '2px 6px', borderRadius: '4px' }}>{ord.trx_id}</code></div>
+                    <div>🔢 <strong>TrxID:</strong> <code style={{ color: '#f8fafc', background: '#0b0f19', padding: '2px 6px', borderRadius: '4px' }}>{ord.trx_id}</code>{' '}
+                      <button type="button" onClick={() => handleCopyTrx(ord.trx_id, ord.id)} style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: copiedTrxId === ord.id ? '#4ade80' : '#cbd5e1', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer' }}>{copiedTrxId === ord.id ? '✓ কপি হয়েছে' : '📋 কপি'}</button></div>
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
@@ -1193,6 +1353,54 @@ export default function SecretAdminPage() {
       )}
 
       {/* WhatsApp ডেলিভারি মডাল */}
+      {/* রিভিউ ট্যাব */}
+      {activeTab === 'reviews' && (
+        <div>
+          <p style={{ fontSize: '12px', color: '#94a3b8', margin: '0 0 14px' }}>
+            কাস্টমারদের দেওয়া সব রিভিউ — স্প্যাম বা অনুপযুক্ত রিভিউ এখান থেকে ডিলিট করা যাবে। ডিলিট করলে সাইট থেকেও সাথে সাথে সরে যাবে।
+          </p>
+          {loadingReviews ? (
+            <div style={{ textAlign: 'center', padding: '30px', color: '#94a3b8', fontSize: '13px' }}>রিভিউ লোড হচ্ছে...</div>
+          ) : totalReviewCount === 0 ? (
+            <div style={{ textAlign: 'center', padding: '30px', color: '#94a3b8', fontSize: '13px', border: '1px dashed rgba(255,255,255,0.12)', borderRadius: '16px' }}>
+              এখনো কোনো রিভিউ জমা পড়েনি।
+            </div>
+          ) : (
+            reviewsByProduct.filter((g) => g.reviews.length > 0).map((group) => {
+              const prod = products.find((p) => p.id === group.productId);
+              const avg = group.reviews.reduce((s, r) => s + (Number(r.rating) || 0), 0) / group.reviews.length;
+              return (
+                <div key={group.productId} style={{ background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', padding: '14px', marginBottom: '12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' }}>
+                    <strong style={{ fontSize: '13px', color: '#f8fafc' }}>{prod ? prod.title : `প্রোডাক্ট #${group.productId}`}</strong>
+                    <span style={{ fontSize: '11px', color: '#fbbf24', fontWeight: 'bold' }}>{'★'.repeat(Math.round(avg))} {avg.toFixed(1)} • {group.reviews.length}টি রিভিউ</span>
+                  </div>
+                  {group.reviews.map((r, idx) => (
+                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', padding: '9px 0', borderTop: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: '12px', color: '#e2e8f0' }}>
+                          <strong>{r.name}</strong>{' '}
+                          <span style={{ color: '#fbbf24' }}>{'★'.repeat(Number(r.rating) || 0)}</span>{' '}
+                          <span style={{ color: '#64748b', fontSize: '10px' }}>{r.date ? new Date(r.date).toLocaleDateString('bn-BD') : ''}</span>
+                        </div>
+                        <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#94a3b8', lineHeight: 1.55 }}>{r.text}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteReview(group.productId, idx, r.name)}
+                        style={{ flex: 'none', alignSelf: 'flex-start', background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#f87171', padding: '5px 9px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
+
       {deliveryModalOrder && (
         <div style={{
           position: 'fixed',
