@@ -36,10 +36,10 @@ export default function PaymentGatewayPage() {
   }
 
   return (
-    <div style={{ minHeight: '90vh', background: '#f8fafc', maxWidth: '480px', margin: '0 auto', display: 'flex', flexDirection: 'column', paddingBottom: '30px' }}>
+    <div style={{ minHeight: '90vh', background: '#080b10', maxWidth: '480px', margin: '0 auto', display: 'flex', flexDirection: 'column', paddingBottom: '30px' }}>
       
       {/* টপ হেডার বার */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid #e2e8f0' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
         <button onClick={() => router.push('/')} style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer' }}>
           🏠
         </button>
@@ -58,16 +58,16 @@ export default function PaymentGatewayPage() {
             style={{ width: '58px', height: '58px', objectFit: 'contain' }}
           />
         </div>
-        <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#0f172a', margin: '0 0 4px' }}>
+        <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#f8fafc', margin: '0 0 4px' }}>
           Hub Cart
         </h2>
         <span style={{ fontSize: '13px', color: '#64748b', fontWeight: '600' }}>
-          পরিশোধযোগ্য মূল্য: <strong style={{ color: '#0284c7' }}>৳{orderData.price}.00</strong>
+          পরিশোধযোগ্য মূল্য: <strong style={{ color: '#a6f36a' }}>৳{orderData.price}.00</strong>
         </span>
       </div>
 
       {/* নীল ব্যানার: মোবাইল ব্যাংকিং */}
-      <div style={{ background: '#0284c7', color: '#ffffff', padding: '10px 16px', textAlign: 'center', fontWeight: 'bold', fontSize: '14px', margin: '10px 16px 16px', borderRadius: '8px' }}>
+      <div style={{ background: '#a6f36a', color: '#10170c', padding: '10px 16px', textAlign: 'center', fontWeight: 'bold', fontSize: '14px', margin: '10px 16px 16px', borderRadius: '8px' }}>
         মোবাইল ব্যাংকিং
       </div>
 
@@ -79,8 +79,8 @@ export default function PaymentGatewayPage() {
           onClick={() => handleSelectMethod('bkash')}
           style={{
             background: '#ffffff',
-            border: '1.5px solid #cbd5e1',
-            borderRadius: '12px',
+            border: '1.5px solid rgba(255,255,255,0.14)',
+            borderRadius: '16px',
             padding: '14px 10px',
             textAlign: 'center',
             cursor: 'pointer',
@@ -100,8 +100,8 @@ export default function PaymentGatewayPage() {
           onClick={() => handleSelectMethod('nagad')}
           style={{
             background: '#ffffff',
-            border: '1.5px solid #cbd5e1',
-            borderRadius: '12px',
+            border: '1.5px solid rgba(255,255,255,0.14)',
+            borderRadius: '16px',
             padding: '14px 10px',
             textAlign: 'center',
             cursor: 'pointer',
@@ -121,8 +121,8 @@ export default function PaymentGatewayPage() {
           onClick={() => handleSelectMethod('rocket')}
           style={{
             background: '#ffffff',
-            border: '1.5px solid #cbd5e1',
-            borderRadius: '12px',
+            border: '1.5px solid rgba(255,255,255,0.14)',
+            borderRadius: '16px',
             padding: '14px 10px',
             textAlign: 'center',
             cursor: 'pointer',
@@ -142,8 +142,8 @@ export default function PaymentGatewayPage() {
           onClick={() => handleSelectMethod('upay')}
           style={{
             background: '#ffffff',
-            border: '1.5px solid #cbd5e1',
-            borderRadius: '12px',
+            border: '1.5px solid rgba(255,255,255,0.14)',
+            borderRadius: '16px',
             padding: '14px 10px',
             textAlign: 'center',
             cursor: 'pointer',

@@ -68,8 +68,14 @@ const CATEGORIES = [
 
 export default function CategoriesPage() {
   const [selectedCat, setSelectedCat] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get('q');
+    if (q) setSearchQuery(q);
+  }, []);
 
   useEffect(() => {
     async function loadProducts() {
@@ -92,14 +98,25 @@ export default function CategoriesPage() {
     loadProducts();
   }, []);
 
-  const filtered = products.filter((p) => selectedCat === 'all' || p.category === selectedCat);
+  const q = searchQuery.trim().toLowerCase();
+  const filtered = products.filter((p) => {
+    const inCategory = selectedCat === 'all' || p.category === selectedCat;
+    const inSearch = !q || (p.title || '').toLowerCase().includes(q) || (p.category || '').toLowerCase().includes(q);
+    return inCategory && inSearch;
+  });
+
+  // Hide categories that have no products (e.g. an empty "Social Boost (0)"),
+  // but keep everything visible while products are still loading.
+  const visibleCategories = loading
+    ? CATEGORIES
+    : CATEGORIES.filter((cat) => cat.id === 'all' || products.some((p) => p.category === cat.id));
 
   return (
-    <div style={{ maxWidth: '640px', margin: '0 auto', padding: '14px 14px 90px' }}>
+    <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '22px 16px 30px' }}>
       
       {/* হেডার */}
       <div style={{ marginBottom: '18px' }}>
-        <h1 style={{ fontSize: '20px', fontWeight: '900', color: '#f8fafc', margin: '0 0 4px', letterSpacing: '-0.3px' }}>
+        <h1 style={{ fontSize: '28px', fontWeight: '900', color: '#f8fafc', margin: '0 0 4px', letterSpacing: '-0.6px', fontFamily: 'Manrope, sans-serif' }}>
           Explore Categories
         </h1>
         <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>
@@ -107,31 +124,42 @@ export default function CategoriesPage() {
         </p>
       </div>
 
+      {/* সার্চ বক্স — navbar-এর ?q= থেকেও এখানে সার্চ আসে */}
+      <div style={{ marginBottom: '16px' }}>
+        <input
+          type="search"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="সার্ভিস খুঁজুন… (যেমন: YouTube, Canva, Root)"
+          style={{ width: '100%', boxSizing: 'border-box', padding: '11px 14px', borderRadius: '12px', background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255, 255, 255, 0.1)', color: '#fff', fontSize: '13px', outline: 'none' }}
+        />
+      </div>
+
       {/* ক্যাটাগরি গ্রিড সিলেকশন */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: '24px' }}>
-        {CATEGORIES.map((cat) => {
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '10px', marginBottom: '24px' }}>
+        {visibleCategories.map((cat) => {
           const isSelected = selectedCat === cat.id;
           return (
             <div
               key={cat.id}
               onClick={() => setSelectedCat(cat.id)}
               style={{
-                background: isSelected ? 'linear-gradient(135deg, rgba(37, 99, 235, 0.25) 0%, rgba(15, 23, 42, 0.85) 100%)' : 'rgba(15, 23, 42, 0.7)',
+                background: isSelected ? 'linear-gradient(135deg, rgba(166, 243, 106, 0.16) 0%, rgba(15, 23, 42, 0.85) 100%)' : 'rgba(15, 23, 42, 0.7)',
                 backdropFilter: 'blur(12px)',
-                border: isSelected ? '1px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.08)',
-                borderRadius: '16px',
-                padding: '14px',
+                border: isSelected ? '1px solid #a6f36a' : '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: '18px',
+                padding: '16px',
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
-                boxShadow: isSelected ? '0 4px 15px rgba(56, 189, 248, 0.2)' : 'none',
+                boxShadow: isSelected ? '0 4px 15px rgba(166, 243, 106, 0.2)' : 'none',
               }}
             >
               <div style={{
                 width: '38px',
                 height: '38px',
                 borderRadius: '10px',
-                background: isSelected ? 'linear-gradient(135deg, #2563eb, #1d4ed8)' : 'rgba(30, 41, 59, 0.8)',
-                color: isSelected ? '#ffffff' : '#38bdf8',
+                background: isSelected ? 'linear-gradient(135deg, #a6f36a, #d2ffad)' : 'rgba(30, 41, 59, 0.8)',
+                color: isSelected ? '#10170c' : '#a6f36a',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -150,7 +178,7 @@ export default function CategoriesPage() {
       <div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 'bold', margin: 0, color: '#f8fafc' }}>
-            {CATEGORIES.find((c) => c.id === selectedCat)?.name} ({filtered.length})
+            {searchQuery.trim() ? `Search: \u201c${searchQuery.trim()}\u201d` : CATEGORIES.find((c) => c.id === selectedCat)?.name} ({filtered.length})
           </h2>
         </div>
 
@@ -158,10 +186,12 @@ export default function CategoriesPage() {
           <div style={{ textAlign: 'center', padding: '40px 0', color: '#64748b', fontSize: '12px' }}>লোড হচ্ছে...</div>
         ) : filtered.length === 0 ? (
           <div style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255, 255, 255, 0.06)', borderRadius: '16px', padding: '30px', textAlign: 'center', color: '#64748b', fontSize: '12px' }}>
-            এই ক্যাটাগরিতে এখনো কোনো সার্ভিস যুক্ত করা হয়নি।
+            {searchQuery.trim()
+              ? `\u201c${searchQuery.trim()}\u201d নামে কোনো সার্ভিস পাওয়া যায়নি। অন্য নামে খুঁজে দেখুন।`
+              : 'এই ক্যাটাগরিতে এখনো কোনো সার্ভিস যুক্ত করা হয়নি।'}
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '14px' }}>
             {filtered.map((prod) => (
               <Link
                 key={prod.id}
@@ -178,7 +208,7 @@ export default function CategoriesPage() {
                   color: 'inherit',
                 }}
               >
-                <div style={{ width: '100%', height: '115px', background: '#0b0f19' }}>
+                <div style={{ width: '100%', height: '150px', background: '#0b0f19' }}>
                   <img
                     src={prod.image || LOGO_HUB_CART}
                     alt={prod.title}
@@ -190,8 +220,8 @@ export default function CategoriesPage() {
                 <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
                   <h4 style={{ fontSize: '12px', fontWeight: '600', margin: '0 0 8px', color: '#f8fafc', minHeight: '32px', lineHeight: 1.3 }}>{prod.title}</h4>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: '14px', fontWeight: '900', color: '#38bdf8' }}>৳{prod.price}</span>
-                    <span style={{ padding: '4px 8px', borderRadius: '6px', background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', color: '#fff', fontSize: '10px', fontWeight: 'bold' }}>
+                    <span style={{ fontSize: '14px', fontWeight: '900', color: '#a6f36a' }}>৳{prod.price}</span>
+                    <span style={{ padding: '4px 8px', borderRadius: '6px', background: 'linear-gradient(135deg, #a6f36a, #d2ffad)', color: '#10170c', fontSize: '10px', fontWeight: 'bold' }}>
                       Buy
                     </span>
                   </div>

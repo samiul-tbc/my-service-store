@@ -154,7 +154,7 @@ export default function CryptoPayPage() {
 
         <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(30, 41, 59, 0.7)', borderRadius: '14px' }}>
           <span style={{ fontSize: '12px', color: '#94a3b8' }}>Total Payable Amount:</span>
-          <div style={{ fontSize: '24px', fontWeight: '900', color: '#38bdf8' }}>
+          <div style={{ fontSize: '24px', fontWeight: '900', color: '#a6f36a' }}>
             ${usdtPrice} USDT <span style={{ fontSize: '13px', color: '#94a3b8' }}>(৳{orderData.price})</span>
           </div>
         </div>
@@ -163,13 +163,13 @@ export default function CryptoPayPage() {
       {/* QR Code & Wallet Address Box */}
       <div style={{
         background: 'rgba(15, 23, 42, 0.8)',
-        border: '1px solid rgba(56, 189, 248, 0.25)',
+        border: '1px solid rgba(166, 243, 106, 0.25)',
         borderRadius: '20px',
         padding: '18px 16px',
         marginBottom: '16px',
         textAlign: 'center'
       }}>
-        <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#38bdf8', display: 'block', marginBottom: '12px', letterSpacing: '0.5px' }}>
+        <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#a6f36a', display: 'block', marginBottom: '12px', letterSpacing: '0.5px' }}>
           🌐 Network: TRON (TRC20)
         </span>
 
@@ -210,8 +210,8 @@ export default function CryptoPayPage() {
             onClick={handleCopy}
             style={{
               width: '100%',
-              background: copied ? '#16a34a' : 'linear-gradient(135deg, #2563eb, #1d4ed8)',
-              color: '#ffffff',
+              background: copied ? '#16a34a' : 'linear-gradient(135deg, #a6f36a, #d2ffad)',
+              color: '#10170c',
               border: 'none',
               borderRadius: '10px',
               padding: '10px',

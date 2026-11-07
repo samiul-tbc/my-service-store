@@ -105,7 +105,7 @@ function OrderSuccessContent() {
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
             <span style={{ color: '#94a3b8' }}>Order ID:</span>
-            <span style={{ fontWeight: '900', color: '#38bdf8', fontSize: '15px' }}>{orderId || 'লোড হচ্ছে...'}</span>
+            <span style={{ fontWeight: '900', color: '#a6f36a', fontSize: '15px' }}>{orderId || 'লোড হচ্ছে...'}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
             <span style={{ color: '#94a3b8' }}>পেমেন্ট স্ট্যাটাস:</span>
@@ -118,7 +118,7 @@ function OrderSuccessContent() {
         </div>
 
         <div style={{
-          border: '1px dashed #0284c7',
+          border: '1px dashed #a6f36a',
           background: 'rgba(2, 132, 199, 0.08)',
           borderRadius: '14px',
           padding: '12px 14px',

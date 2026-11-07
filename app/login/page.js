@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 const LOGO_HUB_CART = 'https://i.postimg.cc/4Y3TK6bN/5707.png';
 
@@ -130,7 +131,7 @@ export default function LoginPage() {
         boxShadow: '0 12px 30px rgba(0,0,0,0.4)',
       }}>
         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-          <img src={LOGO_HUB_CART} alt="Hub Cart" style={{ width: '44px', height: '44px', objectFit: 'contain', margin: '0 auto 6px', filter: 'drop-shadow(0 2px 8px rgba(59, 130, 246, 0.4))' }} />
+          <img src={LOGO_HUB_CART} alt="Hub Cart" style={{ width: '44px', height: '44px', objectFit: 'contain', margin: '0 auto 6px', filter: 'drop-shadow(0 2px 8px rgba(166, 243, 106, 0.4))' }} />
           <h2 style={{ fontSize: '20px', fontWeight: '900', margin: '0 0 4px', color: '#f8fafc' }}>Hub Cart</h2>
           <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>
             {isLoginMode ? 'প্রিমিয়াম অ্যাকাউন্টে লগইন করুন' : 'নতুন অ্যাকাউন্ট তৈরি করুন'}
@@ -142,14 +143,14 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={() => { setIsLoginMode(true); setErrorMsg(''); }}
-            style={{ flex: 1, padding: '8px', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', background: isLoginMode ? 'linear-gradient(135deg, #2563eb, #1d4ed8)' : 'transparent', color: isLoginMode ? '#ffffff' : '#64748b' }}
+            style={{ flex: 1, padding: '8px', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', background: isLoginMode ? 'linear-gradient(135deg, #a6f36a, #d2ffad)' : 'transparent', color: isLoginMode ? '#10170c' : '#64748b' }}
           >
             লগইন
           </button>
           <button
             type="button"
             onClick={() => { setIsLoginMode(false); setErrorMsg(''); }}
-            style={{ flex: 1, padding: '8px', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', background: !isLoginMode ? 'linear-gradient(135deg, #2563eb, #1d4ed8)' : 'transparent', color: !isLoginMode ? '#ffffff' : '#64748b' }}
+            style={{ flex: 1, padding: '8px', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', background: !isLoginMode ? 'linear-gradient(135deg, #a6f36a, #d2ffad)' : 'transparent', color: !isLoginMode ? '#10170c' : '#64748b' }}
           >
             রেজিস্ট্রেশন
           </button>
@@ -222,20 +223,28 @@ export default function LoginPage() {
             <input required type="password" minLength={6} placeholder="কমপক্ষে ৬ ডিজিট" value={password} onChange={(e) => setPassword(e.target.value)} style={inputStyle} />
           </div>
 
+          {isLoginMode && (
+            <div style={{ textAlign: 'right', margin: '-8px 0 14px' }}>
+              <Link href="/forgot-password" style={{ color: '#a6f36a', fontSize: '12px', fontWeight: '700', textDecoration: 'none' }}>
+                পাসওয়ার্ড ভুলে গেছেন?
+              </Link>
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={loading}
             style={{
               width: '100%',
               padding: '12px',
-              background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
-              color: '#ffffff',
+              background: 'linear-gradient(135deg, #a6f36a, #d2ffad)',
+              color: '#10170c',
               border: 'none',
               borderRadius: '12px',
               fontWeight: 'bold',
               fontSize: '13px',
               cursor: 'pointer',
-              boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)',
+              boxShadow: '0 4px 14px rgba(166, 243, 106, 0.4)',
             }}
           >
             {loading ? 'প্রসেসিং হচ্ছে...' : isLoginMode ? 'লগইন করুন' : 'অ্যাকাউন্ট তৈরি করুন'}

@@ -1,12 +1,23 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import LanguageToggle from '../components/LanguageToggle';
 
 const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
 
 export default function Navbar() {
+  const router = useRouter();
   const [user, setUser] = useState(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    const q = searchQuery.trim();
+    setSearchOpen(false);
+    router.push(q ? `/categories?q=${encodeURIComponent(q)}` : '/categories');
+  };
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -26,13 +37,13 @@ export default function Navbar() {
       position: 'sticky',
       top: 0,
       zIndex: 90,
-      background: 'rgba(11, 15, 25, 0.88)',
+      background: 'rgba(8, 11, 16, 0.86)',
       backdropFilter: 'blur(16px)',
-      borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-      padding: '10px 14px',
+      borderBottom: '1px solid rgba(255, 255, 255, 0.075)',
+      padding: '13px 20px',
     }}>
       <div style={{
-        maxWidth: '640px',
+        maxWidth: '1240px',
         margin: '0 auto',
         display: 'flex',
         justifyContent: 'space-between',
@@ -46,7 +57,7 @@ export default function Navbar() {
             <span style={{ fontSize: '15px', fontWeight: '900', color: '#f8fafc', display: 'block', lineHeight: 1.1 }}>
               Hub Cart
             </span>
-            <span style={{ fontSize: '8px', fontWeight: 'bold', color: '#38bdf8', letterSpacing: '0.5px' }}>
+            <span style={{ fontSize: '8px', fontWeight: 'bold', color: '#a6f36a', letterSpacing: '0.5px' }}>
               PREMIUM STORE
             </span>
           </div>
@@ -59,15 +70,20 @@ export default function Navbar() {
           <LanguageToggle />
 
           {/* সার্চ বাটন */}
-          <Link href="/orders" style={{ color: '#94a3b8', display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+          <button
+            type="button"
+            aria-label="Search services"
+            onClick={() => setSearchOpen((v) => !v)}
+            style={{ color: searchOpen ? '#a6f36a' : '#94a3b8', display: 'flex', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+          >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-          </Link>
+          </button>
 
           {/* মেমো বাটন */}
-          <Link href="/orders" style={{ color: '#38bdf8', display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+          <Link href="/orders" style={{ color: '#a6f36a', display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
               <polyline points="14 2 14 8 20 8"></polyline>
@@ -83,8 +99,8 @@ export default function Navbar() {
                 href="/profile"
                 style={{
                   textDecoration: 'none',
-                  background: 'rgba(37, 99, 235, 0.2)',
-                  border: '1px solid rgba(37, 99, 235, 0.4)',
+                  background: 'rgba(166, 243, 106, 0.2)',
+                  border: '1px solid rgba(166, 243, 106, 0.4)',
                   borderRadius: '20px',
                   padding: '3px 8px 3px 4px',
                   display: 'flex',
@@ -96,8 +112,8 @@ export default function Navbar() {
                   width: '20px',
                   height: '20px',
                   borderRadius: '50%',
-                  background: '#2563eb',
-                  color: '#ffffff',
+                  background: '#a6f36a',
+                  color: '#10170c',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -115,16 +131,16 @@ export default function Navbar() {
                 href="/login"
                 style={{
                   textDecoration: 'none',
-                  background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+                  background: 'linear-gradient(135deg, #a6f36a, #d2ffad)',
                   borderRadius: '16px',
                   padding: '5px 12px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: '#ffffff',
+                  color: '#10170c',
                   fontSize: '11px',
                   fontWeight: 'bold',
-                  boxShadow: '0 2px 8px rgba(37, 99, 235, 0.3)',
+                  boxShadow: '0 2px 12px rgba(166, 243, 106, 0.15)',
                 }}
               >
                 Login
@@ -135,6 +151,22 @@ export default function Navbar() {
         </div>
 
       </div>
+    
+      {searchOpen && (
+        <form onSubmit={handleSearchSubmit} style={{ maxWidth: '1240px', margin: '10px auto 2px', display: 'flex', gap: '8px' }}>
+          <input
+            autoFocus
+            type="search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="সার্ভিস খুঁজুন… (যেমন: YouTube, Canva, Root)"
+            style={{ flex: 1, padding: '10px 14px', borderRadius: '12px', background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(166, 243, 106, 0.35)', color: '#fff', fontSize: '13px', outline: 'none' }}
+          />
+          <button type="submit" style={{ padding: '10px 16px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #a6f36a, #d2ffad)', color: '#10170c', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>
+            Search
+          </button>
+        </form>
+      )}
     </header>
   );
 }

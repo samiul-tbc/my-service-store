@@ -106,7 +106,7 @@ export default function SignUpPage() {
           <img
             src={LOGO_HUB_CART}
             alt="Hub Cart"
-            style={{ width: '44px', height: '44px', objectFit: 'contain', margin: '0 auto 6px', filter: 'drop-shadow(0 2px 8px rgba(59, 130, 246, 0.4))' }}
+            style={{ width: '44px', height: '44px', objectFit: 'contain', margin: '0 auto 6px', filter: 'drop-shadow(0 2px 8px rgba(166, 243, 106, 0.4))' }}
           />
           <h2 style={{ fontSize: '20px', fontWeight: '900', margin: '0 0 4px', color: '#f8fafc' }}>Hub Cart</h2>
           <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>নতুন অ্যাকাউন্ট তৈরি করুন</p>
@@ -209,14 +209,14 @@ export default function SignUpPage() {
             style={{
               width: '100%',
               padding: '12px',
-              background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
-              color: '#ffffff',
+              background: 'linear-gradient(135deg, #a6f36a, #d2ffad)',
+              color: '#10170c',
               border: 'none',
               borderRadius: '12px',
               fontWeight: 'bold',
               fontSize: '13px',
               cursor: loading ? 'not-allowed' : 'pointer',
-              boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)',
+              boxShadow: '0 4px 14px rgba(166, 243, 106, 0.4)',
             }}
           >
             {loading ? 'অ্যাকাউন্ট তৈরি হচ্ছে...' : 'অ্যাকাউন্ট তৈরি করুন'}
@@ -225,7 +225,7 @@ export default function SignUpPage() {
 
         <div style={{ marginTop: '16px', textAlign: 'center', fontSize: '12px', color: '#94a3b8' }}>
           আগে থেকেই অ্যাকাউন্ট আছে?{' '}
-          <Link href="/login" style={{ color: '#38bdf8', fontWeight: 'bold', textDecoration: 'none' }}>
+          <Link href="/login" style={{ color: '#a6f36a', fontWeight: 'bold', textDecoration: 'none' }}>
             লগইন করুন
           </Link>
         </div>

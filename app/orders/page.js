@@ -122,7 +122,7 @@ export default function OrderHistoryPage() {
       case 'paid':
         return { label: 'Completed', bg: 'rgba(34, 197, 94, 0.15)', text: '#4ade80', border: 'rgba(34, 197, 94, 0.3)' };
       case 'processing':
-        return { label: 'Processing', bg: 'rgba(56, 189, 248, 0.15)', text: '#38bdf8', border: 'rgba(56, 189, 248, 0.3)' };
+        return { label: 'Processing', bg: 'rgba(166, 243, 106, 0.15)', text: '#a6f36a', border: 'rgba(166, 243, 106, 0.3)' };
       case 'verifying':
         return { label: 'Verifying', bg: 'rgba(251, 191, 36, 0.15)', text: '#fbbf24', border: 'rgba(251, 191, 36, 0.3)' };
       case 'cancelled':
@@ -158,7 +158,7 @@ export default function OrderHistoryPage() {
             if (user?.phone) fetchOrders(user.phone);
             else if (searchInput) fetchOrders(searchInput);
           }}
-          style={{ background: 'rgba(30, 41, 59, 0.6)', border: '1px solid rgba(255, 255, 255, 0.08)', color: '#38bdf8', padding: '6px 10px', borderRadius: '10px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+          style={{ background: 'rgba(30, 41, 59, 0.6)', border: '1px solid rgba(255, 255, 255, 0.08)', color: '#a6f36a', padding: '6px 10px', borderRadius: '10px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
           title="রিফ্রেশ করুন"
         >
           🔄
@@ -199,8 +199,8 @@ export default function OrderHistoryPage() {
             style={{
               padding: '10px 18px',
               borderRadius: '12px',
-              background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
-              color: '#ffffff',
+              background: 'linear-gradient(135deg, #a6f36a, #d2ffad)',
+              color: '#10170c',
               border: 'none',
               fontWeight: 'bold',
               fontSize: '13px',
@@ -235,8 +235,8 @@ export default function OrderHistoryPage() {
             href="/"
             style={{
               display: 'inline-block',
-              background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
-              color: '#ffffff',
+              background: 'linear-gradient(135deg, #a6f36a, #d2ffad)',
+              color: '#10170c',
               padding: '10px 24px',
               borderRadius: '12px',
               textDecoration: 'none',
@@ -270,7 +270,7 @@ export default function OrderHistoryPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', paddingBottom: '10px', borderBottom: '1px solid rgba(255, 255, 255, 0.06)' }}>
                   <div>
                     <span style={{ fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>ORDER ID</span>
-                    <div style={{ fontSize: '14px', fontWeight: '900', color: isCancelled ? '#f87171' : '#38bdf8' }}>
+                    <div style={{ fontSize: '14px', fontWeight: '900', color: isCancelled ? '#f87171' : '#a6f36a' }}>
                       {ord.order_id}
                     </div>
                   </div>
@@ -292,7 +292,7 @@ export default function OrderHistoryPage() {
                   <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 'bold', color: '#f8fafc' }}>
                     {ord.service_name}
                   </h3>
-                  <span style={{ fontSize: '16px', fontWeight: '900', color: isCancelled ? '#94a3b8' : '#38bdf8' }}>
+                  <span style={{ fontSize: '16px', fontWeight: '900', color: isCancelled ? '#94a3b8' : '#a6f36a' }}>
                     ৳{ord.price}
                   </span>
                 </div>
@@ -319,9 +319,9 @@ export default function OrderHistoryPage() {
                         flex: 1,
                         minWidth: '95px',
                         textAlign: 'center',
-                        background: 'rgba(56, 189, 248, 0.1)',
-                        border: '1px solid rgba(56, 189, 248, 0.3)',
-                        color: '#38bdf8',
+                        background: 'rgba(166, 243, 106, 0.1)',
+                        border: '1px solid rgba(166, 243, 106, 0.3)',
+                        color: '#a6f36a',
                         padding: '9px 6px',
                         borderRadius: '10px',
                         textDecoration: 'none',

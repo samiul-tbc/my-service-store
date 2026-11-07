@@ -1,4 +1,20 @@
 'use client';
+
+// ============================================================
+// Hub Cart — Home Page UI (Single-file version)
+// ------------------------------------------------------------
+// This is the EXACT UI of app/page.js from your uploaded project,
+// but self-contained: all the `hc-` styles that were originally in
+// app/globals.css are included inside this one file.
+//
+// How to use:
+// 1. Replace your project's  app/page.js  with this file.
+// 2. That's it — you do NOT need to change globals.css, Navbar
+//    or BottomNav for this page's UI to look the same.
+// 3. Products still load from your existing  /api/products  API
+//    (same as the original). Notice text also comes from the API.
+// ============================================================
+
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
@@ -10,172 +26,381 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let active = true;
     async function loadHomeData() {
       try {
         const res = await fetch('/api/products', { cache: 'no-store' });
         const data = await res.json();
-        if (Array.isArray(data.products)) {
-          setProducts(data.products);
-        }
-        if (data.notice) {
-          setNotice(data.notice);
-        }
+        if (!active) return;
+        if (Array.isArray(data.products)) setProducts(data.products);
+        if (data.notice) setNotice(data.notice);
       } catch (err) {
         console.error('Home load error:', err);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     }
     loadHomeData();
+    return () => { active = false; };
   }, []);
 
   return (
-    <div style={{ maxWidth: '640px', margin: '0 auto', padding: '12px 14px 100px' }}>
-      
-      {/* ডায়নামিক নোটিশ ব্যানার */}
+    <main className="hc-shell">
+      {/* ---------- All styles for this page (originally in globals.css) ---------- */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+        :root{
+          --hc-bg:#080b10;
+          --hc-panel:#10151d;
+          --hc-panel2:#141b24;
+          --hc-line:rgba(255,255,255,.085);
+          --hc-text:#f5f7fa;
+          --hc-muted:#8d98a8;
+          --hc-accent:#a6f36a;
+          --hc-accent2:#d2ffad;
+        }
+        body{
+          margin:0;
+          background:var(--hc-bg);
+          color:var(--hc-text);
+          font-family:'DM Sans',system-ui,sans-serif;
+          -webkit-font-smoothing:antialiased;
+        }
+        ::selection{ background:#a6f36a; color:#10150c; }
+
+        .hc-shell{
+          width:min(100% - 36px,1240px);
+          margin:0 auto;
+          padding:22px 0 112px;
+        }
+
+        /* Notice bar */
+        .hc-notice{
+          display:flex; gap:11px; align-items:center;
+          padding:12px 16px;
+          border:1px solid rgba(166,243,106,.2);
+          background:linear-gradient(90deg,rgba(166,243,106,.09),rgba(16,21,29,.85));
+          border-radius:14px;
+          color:#e7f7db; font-size:13px;
+          margin-bottom:22px;
+        }
+        .hc-notice-mark{
+          display:grid; place-items:center;
+          width:28px; height:28px; border-radius:9px;
+          background:rgba(166,243,106,.14);
+          color:var(--hc-accent); flex:none;
+        }
+
+        /* Hero */
+        .hc-hero{
+          position:relative; overflow:hidden;
+          min-height:340px;
+          border:1px solid var(--hc-line);
+          border-radius:28px;
+          background:
+            radial-gradient(ellipse at 78% 15%,rgba(166,243,106,.13),transparent 32%),
+            linear-gradient(125deg,#151c25 0%,#0d1118 55%,#101b15 100%);
+          padding:clamp(28px,5vw,62px);
+          display:flex; align-items:center;
+          margin-bottom:48px;
+        }
+        .hc-hero:after{
+          content:''; position:absolute;
+          width:400px; height:400px; right:-120px; top:-145px;
+          border:1px solid rgba(166,243,106,.11); border-radius:50%;
+          box-shadow:0 0 0 45px rgba(166,243,106,.025),0 0 0 90px rgba(166,243,106,.018);
+          pointer-events:none;
+        }
+        .hc-hero-content{ position:relative; z-index:1; max-width:680px; }
+        .hc-eyebrow{
+          display:inline-flex; align-items:center; gap:9px;
+          color:var(--hc-accent);
+          font-size:11px; letter-spacing:2px; text-transform:uppercase; font-weight:800;
+          margin-bottom:20px;
+        }
+        .hc-eyebrow:before{ content:''; height:1px; width:24px; background:var(--hc-accent); }
+        .hc-hero h1{
+          font-family:Manrope,sans-serif;
+          font-size:clamp(36px,6vw,66px);
+          line-height:1.04; letter-spacing:-2.5px;
+          margin:0; max-width:700px; font-weight:800;
+        }
+        .hc-hero h1 em{ font-style:normal; color:var(--hc-accent); }
+        .hc-hero p{
+          color:#a7b1be; font-size:15px; line-height:1.8;
+          max-width:510px; margin:20px 0 26px;
+        }
+        .hc-hero-actions{ display:flex; gap:12px; flex-wrap:wrap; }
+
+        .hc-primary{
+          display:inline-flex; align-items:center; justify-content:center; gap:9px;
+          text-decoration:none;
+          background:var(--hc-accent); color:#10170c;
+          padding:13px 20px; border-radius:12px;
+          font-size:13px; font-weight:800;
+          box-shadow:0 8px 26px rgba(166,243,106,.12);
+          transition:transform .2s,box-shadow .2s;
+        }
+        .hc-primary:hover{ transform:translateY(-2px); box-shadow:0 12px 30px rgba(166,243,106,.2); }
+
+        .hc-secondary{
+          display:inline-flex; align-items:center; justify-content:center;
+          text-decoration:none;
+          border:1px solid rgba(255,255,255,.15); color:#e7ebf0;
+          padding:13px 18px; border-radius:12px;
+          font-size:13px; font-weight:700;
+          transition:border .2s,background .2s;
+        }
+        .hc-secondary:hover{ border-color:rgba(166,243,106,.45); background:rgba(166,243,106,.05); }
+
+        /* Benefits */
+        .hc-benefits{
+          display:grid; grid-template-columns:repeat(3,1fr);
+          gap:12px; margin:-24px 0 48px;
+        }
+        .hc-benefit{
+          padding:17px 18px;
+          border:1px solid var(--hc-line); border-radius:16px;
+          background:#0e131a;
+          display:flex; gap:12px; align-items:center;
+        }
+        .hc-benefit-icon{
+          width:38px; height:38px; border-radius:12px;
+          background:rgba(166,243,106,.09); color:var(--hc-accent);
+          display:grid; place-items:center; font-size:17px; flex:none;
+        }
+        .hc-benefit strong{ display:block; font-size:13px; font-weight:800; }
+        .hc-benefit small{ display:block; color:var(--hc-muted); font-size:11px; margin-top:4px; }
+
+        /* Section head */
+        .hc-section-head{
+          display:flex; justify-content:space-between; align-items:end;
+          gap:16px; margin-bottom:20px;
+        }
+        .hc-kicker{
+          font-size:10px; letter-spacing:2px; text-transform:uppercase;
+          color:var(--hc-accent); font-weight:800; margin-bottom:8px;
+        }
+        .hc-section-head h2{
+          font-family:Manrope,sans-serif;
+          font-size:clamp(23px,3vw,32px); letter-spacing:-1px;
+          margin:0; font-weight:800;
+        }
+        .hc-section-head p{ color:var(--hc-muted); font-size:13px; margin:8px 0 0; }
+        .hc-all-link{
+          color:var(--hc-accent); text-decoration:none;
+          font-size:12px; font-weight:800; white-space:nowrap;
+        }
+
+        /* Product grid + card */
+        .hc-product-grid{
+          display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px;
+        }
+        .hc-product{
+          position:relative; min-width:0; overflow:hidden;
+          display:flex; flex-direction:column;
+          text-decoration:none; color:inherit;
+          border:1px solid var(--hc-line); border-radius:20px;
+          background:linear-gradient(155deg,#141b24,#0d1118);
+          transition:transform .22s,border-color .22s,box-shadow .22s;
+        }
+        .hc-product:hover{
+          transform:translateY(-5px);
+          border-color:rgba(166,243,106,.35);
+          box-shadow:0 18px 40px rgba(0,0,0,.24);
+        }
+        .hc-product-media{
+          height:clamp(150px,18vw,210px);
+          position:relative; background:#0b1016; overflow:hidden;
+        }
+        .hc-product-media img{
+          width:100%; height:100%; object-fit:cover; transition:transform .4s;
+        }
+        .hc-product:hover .hc-product-media img{ transform:scale(1.045); }
+        .hc-product-media:after{
+          content:''; position:absolute; inset:45% 0 0;
+          background:linear-gradient(transparent,rgba(7,10,14,.5));
+          pointer-events:none;
+        }
+        .hc-product-body{ padding:16px; display:flex; flex-direction:column; flex:1; }
+        .hc-product-title{
+          font-size:14px; font-weight:800; line-height:1.45;
+          margin:0 0 10px; min-height:40px;
+        }
+        .hc-product-meta{ color:var(--hc-muted); font-size:11px; margin-bottom:14px; }
+        .hc-product-bottom{
+          display:flex; align-items:center; justify-content:space-between;
+          gap:10px; margin-top:auto;
+        }
+        .hc-price{
+          font-family:Manrope,sans-serif;
+          font-size:19px; font-weight:800; color:var(--hc-accent); letter-spacing:-.5px;
+        }
+        .hc-buy{
+          height:34px; width:38px; border-radius:11px;
+          background:var(--hc-accent); color:#11180c;
+          display:grid; place-items:center; font-size:19px; font-weight:700;
+        }
+
+        /* Loading skeleton */
+        .hc-skeleton{
+          height:290px; border-radius:20px;
+          background:linear-gradient(100deg,#111720 20%,#1a222d 40%,#111720 60%);
+          background-size:200% 100%;
+          animation:hc-shimmer 1.5s infinite;
+        }
+        @keyframes hc-shimmer{ to{ background-position:-200% 0; } }
+
+        /* Empty state */
+        .hc-empty{
+          padding:44px 20px; text-align:center;
+          border:1px dashed var(--hc-line); border-radius:18px;
+          color:var(--hc-muted); background:rgba(255,255,255,.015);
+        }
+
+        /* Footer note */
+        .hc-footer-note{
+          margin-top:48px; padding:24px;
+          border:1px solid var(--hc-line); border-radius:20px;
+          background:linear-gradient(120deg,rgba(166,243,106,.055),transparent);
+          display:flex; justify-content:space-between; align-items:center; gap:18px;
+        }
+        .hc-footer-note strong{ font-family:Manrope,sans-serif; font-size:18px; }
+        .hc-footer-note p{ font-size:12px; color:var(--hc-muted); margin:7px 0 0; line-height:1.6; }
+
+        /* Responsive */
+        @media(max-width:900px){
+          .hc-product-grid{ grid-template-columns:repeat(3,minmax(0,1fr)); }
+          .hc-shell{ width:min(100% - 28px,1240px); }
+        }
+        @media(max-width:640px){
+          .hc-shell{ width:calc(100% - 24px); padding-top:14px; }
+          .hc-hero{ min-height:330px; border-radius:22px; padding:28px 22px; margin-bottom:38px; }
+          .hc-hero h1{ letter-spacing:-1.6px; }
+          .hc-hero p{ font-size:13px; }
+          .hc-benefits{ grid-template-columns:1fr; gap:9px; margin-top:-18px; margin-bottom:38px; }
+          .hc-benefit{ padding:13px; }
+          .hc-product-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); gap:11px; }
+          .hc-product{ border-radius:16px; }
+          .hc-product-media{ height:140px; }
+          .hc-product-body{ padding:12px; }
+          .hc-product-title{ font-size:12px; min-height:36px; }
+          .hc-price{ font-size:16px; }
+          .hc-buy{ width:32px; height:30px; border-radius:9px; }
+          .hc-section-head{ align-items:center; }
+          .hc-section-head p{ font-size:11px; }
+          .hc-footer-note{ padding:18px; display:block; }
+          .hc-footer-note .hc-primary{ margin-top:15px; }
+          .hc-notice{ font-size:11px; padding:10px 12px; }
+        }
+      `}</style>
+
+      {/* ---------- Notice bar (API থেকে আসলে দেখাবে) ---------- */}
       {notice && (
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.15) 0%, rgba(15, 23, 42, 0.85) 100%)',
-          backdropFilter: 'blur(16px)',
-          border: '1px solid rgba(56, 189, 248, 0.3)',
-          borderRadius: '16px',
-          padding: '10px 14px',
-          marginBottom: '16px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          boxShadow: '0 4px 15px rgba(56, 189, 248, 0.1)',
-        }}>
-          <span style={{
-            fontSize: '14px',
-            background: 'rgba(56, 189, 248, 0.2)',
-            padding: '4px 6px',
-            borderRadius: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-            📢
-          </span>
-          <div style={{ overflow: 'hidden', whiteSpace: 'nowrap', width: '100%' }}>
-            <span style={{
-              display: 'inline-block',
-              fontSize: '12px',
-              fontWeight: '600',
-              color: '#f8fafc',
-              letterSpacing: '0.2px',
-            }}>
-              {notice}
-            </span>
-          </div>
+        <div className="hc-notice">
+          <span className="hc-notice-mark">✦</span>
+          <span>{notice}</span>
         </div>
       )}
 
-      {/* Hub Cart ব্র্যান্ড ব্যানার */}
-      <div style={{
-        background: 'radial-gradient(circle at center, #0a2356 0%, #020816 85%)',
-        borderRadius: '24px',
-        padding: '30px 16px',
-        border: '1px solid rgba(56, 189, 248, 0.15)',
-        marginBottom: '22px',
-        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        textAlign: 'center',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '8px' }}>
-          <img
-            src={LOGO_HUB_CART}
-            alt="Hub Cart Logo"
-            style={{
-              width: '46px',
-              height: '46px',
-              borderRadius: '8px',
-              objectFit: 'contain',
-              background: '#000000',
-              padding: '3px',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-            }}
-          />
-          <h1 style={{
-            fontSize: '28px',
-            fontWeight: '900',
-            color: '#ffffff',
-            margin: 0,
-            letterSpacing: '0.5px',
-          }}>
-            Hub Cart
+      {/* ---------- Hero ---------- */}
+      <section className="hc-hero">
+        <div className="hc-hero-content">
+          <div className="hc-eyebrow">Your digital essentials, elevated</div>
+          <h1>
+            Good choices.
+            <br />
+            <em>Better digital life.</em>
           </h1>
+          <p>
+            Discover premium digital services and everyday essentials, selected
+            to make your online life simpler, smarter and more rewarding.
+          </p>
+          <div className="hc-hero-actions">
+            <Link href="/categories" className="hc-primary">
+              Explore collection <span aria-hidden="true">↗</span>
+            </Link>
+            <Link href="/orders" className="hc-secondary">
+              Track an order
+            </Link>
+          </div>
         </div>
-        <p style={{
-          margin: 0,
-          fontSize: '12px',
-          fontWeight: '600',
-          letterSpacing: '2.8px',
-          color: '#82a5dc',
-          textTransform: 'uppercase',
-        }}>
-          SHOP SMART &bull; LIVE BETTER
-        </p>
-      </div>
+      </section>
 
-      {/* প্রোডাক্ট তালিকা */}
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-          <h2 style={{ fontSize: '16px', fontWeight: '900', margin: 0, color: '#f8fafc' }}>
-            জনপ্রিয় সার্ভিসসমূহ
-          </h2>
-          <Link href="/categories" style={{ fontSize: '11px', color: '#38bdf8', textDecoration: 'none', fontWeight: 'bold' }}>
-            সব দেখুন ↗
+      {/* ---------- Benefits ---------- */}
+      <section className="hc-benefits" aria-label="Store benefits">
+        <div className="hc-benefit">
+          <span className="hc-benefit-icon">✦</span>
+          <div>
+            <strong>Curated digital goods</strong>
+            <small>Useful services, thoughtfully selected</small>
+          </div>
+        </div>
+        <div className="hc-benefit">
+          <span className="hc-benefit-icon">⌁</span>
+          <div>
+            <strong>Simple, smooth ordering</strong>
+            <small>A clear path from browse to checkout</small>
+          </div>
+        </div>
+        <div className="hc-benefit">
+          <span className="hc-benefit-icon">♡</span>
+          <div>
+            <strong>Here when you need us</strong>
+            <small>Customer support that stays connected</small>
+          </div>
+        </div>
+      </section>
+
+      {/* ---------- Popular picks / Products ---------- */}
+      <section aria-labelledby="products-heading">
+        <div className="hc-section-head">
+          <div>
+            <div className="hc-kicker">The good stuff</div>
+            <h2 id="products-heading">Popular picks</h2>
+            <p>Find your next digital essential.</p>
+          </div>
+          <Link href="/categories" className="hc-all-link">
+            Browse all ↗
           </Link>
         </div>
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '50px 0', color: '#64748b', fontSize: '12px' }}>
-            সার্ভিস লোড হচ্ছে...
+          <div className="hc-product-grid">
+            {[1, 2, 3, 4].map((n) => (
+              <div className="hc-skeleton" key={n} />
+            ))}
           </div>
         ) : products.length === 0 ? (
-          <div style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255, 255, 255, 0.06)', borderRadius: '16px', padding: '36px', textAlign: 'center', color: '#64748b', fontSize: '12px' }}>
-            কোনো প্রোডাক্ট পাওয়া যায়নি।
+          <div className="hc-empty">
+            <div style={{ fontSize: 28, marginBottom: 10 }}>◌</div>
+            <strong style={{ color: '#e7ebf0', display: 'block', marginBottom: 7 }}>
+              Nothing to show just yet
+            </strong>
+            <span>Check back soon — new services are on the way.</span>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+          <div className="hc-product-grid">
             {products.map((prod) => (
-              <Link
-                key={prod.id}
-                href={`/product/${prod.id}`}
-                style={{
-                  textDecoration: 'none',
-                  background: 'rgba(15, 23, 42, 0.75)',
-                  backdropFilter: 'blur(12px)',
-                  borderRadius: '18px',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  overflow: 'hidden',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  color: 'inherit',
-                  transition: 'transform 0.15s ease',
-                }}
-              >
-                <div style={{ width: '100%', height: '120px', background: '#0b0f19' }}>
+              <Link key={prod.id} href={`/product/${prod.id}`} className="hc-product">
+                <div className="hc-product-media">
                   <img
                     src={prod.image || LOGO_HUB_CART}
-                    alt={prod.title}
+                    alt={prod.title || 'Hub Cart product'}
                     loading="lazy"
-                    onError={(e) => { e.currentTarget.src = LOGO_HUB_CART; }}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    onError={(e) => {
+                      e.currentTarget.src = LOGO_HUB_CART;
+                    }}
                   />
                 </div>
-                <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
-                  <h3 style={{ fontSize: '12px', fontWeight: 'bold', margin: '0 0 8px', color: '#f8fafc', minHeight: '32px', lineHeight: 1.3 }}>
-                    {prod.title}
-                  </h3>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: '14px', fontWeight: '900', color: '#38bdf8' }}>৳{prod.price}</span>
-                    <span style={{ padding: '4px 8px', borderRadius: '6px', background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', color: '#fff', fontSize: '10px', fontWeight: 'bold' }}>
-                      Buy
+                <div className="hc-product-body">
+                  <h3 className="hc-product-title">{prod.title}</h3>
+                  <div className="hc-product-meta">Digital service · Instant order</div>
+                  <div className="hc-product-bottom">
+                    <span className="hc-price">৳{prod.price}</span>
+                    <span className="hc-buy" aria-label="View product">
+                      ↗
                     </span>
                   </div>
                 </div>
@@ -183,8 +408,18 @@ export default function HomePage() {
             ))}
           </div>
         )}
-      </div>
+      </section>
 
-    </div>
+      {/* ---------- Footer note ---------- */}
+      <aside className="hc-footer-note">
+        <div>
+          <strong>A better way to shop digital.</strong>
+          <p>Explore the collection and find the service that fits your needs.</p>
+        </div>
+        <Link href="/categories" className="hc-primary">
+          Discover more ↗
+        </Link>
+      </aside>
+    </main>
   );
 }

@@ -66,7 +66,7 @@ export default function InvoicePage() {
         <h3>ইনভয়েস পাওয়া যায়নি!</h3>
         <button
           onClick={() => router.push('/')}
-          style={{ marginTop: '12px', padding: '10px 18px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold' }}
+          style={{ marginTop: '12px', padding: '10px 18px', background: '#a6f36a', color: '#10170c', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold' }}
         >
           হোমে ফিরে যান
         </button>
@@ -92,8 +92,8 @@ export default function InvoicePage() {
         <button
           onClick={handlePrint}
           style={{
-            background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
-            color: '#ffffff',
+            background: 'linear-gradient(135deg, #a6f36a, #d2ffad)',
+            color: '#10170c',
             border: 'none',
             padding: '10px 18px',
             borderRadius: '12px',
@@ -103,7 +103,7 @@ export default function InvoicePage() {
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
-            boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)'
+            boxShadow: '0 4px 14px rgba(166, 243, 106, 0.4)'
           }}
         >
           <span>🖨️</span> মেমো ডাউনলোড / প্রিন্ট
@@ -128,8 +128,8 @@ export default function InvoicePage() {
           top: '20px',
           right: '-20px',
           transform: 'rotate(25deg)',
-          border: `2px dashed ${isCancelled ? '#ef4444' : isCompleted ? '#22c55e' : '#38bdf8'}`,
-          color: isCancelled ? '#ef4444' : isCompleted ? '#22c55e' : '#38bdf8',
+          border: `2px dashed ${isCancelled ? '#ef4444' : isCompleted ? '#22c55e' : '#a6f36a'}`,
+          color: isCancelled ? '#ef4444' : isCompleted ? '#22c55e' : '#a6f36a',
           padding: '4px 28px',
           fontSize: '11px',
           fontWeight: '900',
@@ -151,7 +151,7 @@ export default function InvoicePage() {
             <h2 style={{ fontSize: '20px', fontWeight: '900', color: '#f8fafc', margin: 0, letterSpacing: '-0.3px' }}>
               Hub Cart
             </h2>
-            <span style={{ fontSize: '9px', fontWeight: '800', color: '#38bdf8', letterSpacing: '1.4px' }}>
+            <span style={{ fontSize: '9px', fontWeight: '800', color: '#a6f36a', letterSpacing: '1.4px' }}>
               OFFICIAL CASH MEMO
             </span>
           </div>
@@ -168,7 +168,7 @@ export default function InvoicePage() {
 
           <div style={{ textAlign: 'right' }}>
             <div style={{ color: '#64748b', fontSize: '10px', fontWeight: 'bold' }}>মেমো নম্বর (MEMO ID):</div>
-            <div style={{ color: '#38bdf8', fontWeight: '900', fontSize: '13px' }}>{order.order_id}</div>
+            <div style={{ color: '#a6f36a', fontWeight: '900', fontSize: '13px' }}>{order.order_id}</div>
             <div style={{ color: '#cbd5e1', fontSize: '11px', marginTop: '2px' }}>
               {new Date(order.created_at || Date.now()).toLocaleDateString('bn-BD', {
                 year: 'numeric',
@@ -193,7 +193,7 @@ export default function InvoicePage() {
                 <td style={{ padding: '14px 4px', color: '#f8fafc', fontWeight: 'bold' }}>
                   {order.service_name}
                 </td>
-                <td style={{ padding: '14px 4px', textAlign: 'right', color: '#38bdf8', fontWeight: '900', fontSize: '15px' }}>
+                <td style={{ padding: '14px 4px', textAlign: 'right', color: '#a6f36a', fontWeight: '900', fontSize: '15px' }}>
                   ৳{order.price}
                 </td>
               </tr>
@@ -217,7 +217,7 @@ export default function InvoicePage() {
           )}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '12px', paddingTop: '10px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
             <span style={{ fontSize: '15px', fontWeight: '900', color: '#f8fafc' }}>সর্বমোট পরিশোধিত:</span>
-            <span style={{ fontSize: '22px', fontWeight: '900', color: '#38bdf8' }}>৳{order.price}</span>
+            <span style={{ fontSize: '22px', fontWeight: '900', color: '#a6f36a' }}>৳{order.price}</span>
           </div>
         </div>
 

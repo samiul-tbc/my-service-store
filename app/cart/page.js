@@ -121,14 +121,14 @@ export default function CartPage() {
             href="/"
             style={{
               display: 'inline-block',
-              background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
-              color: '#ffffff',
+              background: 'linear-gradient(135deg, #a6f36a, #d2ffad)',
+              color: '#10170c',
               padding: '12px 28px',
               borderRadius: '12px',
               textDecoration: 'none',
               fontWeight: 'bold',
               fontSize: '13px',
-              boxShadow: '0 4px 15px rgba(37, 99, 235, 0.35)',
+              boxShadow: '0 4px 15px rgba(166, 243, 106, 0.35)',
             }}
           >
             সার্ভিসগুলো দেখুন
@@ -163,7 +163,7 @@ export default function CartPage() {
                   <h4 style={{ fontSize: '13px', fontWeight: 'bold', color: '#f8fafc', margin: '0 0 4px', lineHeight: 1.3 }}>
                     {item.title}
                   </h4>
-                  <div style={{ fontSize: '14px', fontWeight: '900', color: '#38bdf8' }}>
+                  <div style={{ fontSize: '14px', fontWeight: '900', color: '#a6f36a' }}>
                     ৳{item.price}
                   </div>
                 </div>
@@ -220,7 +220,7 @@ export default function CartPage() {
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '16px', fontWeight: '900', color: '#f8fafc', borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '12px' }}>
               <span>সর্বমোট</span>
-              <span style={{ color: '#38bdf8' }}>৳{totalAmount}</span>
+              <span style={{ color: '#a6f36a' }}>৳{totalAmount}</span>
             </div>
           </div>
 

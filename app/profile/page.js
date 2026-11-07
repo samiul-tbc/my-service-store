@@ -59,13 +59,13 @@ export default function ProfilePage() {
               display: 'inline-block',
               width: '80%',
               padding: '12px',
-              background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
-              color: '#ffffff',
+              background: 'linear-gradient(135deg, #a6f36a, #d2ffad)',
+              color: '#10170c',
               textDecoration: 'none',
               borderRadius: '12px',
               fontWeight: 'bold',
               fontSize: '13px',
-              boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)',
+              boxShadow: '0 4px 14px rgba(166, 243, 106, 0.4)',
             }}
           >
             লগইন / সাইন-আপ
@@ -83,7 +83,7 @@ export default function ProfilePage() {
         background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
         borderRadius: '24px',
         padding: '24px',
-        border: '1px solid rgba(59, 130, 246, 0.3)',
+        border: '1px solid rgba(166, 243, 106, 0.3)',
         boxShadow: '0 12px 28px rgba(0, 0, 0, 0.4)',
         position: 'relative',
         overflow: 'hidden',
@@ -104,14 +104,14 @@ export default function ProfilePage() {
             width: '56px',
             height: '56px',
             borderRadius: '50%',
-            background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+            background: 'linear-gradient(135deg, #a6f36a, #d2ffad)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             fontSize: '22px',
             fontWeight: '900',
-            color: '#fff',
-            boxShadow: '0 4px 12px rgba(37, 99, 235, 0.4)'
+            color: '#10170c',
+            boxShadow: '0 4px 12px rgba(166, 243, 106, 0.4)'
           }}>
             {user.name ? user.name[0].toUpperCase() : 'U'}
           </div>

@@ -81,7 +81,7 @@ function TrackContent() {
         <img
           src={LOGO_HUB_CART}
           alt="Hub Cart"
-          style={{ width: '46px', height: '46px', objectFit: 'contain', margin: '0 auto 8px', filter: 'drop-shadow(0 4px 10px rgba(56, 189, 248, 0.4))' }}
+          style={{ width: '46px', height: '46px', objectFit: 'contain', margin: '0 auto 8px', filter: 'drop-shadow(0 4px 10px rgba(166, 243, 106, 0.4))' }}
         />
         <h1 style={{ fontSize: '22px', fontWeight: '900', color: '#f8fafc', margin: '0 0 4px' }}>
           Live Order Tracker
@@ -122,15 +122,15 @@ function TrackContent() {
         <button
           onClick={() => handleSearch()}
           style={{
-            background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
-            color: '#ffffff',
+            background: 'linear-gradient(135deg, #a6f36a, #d2ffad)',
+            color: '#10170c',
             border: 'none',
             borderRadius: '12px',
             padding: '10px 18px',
             fontWeight: 'bold',
             fontSize: '13px',
             cursor: 'pointer',
-            boxShadow: '0 2px 10px rgba(37, 99, 235, 0.4)',
+            boxShadow: '0 2px 10px rgba(166, 243, 106, 0.4)',
           }}
         >
           {loading ? '...' : 'Track'}
@@ -167,7 +167,7 @@ function TrackContent() {
                 style={{
                   background: 'rgba(15, 23, 42, 0.85)',
                   backdropFilter: 'blur(16px)',
-                  border: isCancelled ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(59, 130, 246, 0.25)',
+                  border: isCancelled ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(166, 243, 106, 0.25)',
                   borderRadius: '20px',
                   padding: '20px',
                   boxShadow: '0 10px 25px rgba(0,0,0,0.4)',
@@ -176,7 +176,7 @@ function TrackContent() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', borderBottom: '1px solid rgba(255, 255, 255, 0.06)', paddingBottom: '12px' }}>
                   <div>
                     <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold' }}>ORDER ID</span>
-                    <h3 style={{ fontSize: '17px', fontWeight: '900', color: isCancelled ? '#f87171' : '#38bdf8', margin: 0 }}>
+                    <h3 style={{ fontSize: '17px', fontWeight: '900', color: isCancelled ? '#f87171' : '#a6f36a', margin: 0 }}>
                       {ord.order_id}
                     </h3>
                   </div>
@@ -185,9 +185,9 @@ function TrackContent() {
                     borderRadius: '20px',
                     fontSize: '11px',
                     fontWeight: 'bold',
-                    background: isCancelled ? 'rgba(239, 68, 68, 0.2)' : step === 4 ? 'rgba(34, 197, 94, 0.2)' : 'rgba(56, 189, 248, 0.15)',
-                    color: isCancelled ? '#f87171' : step === 4 ? '#4ade80' : '#38bdf8',
-                    border: isCancelled ? '1px solid rgba(239, 68, 68, 0.4)' : step === 4 ? '1px solid rgba(34, 197, 94, 0.4)' : '1px solid rgba(56, 189, 248, 0.3)',
+                    background: isCancelled ? 'rgba(239, 68, 68, 0.2)' : step === 4 ? 'rgba(34, 197, 94, 0.2)' : 'rgba(166, 243, 106, 0.15)',
+                    color: isCancelled ? '#f87171' : step === 4 ? '#4ade80' : '#a6f36a',
+                    border: isCancelled ? '1px solid rgba(239, 68, 68, 0.4)' : step === 4 ? '1px solid rgba(34, 197, 94, 0.4)' : '1px solid rgba(166, 243, 106, 0.3)',
                   }}>
                     ● {ord.status?.toUpperCase()}
                   </span>
@@ -218,7 +218,7 @@ function TrackContent() {
                         <div style={{
                           height: '100%',
                           width: step === 4 ? '100%' : step === 3 ? '66%' : step === 2 ? '33%' : '0%',
-                          background: '#38bdf8',
+                          background: '#a6f36a',
                           transition: 'width 0.4s ease',
                         }} />
                       </div>
@@ -236,14 +236,14 @@ function TrackContent() {
                               width: '24px',
                               height: '24px',
                               borderRadius: '50%',
-                              background: isActive ? '#38bdf8' : '#1e293b',
+                              background: isActive ? '#a6f36a' : '#1e293b',
                               color: isActive ? '#0f172a' : '#64748b',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
                               fontSize: '11px',
                               fontWeight: 'bold',
-                              boxShadow: isActive ? '0 0 10px rgba(56, 189, 248, 0.5)' : 'none',
+                              boxShadow: isActive ? '0 0 10px rgba(166, 243, 106, 0.5)' : 'none',
                               marginBottom: '4px',
                             }}>
                               {isActive ? '✓' : s.num}

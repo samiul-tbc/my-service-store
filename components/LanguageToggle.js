@@ -18,7 +18,7 @@ export default function LanguageToggle() {
         type="button"
         onClick={() => toggleLanguage('bn')}
         style={{
-          background: lang === 'bn' ? '#2563eb' : 'transparent',
+          background: lang === 'bn' ? '#a6f36a' : 'transparent',
           color: lang === 'bn' ? '#ffffff' : '#94a3b8',
           border: 'none',
           borderRadius: '14px',
@@ -35,7 +35,7 @@ export default function LanguageToggle() {
         type="button"
         onClick={() => toggleLanguage('en')}
         style={{
-          background: lang === 'en' ? '#2563eb' : 'transparent',
+          background: lang === 'en' ? '#a6f36a' : 'transparent',
           color: lang === 'en' ? '#ffffff' : '#94a3b8',
           border: 'none',
           borderRadius: '14px',

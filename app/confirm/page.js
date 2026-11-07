@@ -166,7 +166,7 @@ export default function ConfirmPage() {
           <span style={{ fontSize: '14px', fontWeight: '600', color: '#f8fafc' }}>
             {productData.title}
           </span>
-          <span style={{ fontSize: '16px', fontWeight: '800', color: '#38bdf8' }}>
+          <span style={{ fontSize: '16px', fontWeight: '800', color: '#a6f36a' }}>
             ৳{productData.price}
           </span>
         </div>
@@ -281,14 +281,14 @@ export default function ConfirmPage() {
               width: '100%',
               marginTop: '8px',
               padding: '14px',
-              backgroundColor: '#2563eb',
-              color: '#ffffff',
+              backgroundColor: '#a6f36a',
+              color: '#10170c',
               fontWeight: '700',
               fontSize: '15px',
               border: 'none',
               borderRadius: '12px',
               cursor: loading ? 'not-allowed' : 'pointer',
-              boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)',
+              boxShadow: '0 4px 14px rgba(166, 243, 106, 0.4)',
             }}
           >
             {loading ? 'প্রসেসিং হচ্ছে...' : 'অর্ডার Confirm করুন →'}

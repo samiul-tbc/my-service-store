@@ -68,7 +68,7 @@ export default function ProductDetailPage() {
     return (
       <div style={{ padding: '80px 20px', textAlign: 'center', color: '#94a3b8' }}>
         <h3>প্রোডাক্টটি পাওয়া যায়নি!</h3>
-        <Link href="/" style={{ color: '#38bdf8', textDecoration: 'none', fontWeight: 'bold' }}>← ফিরে যান</Link>
+        <Link href="/" style={{ color: '#a6f36a', textDecoration: 'none', fontWeight: 'bold' }}>← ফিরে যান</Link>
       </div>
     );
   }
@@ -79,7 +79,7 @@ export default function ProductDetailPage() {
   const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${whatsappMsg}`;
 
   return (
-    <div style={{ maxWidth: '600px', margin: '0 auto', padding: '14px 14px 110px' }}>
+    <div style={{ maxWidth: '760px', margin: '0 auto', padding: '18px 16px 40px' }}>
       
       {/* ব্যাক বাটন */}
       <button
@@ -108,7 +108,7 @@ export default function ProductDetailPage() {
         </div>
 
         <div style={{ padding: '20px' }}>
-          <span style={{ fontSize: '10px', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '4px 10px', borderRadius: '14px', fontWeight: 'bold', textTransform: 'uppercase' }}>
+          <span style={{ fontSize: '10px', background: 'rgba(166, 243, 106, 0.15)', color: '#a6f36a', padding: '4px 10px', borderRadius: '14px', fontWeight: 'bold', textTransform: 'uppercase' }}>
             {product.category || 'Service'}
           </span>
 
@@ -117,7 +117,7 @@ export default function ProductDetailPage() {
           </h1>
 
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '18px' }}>
-            <span style={{ fontSize: '24px', fontWeight: '900', color: '#38bdf8' }}>৳{product.price}</span>
+            <span style={{ fontSize: '24px', fontWeight: '900', color: '#a6f36a' }}>৳{product.price}</span>
             {product.original_price && (
               <span style={{ fontSize: '13px', color: '#64748b', textDecoration: 'line-through' }}>৳{product.original_price}</span>
             )}
@@ -183,8 +183,8 @@ export default function ProductDetailPage() {
           style={{
             flex: 1,
             border: 'none',
-            background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
-            color: '#ffffff',
+            background: 'linear-gradient(135deg, #a6f36a, #d2ffad)',
+            color: '#10170c',
             padding: '12px 8px',
             borderRadius: '14px',
             fontWeight: 'bold',
@@ -194,7 +194,7 @@ export default function ProductDetailPage() {
             alignItems: 'center',
             justifyContent: 'center',
             gap: '6px',
-            boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)',
+            boxShadow: '0 4px 14px rgba(166, 243, 106, 0.4)',
           }}
         >
           <span>⚡</span>
