@@ -8,7 +8,6 @@ const LOGO_BKASH = 'https://1000logos.net/wp-content/uploads/2021/02/Bkash-logo.
 const LOGO_NAGAD = 'https://i.postimg.cc/3xv1gSBL/Nagad-Logo-wine.png';
 const LOGO_ROCKET = 'https://i.postimg.cc/vBM08r5J/vecteezy-rocket-color-logo-mobile-banking-icon-68706013.png';
 const LOGO_UPAY = 'https://i.postimg.cc/Gh9qphTM/upay-logo-mobile-banking-app-icon-transparent-background-free-png.png';
-const LOGO_BYBIT = 'https://i.postimg.cc/vTPhzDcs/bybit5549.jpg';
 const LOGO_TRC20 = 'https://cryptologos.cc/logos/tether-usdt-logo.png';
 
 const DOLLAR_RATE = 120;
@@ -98,71 +97,7 @@ export default function ProcessedOrderPage() {
       return;
     }
 
-    // ৩. Auto Pay (bKash/Nagad/Rocket/Upay/Bybit)
-    if (selectedMethod === 'instant') {
-      setLoading(true);
-      try {
-        const orderRes = await fetch('/api/order', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            serviceName: productName,
-            price: orderAmount,
-            customerName: orderData.customerName || 'Customer',
-            whatsappNumber: orderData.whatsappNumber || '',
-            telegramUsername: orderData.telegramUsername || 'নেই',
-            paymentMethod: 'Auto Pay (Gateway)',
-            trxId: 'Pending Gateway',
-          }),
-        });
-
-        const orderResult = await orderRes.json();
-        const finalOrderId = orderResult.orderId || orderResult.order_id || orderResult.id || `HC-${Date.now().toString().slice(-6)}`;
-
-        try {
-          await fetch('/api/send-whatsapp', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              customerName: orderData.customerName,
-              phone: orderData.whatsappNumber,
-              orderId: finalOrderId,
-              serviceName: productName,
-            }),
-          });
-        } catch (waErr) {
-          console.error('WhatsApp alert error:', waErr);
-        }
-
-        const payRes = await fetch('/api/create-bdt-payment', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            orderId: finalOrderId,
-            amount: orderAmount,
-            customerName: orderData.customerName || 'Customer',
-            phone: orderData.whatsappNumber || '',
-            serviceName: productName,
-            telegram: orderData.telegramUsername || 'নেই',
-          }),
-        });
-
-        const payData = await payRes.json();
-        if (payRes.ok && payData.paymentUrl) {
-          localStorage.removeItem('hubcart_current_order');
-          window.location.href = payData.paymentUrl;
-        } else {
-          alert(payData.error || 'Payment gateway connection error. Please use Manual Pay.');
-        }
-      } catch (err) {
-        alert('Server connection error. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-      return;
-    }
-
-    // ৪. Crypto Pay
+    // ৩. Crypto Pay
     if (selectedMethod === 'crypto') {
       setLoading(true);
       try {
@@ -268,10 +203,11 @@ export default function ProcessedOrderPage() {
       {/* Grid Methods */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '20px' }}>
         
-        {/* ১. Manual Pay */}
+        {/* ১. Manual Pay (ফুল উইডথ / স্প্যান ২) */}
         <div
           onClick={() => setSelectedMethod('manual_mfs')}
           style={{
+            gridColumn: 'span 2',
             background: '#ffffff',
             borderRadius: '16px',
             border: selectedMethod === 'manual_mfs' ? '2px solid #16a34a' : '1px solid #e2e8f0',
@@ -283,54 +219,24 @@ export default function ProcessedOrderPage() {
             justifyContent: 'space-between',
           }}
         >
-          <div style={{ background: '#16a34a', color: '#ffffff', fontSize: '9px', fontWeight: '900', textAlign: 'center', padding: '3px 0' }}>
+          <div style={{ background: '#16a34a', color: '#ffffff', fontSize: '9px', fontWeight: '900', textAlign: 'center', padding: '4px 0' }}>
             ⭐ RECOMMENDED
           </div>
-          <div style={{ padding: '12px 4px', textAlign: 'center', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', flexWrap: 'wrap', marginBottom: '6px' }}>
-              <img src={LOGO_BKASH} alt="bKash" style={{ height: '14px', objectFit: 'contain' }} />
-              <img src={LOGO_NAGAD} alt="Nagad" style={{ height: '14px', objectFit: 'contain' }} />
-              <img src={LOGO_ROCKET} alt="Rocket" style={{ height: '15px', objectFit: 'contain' }} />
-              <img src={LOGO_UPAY} alt="Upay" style={{ height: '13px', objectFit: 'contain' }} />
+          <div style={{ padding: '14px 8px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
+              <img src={LOGO_BKASH} alt="bKash" style={{ height: '18px', objectFit: 'contain' }} />
+              <img src={LOGO_NAGAD} alt="Nagad" style={{ height: '18px', objectFit: 'contain' }} />
+              <img src={LOGO_ROCKET} alt="Rocket" style={{ height: '19px', objectFit: 'contain' }} />
+              <img src={LOGO_UPAY} alt="Upay" style={{ height: '17px', objectFit: 'contain' }} />
             </div>
-            <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#15803d' }}>Manual Pay</span>
+            <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#15803d' }}>Manual Pay</span>
           </div>
-          <div style={{ background: '#dcfce7', padding: '6px', textAlign: 'center', fontSize: '10px', fontWeight: 'bold', color: '#166534' }}>
-            bKash / Nagad / Rocket / Upay
+          <div style={{ background: '#dcfce7', padding: '6px', textAlign: 'center', fontSize: '11px', fontWeight: 'bold', color: '#166534' }}>
+            bKash / Nagad / Rocket / Upay (Send Money)
           </div>
         </div>
 
-        {/* ২. Auto Pay (Upay, Rocket, Bybit সহ) */}
-        <div
-          onClick={() => setSelectedMethod('instant')}
-          style={{
-            background: '#ffffff',
-            borderRadius: '16px',
-            border: selectedMethod === 'instant' ? '2px solid #ff7a00' : '1px solid #e2e8f0',
-            cursor: 'pointer',
-            overflow: 'hidden',
-            boxShadow: selectedMethod === 'instant' ? '0 0 10px rgba(255, 122, 0, 0.3)' : 'none',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div style={{ padding: '12px 4px', textAlign: 'center', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', flexWrap: 'wrap', marginBottom: '6px' }}>
-              <img src={LOGO_BKASH} alt="bKash" style={{ height: '13px', objectFit: 'contain' }} />
-              <img src={LOGO_NAGAD} alt="Nagad" style={{ height: '13px', objectFit: 'contain' }} />
-              <img src={LOGO_ROCKET} alt="Rocket" style={{ height: '14px', objectFit: 'contain' }} />
-              <img src={LOGO_UPAY} alt="Upay" style={{ height: '12px', objectFit: 'contain' }} />
-              <img src={LOGO_BYBIT} alt="Bybit" style={{ height: '13px', borderRadius: '2px', objectFit: 'contain' }} />
-            </div>
-            <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#334155' }}>Auto Pay</span>
-          </div>
-          <div style={{ background: '#f1f5f9', padding: '6px', textAlign: 'center', fontSize: '10px', fontWeight: 'bold', color: '#475569' }}>
-            bKash / Nagad / Rocket / Upay / Bybit
-          </div>
-        </div>
-
-        {/* ৩. Crypto Pay */}
+        {/* ২. Crypto Pay */}
         <div
           onClick={() => setSelectedMethod('crypto')}
           style={{
@@ -354,7 +260,7 @@ export default function ProcessedOrderPage() {
           </div>
         </div>
 
-        {/* ৪. TBC Pay */}
+        {/* ৩. TBC Pay */}
         <div
           onClick={() => setSelectedMethod('tbc')}
           style={{
@@ -413,9 +319,7 @@ export default function ProcessedOrderPage() {
             ? 'Manual Pay'
             : selectedMethod === 'tbc'
               ? 'TBC Pay'
-              : selectedMethod === 'instant'
-                ? `Pay ৳${orderData.price} (Auto)`
-                : `Pay $${usdtAmount} USDT`}
+              : `Pay $${usdtAmount} USDT`}
       </button>
 
     </div>
