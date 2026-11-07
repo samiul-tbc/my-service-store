@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { useLanguage } from '../context/LanguageContext';
 
-const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
+const LOGO_HUB_CART = '/logo-icon.png';
 const SUPPORT_WHATSAPP = '8801319760720'; // app/orders ও product পেজে ব্যবহৃত সাপোর্ট নম্বর
 
 const linkStyle = {
@@ -46,8 +46,7 @@ export default function Footer() {
         {/* ব্র্যান্ড */}
         <div>
           <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-            <img src={LOGO_HUB_CART} alt="Hub Cart" style={{ width: '30px', height: '30px', objectFit: 'contain' }} />
-            <span style={{ fontSize: '15px', fontWeight: '900', color: '#f8fafc' }}>Hub Cart</span>
+            <img src="/logo-full.png" alt="Hub Cart" style={{ height: '36px', width: 'auto', display: 'block' }} />
           </Link>
           <p style={{ margin: 0, fontSize: '12px', lineHeight: 1.7, color: '#64748b' }}>
             {t.footer.tagline}

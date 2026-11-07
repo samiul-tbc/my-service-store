@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 
-const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
+const LOGO_HUB_CART = '/logo-icon.png';
 
 const CATEGORIES = [
   { id: 'android-root', name: 'Android Root' },

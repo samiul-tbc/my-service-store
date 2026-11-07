@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useLanguage } from '../../context/LanguageContext';
 import { productImageSrc } from '../../lib/productImage';
 
-const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
+const LOGO_HUB_CART = '/logo-icon.png';
 
 // Vercel Environment Variables থেকে ডাটা নেওয়া হচ্ছে
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://mieygzqgoekinxppdepb.supabase.co';
