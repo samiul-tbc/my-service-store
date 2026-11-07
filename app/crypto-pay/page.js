@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLanguage } from '../../context/LanguageContext';
 
 const LOGO_BYBIT = 'https://i.postimg.cc/vTPhzDcs/bybit5549.jpg';
 const LOGO_TRC20 = 'https://cryptologos.cc/logos/tether-usdt-logo.png';
@@ -13,6 +14,7 @@ const BYBIT_TRC20_ADDRESS = 'TJy7RE5zHs7E6Mqjr44PMuJJNXmqE9nYc1';
 
 export default function CryptoPayPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [orderData, setOrderData] = useState(null);
   const [trxId, setTrxId] = useState('');
   const [copied, setCopied] = useState(false);
@@ -44,7 +46,7 @@ export default function CryptoPayPage() {
     if (!orderData) return;
 
     if (!trxId.trim()) {
-      alert('Please provide your Transaction Hash or Bybit TxID!');
+      alert(t.crypto.alertHash);
       return;
     }
 
@@ -94,10 +96,10 @@ export default function CryptoPayPage() {
         localStorage.removeItem('hubcart_current_order');
         router.push(`/order-success?orderId=${generatedOrderId}`);
       } else {
-        alert(data.error || 'Failed to submit order. Please try again.');
+        alert(data.error || t.crypto.alertFail);
       }
     } catch (err) {
-      alert('Server connection error! Please check your network and try again.');
+      alert(t.crypto.alertServer);
     } finally {
       setLoading(false);
     }
@@ -106,7 +108,7 @@ export default function CryptoPayPage() {
   if (!orderData) {
     return (
       <div style={{ textAlign: 'center', padding: '80px 20px', color: '#94a3b8' }}>
-        <h3>No order data found!</h3>
+        <h3>{t.crypto.noData}</h3>
         <button
           onClick={() => router.push('/')}
           style={{
@@ -119,7 +121,7 @@ export default function CryptoPayPage() {
             cursor: 'pointer',
           }}
         >
-          Back to Store
+          {t.crypto.backToStore}
         </button>
       </div>
     );
@@ -145,7 +147,7 @@ export default function CryptoPayPage() {
           <img src={LOGO_BYBIT} alt="Bybit" style={{ height: '22px', borderRadius: '4px' }} />
           <img src={LOGO_TRC20} alt="USDT" style={{ height: '22px' }} />
           <h2 style={{ fontSize: '18px', fontWeight: '900', color: '#f8fafc', margin: 0 }}>
-            USDT (TRC20) Payment
+            {t.crypto.usdtTitle}
           </h2>
         </div>
         <p style={{ margin: 0, fontSize: '12px', color: '#94a3b8' }}>
@@ -153,7 +155,7 @@ export default function CryptoPayPage() {
         </p>
 
         <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(30, 41, 59, 0.7)', borderRadius: '14px' }}>
-          <span style={{ fontSize: '12px', color: '#94a3b8' }}>Total Payable Amount:</span>
+          <span style={{ fontSize: '12px', color: '#94a3b8' }}>{t.crypto.totalPayable}</span>
           <div style={{ fontSize: '24px', fontWeight: '900', color: '#a6f36a' }}>
             ${usdtPrice} USDT <span style={{ fontSize: '13px', color: '#94a3b8' }}>(৳{orderData.price})</span>
           </div>
@@ -170,7 +172,7 @@ export default function CryptoPayPage() {
         textAlign: 'center'
       }}>
         <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#a6f36a', display: 'block', marginBottom: '12px', letterSpacing: '0.5px' }}>
-          🌐 Network: TRON (TRC20)
+          {t.crypto.network}
         </span>
 
         {/* QR Code */}
@@ -220,7 +222,7 @@ export default function CryptoPayPage() {
               cursor: 'pointer',
             }}
           >
-            {copied ? '✓ Wallet Address Copied!' : 'Copy Wallet Address'}
+            {copied ? t.crypto.copiedAddr : t.crypto.copyAddr}
           </button>
         </div>
       </div>
@@ -233,7 +235,7 @@ export default function CryptoPayPage() {
         padding: '16px',
       }}>
         <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#cbd5e1', marginBottom: '6px' }}>
-          Transaction Hash / Bybit TxID: *
+          {t.crypto.txLabel}
         </label>
         <input
           type="text"
@@ -270,7 +272,7 @@ export default function CryptoPayPage() {
             cursor: loading ? 'not-allowed' : 'pointer',
           }}
         >
-          {loading ? 'Submitting Order...' : 'Confirm Payment →'}
+          {loading ? t.crypto.submitting : t.crypto.confirmBtn}
         </button>
       </form>
 

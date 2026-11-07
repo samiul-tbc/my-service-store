@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLanguage } from '../../context/LanguageContext';
 
 const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
 const LOGO_BKASH = 'https://1000logos.net/wp-content/uploads/2021/02/Bkash-logo.png';
@@ -14,6 +15,7 @@ const DOLLAR_RATE = 120;
 
 export default function ProcessedOrderPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [orderData, setOrderData] = useState(null);
   const [selectedMethod, setSelectedMethod] = useState('manual_mfs');
   const [loading, setLoading] = useState(false);
@@ -64,7 +66,7 @@ export default function ProcessedOrderPage() {
             price: orderAmount,
             customerName: orderData.customerName || 'Customer',
             whatsappNumber: orderData.whatsappNumber || '',
-            telegramUsername: orderData.telegramUsername || 'নেই',
+            telegramUsername: orderData.telegramUsername || t.success.none,
             paymentMethod: 'TBC Pay (Manual)',
             trxId: 'Manual Contact',
           }),
@@ -230,7 +232,7 @@ export default function ProcessedOrderPage() {
       {/* Product Price Summary */}
       <div style={{ background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', padding: '16px', marginBottom: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1', fontSize: '13px' }}>
-          <span>ℹ️ প্রোডাক্ট মূল্য:</span>
+          <span>ℹ️ {t.success.productPrice}</span>
           <span style={{ fontWeight: 'bold', color: '#f8fafc' }}>
             ৳ {orderData.price}
             {selectedMethod === 'crypto' && ` (≈ $${usdtAmount} USDT)`}

@@ -6,19 +6,11 @@ import { useLanguage } from '../context/LanguageContext';
 
 export default function BottomNav() {
   const pathname = usePathname();
-
-  // Language context সেফলি হ্যান্ডেল করা
-  let lang = 'bn';
-  try {
-    const langContext = useLanguage?.();
-    if (langContext?.language) lang = langContext.language;
-  } catch (e) {
-    // কনটেক্সট প্রোভাইডার লোড না হলেও অ্যাপ ক্র্যাশ করবে না
-  }
+  const { t } = useLanguage();
 
   const navItems = [
     {
-      name: 'Home',
+      name: t.nav.home,
       href: '/',
       icon: (active) => (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? "#a6f36a" : "#94a3b8"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -28,7 +20,7 @@ export default function BottomNav() {
       ),
     },
     {
-      name: 'Categories',
+      name: t.nav.categories,
       href: '/categories',
       icon: (active) => (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? "#a6f36a" : "#94a3b8"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -40,7 +32,7 @@ export default function BottomNav() {
       ),
     },
     {
-      name: 'Orders',
+      name: t.nav.orders,
       href: '/orders',
       icon: (active) => (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? "#a6f36a" : "#94a3b8"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -53,7 +45,7 @@ export default function BottomNav() {
       ),
     },
     {
-      name: 'Profile',
+      name: t.nav.profile,
       href: '/profile',
       icon: (active) => (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? "#a6f36a" : "#94a3b8"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

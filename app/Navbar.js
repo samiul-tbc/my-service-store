@@ -3,11 +3,13 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import LanguageToggle from '../components/LanguageToggle';
+import { useLanguage } from '../context/LanguageContext';
 
 const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
 
 export default function Navbar() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [user, setUser] = useState(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -58,7 +60,7 @@ export default function Navbar() {
               Hub Cart
             </span>
             <span style={{ fontSize: '8px', fontWeight: 'bold', color: '#a6f36a', letterSpacing: '0.5px' }}>
-              PREMIUM STORE
+              {t.nav.premiumStore}
             </span>
           </div>
         </Link>
@@ -143,7 +145,7 @@ export default function Navbar() {
                   boxShadow: '0 2px 12px rgba(166, 243, 106, 0.15)',
                 }}
               >
-                Login
+                {t.nav.login}
               </Link>
             )
           )}
@@ -159,11 +161,11 @@ export default function Navbar() {
             type="search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="সার্ভিস খুঁজুন… (যেমন: YouTube, Canva, Root)"
+            placeholder={t.nav.searchPlaceholder}
             style={{ flex: 1, padding: '10px 14px', borderRadius: '12px', background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(166, 243, 106, 0.35)', color: '#fff', fontSize: '13px', outline: 'none' }}
           />
           <button type="submit" style={{ padding: '10px 16px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #a6f36a, #d2ffad)', color: '#10170c', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>
-            Search
+            {t.nav.search}
           </button>
         </form>
       )}

@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useLanguage } from '../../context/LanguageContext';
 
 const LOGO_HUB_CART = 'https://i.postimg.cc/4Y3TK6bN/5707.png';
 
@@ -19,6 +20,7 @@ const COUNTRY_CODES = [
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [isLoginMode, setIsLoginMode] = useState(true);
 
   const [fullName, setFullName] = useState('');
@@ -57,9 +59,9 @@ export default function LoginPage() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error_description || data.msg || data.message || 'রেজিস্ট্রেশন হয়নি');
+      if (!res.ok) throw new Error(data.error_description || data.msg || data.message || t.auth.signupFail);
 
-      alert('✅ অ্যাকাউন্ট তৈরি সফল হয়েছে! এখন লগইন করুন।');
+      alert(t.auth.signupSuccess);
       setIsLoginMode(true);
       setPassword('');
     } catch (err) {
@@ -88,7 +90,7 @@ export default function LoginPage() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error_description || data.msg || data.message || 'ইমেইল বা পাসওয়ার্ড ভুল');
+      if (!res.ok) throw new Error(data.error_description || data.msg || data.message || t.auth.loginFail);
 
       const userData = {
         token: data.access_token,
@@ -134,7 +136,7 @@ export default function LoginPage() {
           <img src={LOGO_HUB_CART} alt="Hub Cart" style={{ width: '44px', height: '44px', objectFit: 'contain', margin: '0 auto 6px', filter: 'drop-shadow(0 2px 8px rgba(166, 243, 106, 0.4))' }} />
           <h2 style={{ fontSize: '20px', fontWeight: '900', margin: '0 0 4px', color: '#f8fafc' }}>Hub Cart</h2>
           <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>
-            {isLoginMode ? 'প্রিমিয়াম অ্যাকাউন্টে লগইন করুন' : 'নতুন অ্যাকাউন্ট তৈরি করুন'}
+            {isLoginMode ? t.auth.loginTitle : t.auth.signupTitle}
           </p>
         </div>
 
@@ -145,14 +147,14 @@ export default function LoginPage() {
             onClick={() => { setIsLoginMode(true); setErrorMsg(''); }}
             style={{ flex: 1, padding: '8px', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', background: isLoginMode ? 'linear-gradient(135deg, #a6f36a, #d2ffad)' : 'transparent', color: isLoginMode ? '#10170c' : '#64748b' }}
           >
-            লগইন
+            {t.auth.loginTab}
           </button>
           <button
             type="button"
             onClick={() => { setIsLoginMode(false); setErrorMsg(''); }}
             style={{ flex: 1, padding: '8px', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', background: !isLoginMode ? 'linear-gradient(135deg, #a6f36a, #d2ffad)' : 'transparent', color: !isLoginMode ? '#10170c' : '#64748b' }}
           >
-            রেজিস্ট্রেশন
+            {t.auth.signupTab}
           </button>
         </div>
 
@@ -166,13 +168,13 @@ export default function LoginPage() {
           {!isLoginMode && (
             <>
               <div style={{ marginBottom: '12px' }}>
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px', color: '#94a3b8' }}>আপনার নাম *</label>
-                <input required type="text" placeholder="যেমন: Samiul Islam" value={fullName} onChange={(e) => setFullName(e.target.value)} style={inputStyle} />
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px', color: '#94a3b8' }}>{t.auth.name}</label>
+                <input required type="text" placeholder={t.auth.namePlaceholder} value={fullName} onChange={(e) => setFullName(e.target.value)} style={inputStyle} />
               </div>
 
               {/* WhatsApp নম্বর কান্ট্রি কোড সহ */}
               <div style={{ marginBottom: '12px' }}>
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px', color: '#94a3b8' }}>WhatsApp নম্বর *</label>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px', color: '#94a3b8' }}>{t.auth.whatsapp}</label>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <select
                     value={selectedCountry.code}
@@ -214,19 +216,19 @@ export default function LoginPage() {
           )}
 
           <div style={{ marginBottom: '12px' }}>
-            <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px', color: '#94a3b8' }}>ইমেইল *</label>
+            <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px', color: '#94a3b8' }}>{t.auth.email}</label>
             <input required type="email" placeholder="example@mail.com" value={email} onChange={(e) => setEmail(e.target.value)} style={inputStyle} />
           </div>
 
           <div style={{ marginBottom: '18px' }}>
-            <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px', color: '#94a3b8' }}>পাসওয়ার্ড *</label>
-            <input required type="password" minLength={6} placeholder="কমপক্ষে ৬ ডিজিট" value={password} onChange={(e) => setPassword(e.target.value)} style={inputStyle} />
+            <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px', color: '#94a3b8' }}>{t.auth.password}</label>
+            <input required type="password" minLength={6} placeholder={t.auth.passwordPlaceholder} value={password} onChange={(e) => setPassword(e.target.value)} style={inputStyle} />
           </div>
 
           {isLoginMode && (
             <div style={{ textAlign: 'right', margin: '-8px 0 14px' }}>
               <Link href="/forgot-password" style={{ color: '#a6f36a', fontSize: '12px', fontWeight: '700', textDecoration: 'none' }}>
-                পাসওয়ার্ড ভুলে গেছেন?
+                {t.auth.forgot}
               </Link>
             </div>
           )}
@@ -247,7 +249,7 @@ export default function LoginPage() {
               boxShadow: '0 4px 14px rgba(166, 243, 106, 0.4)',
             }}
           >
-            {loading ? 'প্রসেসিং হচ্ছে...' : isLoginMode ? 'লগইন করুন' : 'অ্যাকাউন্ট তৈরি করুন'}
+            {loading ? t.auth.processing : isLoginMode ? t.auth.loginBtn : t.auth.signupBtn}
           </button>
         </form>
       </div>

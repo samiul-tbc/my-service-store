@@ -2,14 +2,16 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useLanguage } from '../../context/LanguageContext';
 
 const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
 
-// Vercel Environment Variables থেকে ডাটা নেওয়া হচ্ছে
+// Vercel Environment Variables থেকে ডাটা নেওয়া হচ্ছে
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://mieygzqgoekinxppdepb.supabase.co';
 const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
 
 function TrackContent() {
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const initialId = searchParams.get('id') || '';
 
@@ -84,10 +86,10 @@ function TrackContent() {
           style={{ width: '46px', height: '46px', objectFit: 'contain', margin: '0 auto 8px', filter: 'drop-shadow(0 4px 10px rgba(166, 243, 106, 0.4))' }}
         />
         <h1 style={{ fontSize: '22px', fontWeight: '900', color: '#f8fafc', margin: '0 0 4px' }}>
-          Live Order Tracker
+          {t.track.title}
         </h1>
         <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>
-          আপনার অর্ডার আইডি (HC-XXXX) বা WhatsApp নম্বর দিয়ে লাইভ স্ট্যাটাস দেখুন
+          {t.track.subtitle}
         </p>
       </div>
 
@@ -105,7 +107,7 @@ function TrackContent() {
       }}>
         <input
           type="text"
-          placeholder="যেমন: HC-8492 অথবা 018XXXXXXXX"
+          placeholder={t.track.placeholder}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -133,14 +135,14 @@ function TrackContent() {
             boxShadow: '0 2px 10px rgba(166, 243, 106, 0.4)',
           }}
         >
-          {loading ? '...' : 'Track'}
+          {loading ? '...' : t.track.button}
         </button>
       </div>
 
       {/* ফলাফল */}
       {loading ? (
         <div style={{ textAlign: 'center', padding: '40px', color: '#64748b', fontSize: '13px' }}>
-          তথ্য অনুসন্ধান করা হচ্ছে...
+          {t.track.searching}
         </div>
       ) : searched && orders.length === 0 ? (
         <div style={{
@@ -152,8 +154,8 @@ function TrackContent() {
           color: '#94a3b8',
         }}>
           <div style={{ fontSize: '32px', marginBottom: '8px' }}>🔍</div>
-          <h3 style={{ fontSize: '15px', color: '#f8fafc', margin: '0 0 4px' }}>কোনো অর্ডার পাওয়া যায়নি</h3>
-          <p style={{ fontSize: '12px', margin: 0, color: '#64748b' }}>সঠিক অর্ডার আইডি বা নম্বরটি দিয়ে আবার চেষ্টা করুন।</p>
+          <h3 style={{ fontSize: '15px', color: '#f8fafc', margin: '0 0 4px' }}>{t.track.noneTitle}</h3>
+          <p style={{ fontSize: '12px', margin: 0, color: '#64748b' }}>{t.track.noneSub}</p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -175,7 +177,7 @@ function TrackContent() {
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', borderBottom: '1px solid rgba(255, 255, 255, 0.06)', paddingBottom: '12px' }}>
                   <div>
-                    <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold' }}>ORDER ID</span>
+                    <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold' }}>{t.track.orderId}</span>
                     <h3 style={{ fontSize: '17px', fontWeight: '900', color: isCancelled ? '#f87171' : '#a6f36a', margin: 0 }}>
                       {ord.order_id}
                     </h3>
@@ -198,7 +200,7 @@ function TrackContent() {
                     {ord.service_name}
                   </div>
                   <div style={{ fontSize: '12px', color: '#94a3b8' }}>
-                    মূল্য: <strong style={{ color: '#f8fafc' }}>৳{ord.price}</strong> • পেমেন্ট: <strong style={{ color: '#f8fafc' }}>{ord.payment_method}</strong>
+                    {t.track.priceLabel} <strong style={{ color: '#f8fafc' }}>৳{ord.price}</strong> • {t.track.paymentLabel} <strong style={{ color: '#f8fafc' }}>{ord.payment_method}</strong>
                   </div>
                 </div>
 
@@ -224,10 +226,10 @@ function TrackContent() {
                       </div>
 
                       {[
-                        { num: 1, label: 'গৃহীত' },
-                        { num: 2, label: 'যাচাইকরণ' },
-                        { num: 3, label: 'প্রসেসিং' },
-                        { num: 4, label: 'সম্পন্ন' },
+                        { num: 1, label: t.track.steps[0] },
+                        { num: 2, label: t.track.steps[1] },
+                        { num: 3, label: t.track.steps[2] },
+                        { num: 4, label: t.track.steps[3] },
                       ].map((s) => {
                         const isActive = step >= s.num;
                         return (
@@ -258,11 +260,11 @@ function TrackContent() {
                   </div>
                 ) : (
                   <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.25)', borderRadius: '12px', padding: '10px 14px', fontSize: '12px', color: '#f87171', textAlign: 'center' }}>
-                    এই অর্ডারটি বাতিল (Cancelled) করা হয়েছে। প্রয়োজনে সাপোর্টে যোগাযোগ করুন।
+                    {t.track.cancelled}
                   </div>
                 )}
 
-                {/* ক্যাশ মেমো / ইনভয়েস লিংক বাটন */}
+                {/* ক্যাশ মেমো / ইনভয়েস লিংক বাটন */}
                 <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
                   <Link
                     href={`/invoice/${ord.order_id}`}
@@ -280,7 +282,7 @@ function TrackContent() {
                       fontWeight: 'bold',
                     }}
                   >
-                    <span>📄</span> ক্যাশ মেমো / ইনভয়েস দেখুন →
+                    <span>📄</span> {t.track.viewInvoice}
                   </Link>
                 </div>
 
@@ -295,8 +297,9 @@ function TrackContent() {
 }
 
 export default function TrackOrderPage() {
+  const { t } = useLanguage();
   return (
-    <Suspense fallback={<div style={{ textAlign: 'center', padding: '60px', color: '#64748b' }}>লোড হচ্ছে...</div>}>
+    <Suspense fallback={<div style={{ textAlign: 'center', padding: '60px', color: '#64748b' }}>{t.track.loading}</div>}>
       <TrackContent />
     </Suspense>
   );

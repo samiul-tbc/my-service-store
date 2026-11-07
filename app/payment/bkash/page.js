@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLanguage } from '../../../context/LanguageContext';
 
 const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
 const LOGO_BKASH = 'https://1000logos.net/wp-content/uploads/2021/02/Bkash-logo.png';
@@ -10,6 +11,8 @@ const BKASH_NUMBER = '01894693890';
 
 export default function BkashPaymentPage() {
   const router = useRouter();
+  const { t, lang } = useLanguage();
+  const brandName = lang === 'en' ? 'bKash' : 'বিকাশ';
   const [orderData, setOrderData] = useState(null);
   const [trxId, setTrxId] = useState('');
   const [copied, setCopied] = useState(false);
@@ -34,7 +37,7 @@ export default function BkashPaymentPage() {
 
   const handleVerify = async () => {
     if (!trxId.trim()) {
-      alert('দয়া করে বিকাশ TrxID লিখুন');
+      alert(t.pay.alertTrx.replaceAll('{brand}', brandName));
       return;
     }
 
@@ -51,7 +54,7 @@ export default function BkashPaymentPage() {
           price: orderAmount,
           customerName: orderData.customerName || 'Customer',
           whatsappNumber: orderData.whatsappNumber || '',
-          telegramUsername: orderData.telegramUsername || 'নেই',
+          telegramUsername: orderData.telegramUsername || t.pay.none,
           paymentMethod: 'bKash (Send Money)',
           trxId: trxId.trim(),
         }),
@@ -81,10 +84,10 @@ export default function BkashPaymentPage() {
         localStorage.removeItem('hubcart_current_order');
         router.push(`/order-success?orderId=${generatedOrderId}`);
       } else {
-        alert(data.error || data.message || 'অর্ডার সাবমিট করতে সমস্যা হয়েছে।');
+        alert(data.error || data.message || t.pay.alertSubmitFail);
       }
     } catch (err) {
-      alert('সার্ভার সংযোগ সমস্যা। আবার চেষ্টা করুন।');
+      alert(t.pay.alertServer);
     } finally {
       setSubmitting(false);
     }
@@ -93,7 +96,7 @@ export default function BkashPaymentPage() {
   if (!orderData) {
     return (
       <div style={{ textAlign: 'center', padding: '80px 20px', color: '#64748b' }}>
-        অর্ডার লোড হচ্ছে...
+        {t.pay.loading}
       </div>
     );
   }
@@ -116,29 +119,29 @@ export default function BkashPaymentPage() {
       </div>
 
       <div style={{ background: '#e2136e', borderRadius: '16px', padding: '20px 16px', color: '#ffffff', marginBottom: '20px' }}>
-        <h4 style={{ margin: '0 0 12px', fontSize: '15px', fontWeight: 'bold' }}>ট্রানজেকশন আইডি দিন</h4>
+        <h4 style={{ margin: '0 0 12px', fontSize: '15px', fontWeight: 'bold' }}>{t.pay.enterTrx}</h4>
 
         <input
           type="text"
-          placeholder="TrxID (যেমন: BLK8927X)"
+          placeholder={t.pay.trxPlaceholder}
           value={trxId}
           onChange={(e) => setTrxId(e.target.value)}
           style={{ width: '100%', boxSizing: 'border-box', padding: '12px', borderRadius: '8px', border: 'none', fontSize: '14px', outline: 'none', color: '#000', marginBottom: '16px' }}
         />
 
         <div style={{ fontSize: '12px', lineHeight: '1.8', opacity: 0.95 }}>
-          <div>• *247# ডায়াল করে বিকাশ মেনুতে যান অথবা বিকাশ অ্যাপ খুলুন।</div>
-          <div>• Send Money -এ ক্লিক করুন।</div>
+          <div>{t.pay.stepDial.replaceAll('{brand}', brandName)}</div>
+          <div>{t.pay.stepSendMenu}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '4px 0' }}>
-            <span>• এই নম্বরে টাকা পাঠান: <strong>{BKASH_NUMBER}</strong></span>
+            <span>{t.pay.stepSendTo} <strong>{BKASH_NUMBER}</strong></span>
             <button onClick={handleCopy} style={{ background: '#ffffff', color: '#e2136e', border: 'none', borderRadius: '4px', padding: '2px 8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}>
-              {copied ? 'কপি হয়েছে' : 'কপি'}
+              {copied ? t.pay.copied : t.pay.copy}
             </button>
           </div>
-          <div>• টাকার পরিমাণ: <strong>৳{orderData.price}</strong></div>
-          <div>• নিশ্চিত করে এখন আপনার bKash PIN লিখুন।</div>
-          <div>• টাকা পাঠান এবং ট্রানজ্যাকশন আইডি কপি করুন।</div>
-          <div>• ট্রানজ্যাকশন আইডি লিখে ভেরিফাই চাপুন।</div>
+          <div>{t.pay.stepAmount} <strong>৳{orderData.price}</strong></div>
+          <div>{t.pay.stepPin.replaceAll('{brand}', brandName)}</div>
+          <div>{t.pay.stepCopyTrx}</div>
+          <div>{t.pay.stepVerify}</div>
         </div>
       </div>
 
@@ -157,7 +160,7 @@ export default function BkashPaymentPage() {
           cursor: submitting ? 'not-allowed' : 'pointer',
         }}
       >
-        {submitting ? 'যাচাই করা হচ্ছে...' : 'ভেরিফাই'}
+        {submitting ? t.pay.verifying : t.pay.verify}
       </button>
 
     </div>

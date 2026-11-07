@@ -3,8 +3,10 @@
 import { Suspense, useEffect, useState, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useLanguage } from '../../context/LanguageContext';
 
 function OrderSuccessContent() {
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const router = useRouter();
   const [orderId, setOrderId] = useState('');
@@ -90,10 +92,10 @@ function OrderSuccessContent() {
         </div>
 
         <h2 style={{ fontSize: '22px', fontWeight: '900', color: '#f8fafc', margin: '0 0 10px' }}>
-          পেমেন্ট সফল হয়েছে!
+          {t.success.title}
         </h2>
         <p style={{ fontSize: '13px', color: '#94a3b8', lineHeight: '1.6', margin: '0 0 24px' }}>
-          ধন্যবাদ! আপনার অর্ডারটি নিশ্চিত করা হয়েছে এবং স্বয়ংক্রিয় প্রসেসিং শুরু হয়েছে।
+          {t.success.sub}
         </p>
 
         <div style={{
@@ -104,16 +106,16 @@ function OrderSuccessContent() {
           fontSize: '13px',
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <span style={{ color: '#94a3b8' }}>Order ID:</span>
-            <span style={{ fontWeight: '900', color: '#a6f36a', fontSize: '15px' }}>{orderId || 'লোড হচ্ছে...'}</span>
+            <span style={{ color: '#94a3b8' }}>{t.success.orderId}</span>
+            <span style={{ fontWeight: '900', color: '#a6f36a', fontSize: '15px' }}>{orderId || t.success.loading}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <span style={{ color: '#94a3b8' }}>পেমেন্ট স্ট্যাটাস:</span>
-            <span style={{ color: '#10b981', fontWeight: 'bold' }}>● Paid (পরিশোধিত)</span>
+            <span style={{ color: '#94a3b8' }}>{t.success.paymentStatus}</span>
+            <span style={{ color: '#10b981', fontWeight: 'bold' }}>{t.success.paid}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ color: '#94a3b8' }}>ডেলিভারি মেথড:</span>
-            <span style={{ color: '#f8fafc', fontWeight: 'bold' }}>ইনস্ট্যান্ট অটো ডেলিভারি</span>
+            <span style={{ color: '#94a3b8' }}>{t.success.deliveryMethod}</span>
+            <span style={{ color: '#f8fafc', fontWeight: 'bold' }}>{t.success.instant}</span>
           </div>
         </div>
 
@@ -127,9 +129,9 @@ function OrderSuccessContent() {
           color: '#bae6fd',
           textAlign: 'left',
         }}>
-          💬 {smsStatus === 'sent' && 'WhatsApp-এ কনফার্মেশন মেসেজ সফলভাবে পাঠানো হয়েছে!'}
-          {smsStatus === 'sending' && 'WhatsApp নম্বরে মেসেজ পাঠিয়ে দেওয়া হচ্ছে...'}
-          {smsStatus === 'failed' && 'অর্ডার কনফার্ম হয়েছে। বিস্তারিত অর্ডার হিস্ট্রিতে দেখুন।'}
+          💬 {smsStatus === 'sent' && t.success.smsSent}
+          {smsStatus === 'sending' && t.success.smsSending}
+          {smsStatus === 'failed' && t.success.smsFallback}
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -146,7 +148,7 @@ function OrderSuccessContent() {
               cursor: 'pointer',
             }}
           >
-            অর্ডার হিস্ট্রি দেখুন
+            {t.success.viewHistory}
           </button>
           <Link
             href="/"
@@ -158,7 +160,7 @@ function OrderSuccessContent() {
               textDecoration: 'none',
             }}
           >
-            হোম পেজে ফিরে যান
+            {t.success.backHome}
           </Link>
         </div>
       </div>
@@ -167,10 +169,11 @@ function OrderSuccessContent() {
 }
 
 export default function OrderSuccessPage() {
+  const { t } = useLanguage();
   return (
     <Suspense fallback={
       <div style={{ textAlign: 'center', padding: '100px 20px', color: '#94a3b8' }}>
-        অর্ডার কনফার্মেশন লোড হচ্ছে...
+        {t.success.pageLoading}
       </div>
     }>
       <OrderSuccessContent />

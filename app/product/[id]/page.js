@@ -2,16 +2,18 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useLanguage } from '../../../context/LanguageContext';
 
 const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
 const LOGO_WHATSAPP = 'https://download.logo.wine/logo/WhatsApp/WhatsApp-Logo.wine.png';
 
-// Vercel Environment Variables থেকে ডাটা নেওয়া হচ্ছে
+// Vercel Environment Variables থেকে ডাটা নেওয়া হচ্ছে
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://mieygzqgoekinxppdepb.supabase.co';
 const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
 const WHATSAPP_NUMBER = '8801319760720';
 
 export default function ProductDetailPage() {
+  const { t } = useLanguage();
   const params = useParams();
   const router = useRouter();
   const id = params?.id;
@@ -43,7 +45,7 @@ export default function ProductDetailPage() {
     fetchProduct();
   }, [id]);
 
-  // এখনই কিনুন বাটনে ক্লিক করলে ডাটা সেভ করে নতুন পেজে নিয়ে যাবে
+  // এখনই কিনুন বাটনে ক্লিক করলে ডাটা সেভ করে নতুন পেজে নিয়ে যাবে
   const handleBuyNow = () => {
     if (!product) return;
 
@@ -61,20 +63,23 @@ export default function ProductDetailPage() {
   };
 
   if (loading) {
-    return <div style={{ padding: '80px 20px', textAlign: 'center', color: '#64748b' }}>প্যাকেজ বিবরণ লোড হচ্ছে...</div>;
+    return <div style={{ padding: '80px 20px', textAlign: 'center', color: '#64748b' }}>{t.prod.loading}</div>;
   }
 
   if (!product) {
     return (
       <div style={{ padding: '80px 20px', textAlign: 'center', color: '#94a3b8' }}>
-        <h3>প্রোডাক্টটি পাওয়া যায়নি!</h3>
-        <Link href="/" style={{ color: '#a6f36a', textDecoration: 'none', fontWeight: 'bold' }}>← ফিরে যান</Link>
+        <h3>{t.prod.notFound}</h3>
+        <Link href="/" style={{ color: '#a6f36a', textDecoration: 'none', fontWeight: 'bold' }}>{t.prod.goBack}</Link>
       </div>
     );
   }
 
   const whatsappMsg = encodeURIComponent(
-    `হ্যালো, আমি Hub Cart থেকে সার্ভিস নিতে চাই:\n\nসার্ভিস: ${product.title}\nমূল্য: ৳${product.price}\nলিংক: ${typeof window !== 'undefined' ? window.location.href : ''}`
+    t.prod.waMsg
+      .replace('{title}', product.title)
+      .replace('{price}', product.price)
+      .replace('{link}', typeof window !== 'undefined' ? window.location.href : '')
   );
   const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${whatsappMsg}`;
 
@@ -86,7 +91,7 @@ export default function ProductDetailPage() {
         onClick={() => router.back()}
         style={{ border: 'none', background: 'none', color: '#94a3b8', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', padding: '4px 0', marginBottom: '12px' }}
       >
-        ← পেছনে যান
+        {t.prod.back}
       </button>
 
       {/* প্রোডাক্ট কার্ড */}
@@ -109,7 +114,7 @@ export default function ProductDetailPage() {
 
         <div style={{ padding: '20px' }}>
           <span style={{ fontSize: '10px', background: 'rgba(166, 243, 106, 0.15)', color: '#a6f36a', padding: '4px 10px', borderRadius: '14px', fontWeight: 'bold', textTransform: 'uppercase' }}>
-            {product.category || 'Service'}
+            {product.category || t.prod.service}
           </span>
 
           <h1 style={{ fontSize: '18px', fontWeight: 'bold', margin: '12px 0 8px', color: '#f8fafc' }}>
@@ -124,9 +129,9 @@ export default function ProductDetailPage() {
           </div>
 
           <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '16px' }}>
-            <h4 style={{ fontSize: '12px', fontWeight: 'bold', margin: '0 0 6px', color: '#94a3b8', textTransform: 'uppercase' }}>বিস্তারিত বিবরণ:</h4>
+            <h4 style={{ fontSize: '12px', fontWeight: 'bold', margin: '0 0 6px', color: '#94a3b8', textTransform: 'uppercase' }}>{t.prod.details}</h4>
             <p style={{ fontSize: '13px', color: '#cbd5e1', lineHeight: '1.6', whiteSpace: 'pre-line', margin: 0 }}>
-              {product.description || 'এই প্যাকেজের জন্য কোনো অতিরিক্ত বিবরণ দেওয়া হয়নি।'}
+              {product.description || t.prod.noDesc}
             </p>
           </div>
         </div>
@@ -175,7 +180,7 @@ export default function ProductDetailPage() {
             alt="WhatsApp"
             style={{ width: '22px', height: '22px', objectFit: 'contain' }}
           />
-          <span>WhatsApp Order</span>
+          <span>{t.prod.whatsappOrder}</span>
         </a>
 
         <button
@@ -198,7 +203,7 @@ export default function ProductDetailPage() {
           }}
         >
           <span>⚡</span>
-          <span>এখনই কিনুন</span>
+          <span>{t.prod.buyNow}</span>
         </button>
       </div>
 

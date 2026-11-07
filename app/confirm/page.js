@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLanguage } from '../../context/LanguageContext';
 
 const COUNTRY_CODES = [
   { code: '+880', flag: '🇧🇩', name: 'BD', placeholder: '1XXXXXXXXX' },
@@ -13,6 +14,7 @@ const COUNTRY_CODES = [
 
 export default function ConfirmPage() {
   const router = useRouter();
+  const { t } = useLanguage();
 
   const [productData, setProductData] = useState({
     title: 'Test payment',
@@ -58,12 +60,12 @@ export default function ConfirmPage() {
     e.preventDefault();
 
     if (!name.trim()) {
-      alert('দয়া করে আপনার নাম লিখুন');
+      alert(t.confirm.alertName);
       return;
     }
 
     if (!phoneNumber.trim()) {
-      alert('দয়া করে WhatsApp নম্বরটি লিখুন');
+      alert(t.confirm.alertPhone);
       return;
     }
 
@@ -136,7 +138,7 @@ export default function ConfirmPage() {
 
     } catch (err) {
       console.error('Order submission error:', err);
-      alert('অর্ডার প্রসেসিংয়ে সমস্যা হয়েছে। আবার চেষ্টা করুন।');
+      alert(t.confirm.alertFail);
     } finally {
       setLoading(false);
     }
@@ -148,7 +150,7 @@ export default function ConfirmPage() {
         
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
           <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#f8fafc', margin: 0 }}>
-            অর্ডার কনফার্মেশন
+            {t.confirm.title}
           </h2>
           <button 
             type="button" 
@@ -159,7 +161,7 @@ export default function ConfirmPage() {
           </button>
         </div>
         <p style={{ fontSize: '13px', color: '#94a3b8', margin: '0 0 18px 0' }}>
-          অর্ডারের জন্য প্রয়োজনীয় তথ্য দিন
+          {t.confirm.subtitle}
         </p>
 
         <div style={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '12px', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -174,12 +176,12 @@ export default function ConfirmPage() {
         <form onSubmit={handleOrderSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
             <label style={{ display: 'block', fontSize: '13px', color: '#cbd5e1', marginBottom: '6px', fontWeight: '600' }}>
-              আপনার নাম *
+              {t.confirm.name}
             </label>
             <input
               type="text"
               required
-              placeholder="আপনার পুরো নাম"
+              placeholder={t.confirm.namePlaceholder}
               value={name}
               onChange={(e) => setName(e.target.value)}
               style={{
@@ -198,7 +200,7 @@ export default function ConfirmPage() {
 
           <div>
             <label style={{ display: 'block', fontSize: '13px', color: '#cbd5e1', marginBottom: '6px', fontWeight: '600' }}>
-              WhatsApp নম্বর *
+              {t.confirm.whatsapp}
             </label>
             <div style={{ display: 'flex', gap: '8px' }}>
               <select
@@ -247,17 +249,17 @@ export default function ConfirmPage() {
               />
             </div>
             <span style={{ fontSize: '11px', color: '#64748b', marginTop: '4px', display: 'block' }}>
-              কান্ট্রি কোড বাদে বাকি অংশ লিখুন (যেমন: 1893432478)
+              {t.confirm.phoneHint}
             </span>
           </div>
 
           <div>
             <label style={{ display: 'block', fontSize: '13px', color: '#cbd5e1', marginBottom: '6px', fontWeight: '600' }}>
-              Telegram ইউজারনেম (@username)
+              {t.confirm.telegram}
             </label>
             <input
               type="text"
-              placeholder="@username (যদি থাকে)"
+              placeholder={t.confirm.telegramPlaceholder}
               value={telegram}
               onChange={(e) => setTelegram(e.target.value)}
               style={{
@@ -291,7 +293,7 @@ export default function ConfirmPage() {
               boxShadow: '0 4px 14px rgba(166, 243, 106, 0.4)',
             }}
           >
-            {loading ? 'প্রসেসিং হচ্ছে...' : 'অর্ডার Confirm করুন →'}
+            {loading ? t.confirm.processing : t.confirm.btn}
           </button>
         </form>
 

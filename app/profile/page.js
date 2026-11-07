@@ -8,6 +8,7 @@ const LOGO_HUB_CART = 'https://i.postimg.cc/4Y3TK6bN/5707.png';
 export default function ProfilePage() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { t } = useLanguage();
 
   useEffect(() => {
     const savedUser = localStorage.getItem('hubcart_user');
@@ -22,7 +23,7 @@ export default function ProfilePage() {
   }, []);
 
   const handleLogout = () => {
-    if (confirm('অ্যাকাউন্ট থেকে লগআউট করতে চান?')) {
+    if (confirm(t.prof.logoutConfirm)) {
       localStorage.removeItem('hubcart_user');
       window.location.href = '/';
     }
@@ -31,7 +32,7 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <div style={{ textAlign: 'center', padding: '80px 20px', color: '#64748b', fontSize: '13px' }}>
-        প্রোফাইল লোড হচ্ছে...
+        {t.prof.loading}
       </div>
     );
   }
@@ -51,8 +52,8 @@ export default function ProfilePage() {
           boxShadow: '0 12px 30px rgba(0,0,0,0.4)',
         }}>
           <img src={LOGO_HUB_CART} alt="Hub Cart" style={{ width: '56px', height: '56px', objectFit: 'contain', marginBottom: '14px' }} />
-          <h3 style={{ margin: '0 0 6px', color: '#f8fafc', fontSize: '18px', fontWeight: 'bold' }}>অ্যাকাউন্টে লগইন নেই</h3>
-          <p style={{ fontSize: '13px', color: '#64748b', margin: '0 0 20px' }}>অর্ডার হিস্ট্রি ও প্রোফাইল বিবরণ দেখতে লগইন করুন।</p>
+          <h3 style={{ margin: '0 0 6px', color: '#f8fafc', fontSize: '18px', fontWeight: 'bold' }}>{t.prof.notLoggedTitle}</h3>
+          <p style={{ fontSize: '13px', color: '#64748b', margin: '0 0 20px' }}>{t.prof.notLoggedSub}</p>
           <Link
             href="/login"
             style={{
@@ -68,12 +69,14 @@ export default function ProfilePage() {
               boxShadow: '0 4px 14px rgba(166, 243, 106, 0.4)',
             }}
           >
-            লগইন / সাইন-আপ
+            {t.prof.loginSignup}
           </Link>
         </div>
       </div>
     );
   }
+
+  const displayName = user.name || t.prof.customer;
 
   return (
     <div style={{ maxWidth: '460px', margin: '14px auto', padding: '0 14px 90px' }}>
@@ -92,10 +95,10 @@ export default function ProfilePage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <img src={LOGO_HUB_CART} alt="Hub Cart" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
-            <span style={{ fontSize: '13px', fontWeight: '900', color: '#f8fafc' }}>Hub Cart VIP</span>
+            <span style={{ fontSize: '13px', fontWeight: '900', color: '#f8fafc' }}>{t.prof.vip}</span>
           </div>
           <span style={{ background: 'rgba(34, 197, 94, 0.15)', border: '1px solid rgba(34, 197, 94, 0.4)', color: '#4ade80', fontSize: '10px', padding: '3px 8px', borderRadius: '12px', fontWeight: 'bold' }}>
-            ● Verified
+            {t.prof.verified}
           </span>
         </div>
 
@@ -113,11 +116,11 @@ export default function ProfilePage() {
             color: '#10170c',
             boxShadow: '0 4px 12px rgba(166, 243, 106, 0.4)'
           }}>
-            {user.name ? user.name[0].toUpperCase() : 'U'}
+            {displayName[0].toUpperCase()}
           </div>
           <div>
-            <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: '0 0 4px', color: '#f8fafc' }}>{user.name}</h2>
-            <p style={{ margin: 0, fontSize: '11px', color: '#94a3b8' }}>Hub Cart ক্লায়েন্ট</p>
+            <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: '0 0 4px', color: '#f8fafc' }}>{displayName}</h2>
+            <p style={{ margin: 0, fontSize: '11px', color: '#94a3b8' }}>{t.prof.client}</p>
           </div>
         </div>
       </div>
@@ -125,12 +128,12 @@ export default function ProfilePage() {
       {/* অ্যাকাউন্ট ইনফো */}
       <div style={{ background: 'rgba(15, 23, 42, 0.75)', borderRadius: '20px', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '18px', marginBottom: '14px' }}>
         <div style={{ paddingBottom: '12px', borderBottom: '1px solid rgba(255, 255, 255, 0.05)', fontSize: '13px' }}>
-          <span style={{ display: 'block', fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>ইমেইল</span>
-          <span style={{ color: '#f8fafc' }}>{user.email || 'যুক্ত করা নেই'}</span>
+          <span style={{ display: 'block', fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>{t.prof.email}</span>
+          <span style={{ color: '#f8fafc' }}>{user.email || t.prof.notAdded}</span>
         </div>
         <div style={{ paddingTop: '12px', fontSize: '13px' }}>
-          <span style={{ display: 'block', fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>WhatsApp নম্বর</span>
-          <span style={{ color: '#f8fafc' }}>{user.phone || 'যুক্ত করা নেই'}</span>
+          <span style={{ display: 'block', fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>{t.prof.whatsapp}</span>
+          <span style={{ color: '#f8fafc' }}>{user.phone || t.prof.notAdded}</span>
         </div>
       </div>
 
@@ -152,7 +155,7 @@ export default function ProfilePage() {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span style={{ fontSize: '16px' }}>📦</span>
-          <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#f8fafc' }}>আমার অর্ডারসমূহ (My Orders)</span>
+          <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#f8fafc' }}>{t.prof.myOrders}</span>
         </div>
         <span style={{ color: '#64748b', fontSize: '14px' }}>→</span>
       </Link>
@@ -173,7 +176,7 @@ export default function ProfilePage() {
           transition: 'background 0.2s',
         }}
       >
-        লগআউট করুন
+        {t.prof.logout}
       </button>
 
     </div>

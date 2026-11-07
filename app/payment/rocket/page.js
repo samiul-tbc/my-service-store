@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLanguage } from '../../../context/LanguageContext';
 
 const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
 const LOGO_ROCKET = 'https://i.postimg.cc/vBM08r5J/vecteezy-rocket-color-logo-mobile-banking-icon-68706013.png';
@@ -8,6 +9,8 @@ const ROCKET_NUMBER = '01893432478';
 
 export default function RocketPaymentPage() {
   const router = useRouter();
+  const { t, lang } = useLanguage();
+  const brandName = lang === 'en' ? 'Rocket' : 'রকেট';
   const [orderData, setOrderData] = useState(null);
   const [trxId, setTrxId] = useState('');
   const [copied, setCopied] = useState(false);
@@ -32,7 +35,7 @@ export default function RocketPaymentPage() {
 
   const handleVerify = async () => {
     if (!trxId.trim()) {
-      alert('দয়া করে Rocket TrxID লিখুন');
+      alert(t.pay.alertTrx.replaceAll('{brand}', brandName));
       return;
     }
 
@@ -49,7 +52,7 @@ export default function RocketPaymentPage() {
           price: orderAmount,
           customerName: orderData.customerName || 'Customer',
           whatsappNumber: orderData.whatsappNumber || '',
-          telegramUsername: orderData.telegramUsername || 'নেই',
+          telegramUsername: orderData.telegramUsername || t.pay.none,
           paymentMethod: 'Rocket (Send Money)',
           trxId: trxId.trim(),
         }),
@@ -78,17 +81,17 @@ export default function RocketPaymentPage() {
         localStorage.removeItem('hubcart_current_order');
         router.push(`/order-success?orderId=${generatedOrderId}`);
       } else {
-        alert(data.error || data.message || 'অর্ডার সাবমিট করতে সমস্যা হয়েছে।');
+        alert(data.error || data.message || t.pay.alertSubmitFail);
       }
     } catch (err) {
-      alert('সার্ভার সংযোগ সমস্যা। আবার চেষ্টা করুন।');
+      alert(t.pay.alertServer);
     } finally {
       setSubmitting(false);
     }
   };
 
   if (!orderData) {
-    return <div style={{ textAlign: 'center', padding: '80px 20px', color: '#64748b' }}>অর্ডার লোড হচ্ছে...</div>;
+    return <div style={{ textAlign: 'center', padding: '80px 20px', color: '#64748b' }}>{t.pay.loading}</div>;
   }
 
   return (
@@ -107,28 +110,29 @@ export default function RocketPaymentPage() {
       </div>
 
       <div style={{ background: '#8c3494', borderRadius: '16px', padding: '20px 16px', color: '#ffffff', marginBottom: '20px' }}>
-        <h4 style={{ margin: '0 0 12px', fontSize: '15px', fontWeight: 'bold' }}>ট্রানজেকশন আইডি দিন</h4>
+        <h4 style={{ margin: '0 0 12px', fontSize: '15px', fontWeight: 'bold' }}>{t.pay.enterTrx}</h4>
 
         <input
           type="text"
-          placeholder="TrxID (যেমন: 893432478)"
+          placeholder={t.pay.trxPlaceholder}
           value={trxId}
           onChange={(e) => setTrxId(e.target.value)}
           style={{ width: '100%', boxSizing: 'border-box', padding: '12px', borderRadius: '8px', border: 'none', fontSize: '14px', outline: 'none', color: '#000', marginBottom: '16px' }}
         />
 
         <div style={{ fontSize: '12px', lineHeight: '1.8', opacity: 0.95 }}>
-          <div>• *322# ডায়াল করুন অথবা রকেট অ্যাপ খুলুন।</div>
-          <div>• Send Money অপশন বেছে নিন।</div>
+          <div>{t.pay.stepDial.replaceAll('{brand}', brandName).replace('*247#', '*322#')}</div>
+          <div>{t.pay.stepSendMenu}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '4px 0' }}>
-            <span>• এই নম্বরে টাকা পাঠান: <strong>{ROCKET_NUMBER}</strong></span>
+            <span>{t.pay.stepSendTo} <strong>{ROCKET_NUMBER}</strong></span>
             <button onClick={handleCopy} style={{ background: '#ffffff', color: '#8c3494', border: 'none', borderRadius: '4px', padding: '2px 8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}>
-              {copied ? 'কপি হয়েছে' : 'কপি'}
+              {copied ? t.pay.copied : t.pay.copy}
             </button>
           </div>
-          <div>• টাকার পরিমাণ: <strong>৳{orderData.price}</strong></div>
-          <div>• রকেট পিন দিয়ে নিশ্চিত করুন।</div>
-          <div>• ট্রানজ্যাকশন আইডি কপি করে এখানে লিখে ভেরিফাই চাপুন।</div>
+          <div>{t.pay.stepAmount} <strong>৳{orderData.price}</strong></div>
+          <div>{t.pay.stepPin.replaceAll('{brand}', brandName)}</div>
+          <div>{t.pay.stepCopyTrx}</div>
+          <div>{t.pay.stepVerify}</div>
         </div>
       </div>
 
@@ -147,7 +151,7 @@ export default function RocketPaymentPage() {
           cursor: submitting ? 'not-allowed' : 'pointer',
         }}
       >
-        {submitting ? 'যাচাই করা হচ্ছে...' : 'ভেরিফাই'}
+        {submitting ? t.pay.verifying : t.pay.verify}
       </button>
     </div>
   );

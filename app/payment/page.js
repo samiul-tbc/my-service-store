@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLanguage } from '../../context/LanguageContext';
 
 const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
 const LOGO_BKASH = 'https://1000logos.net/wp-content/uploads/2021/02/Bkash-logo.png';
@@ -10,6 +11,7 @@ const LOGO_UPAY = 'https://i.postimg.cc/Gh9qphTM/upay-logo-mobile-banking-app-ic
 
 export default function PaymentGatewayPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [orderData, setOrderData] = useState(null);
 
   useEffect(() => {
@@ -30,7 +32,7 @@ export default function PaymentGatewayPage() {
   if (!orderData) {
     return (
       <div style={{ textAlign: 'center', padding: '80px 20px', color: '#94a3b8' }}>
-        <h3>কোনো অর্ডার পাওয়া যায়নি!</h3>
+        <h3>{t.pay.noOrder}</h3>
       </div>
     );
   }
@@ -62,13 +64,13 @@ export default function PaymentGatewayPage() {
           Hub Cart
         </h2>
         <span style={{ fontSize: '13px', color: '#64748b', fontWeight: '600' }}>
-          পরিশোধযোগ্য মূল্য: <strong style={{ color: '#a6f36a' }}>৳{orderData.price}.00</strong>
+          {t.pay.payable} <strong style={{ color: '#a6f36a' }}>৳{orderData.price}.00</strong>
         </span>
       </div>
 
       {/* নীল ব্যানার: মোবাইল ব্যাংকিং */}
       <div style={{ background: '#a6f36a', color: '#10170c', padding: '10px 16px', textAlign: 'center', fontWeight: 'bold', fontSize: '14px', margin: '10px 16px 16px', borderRadius: '8px' }}>
-        মোবাইল ব্যাংকিং
+        {t.pay.mobileBanking}
       </div>
 
       {/* bKash, Nagad, Rocket, Upay কার্ড গ্রিড */}

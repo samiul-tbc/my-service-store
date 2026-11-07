@@ -10,6 +10,7 @@ const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishabl
 const SUPPORT_WHATSAPP = '8801319760720';
 
 export default function OrderHistoryPage() {
+  const { lang, t } = useLanguage();
   const [user, setUser] = useState(null);
   const [searchInput, setSearchInput] = useState('');
   const [orders, setOrders] = useState([]);
@@ -19,7 +20,7 @@ export default function OrderHistoryPage() {
   useEffect(() => {
     let targetPhone = '';
 
-    // ১. Profile / Login User থেকে ফোন নম্বর নেওয়া
+    // ১. Profile / Login User থেকে ফোন নম্বর নেওয়া
     const savedUser = localStorage.getItem('hubcart_user');
     if (savedUser) {
       try {
@@ -61,7 +62,7 @@ export default function OrderHistoryPage() {
 
       let filter = '';
       if (isOrderId) {
-        // Order ID দিয়ে সার্চ
+        // Order ID দিয়ে সার্চ
         const cleanId = query.toUpperCase().replace(/[^A-Z0-9-]/g, '');
         filter = `order_id=ilike.*${cleanId}*`;
       } else {
@@ -69,10 +70,10 @@ export default function OrderHistoryPage() {
         const digitsOnly = query.replace(/[^0-9]/g, '');
         const last10 = digitsOnly.length >= 10 ? digitsOnly.slice(-10) : digitsOnly;
         
-        // URL-এ '+' চিহ্ন সুরক্ষিত রাখতে encodeURIComponent ব্যবহার করা হয়েছে (%2B)
+        // URL-এ '+' চিহ্ন সুরক্ষিত রাখতে encodeURIComponent ব্যবহার করা হয়েছে (%2B)
         const encodedRaw = encodeURIComponent(query);
 
-        // চারটি সম্ভাব্য ফরম্যাটই একসাথে OR দিয়ে চেক করা হবে:
+        // চারটি সম্ভাব্য ফরম্যাটই একসাথে OR দিয়ে চেক করা হবে:
         const orConditions = [
           `whatsapp_number.ilike.*${last10}*`,
           `whatsapp_number.eq.0${last10}`,
@@ -145,10 +146,10 @@ export default function OrderHistoryPage() {
           />
           <div>
             <h1 style={{ fontSize: '20px', fontWeight: '900', color: '#f8fafc', margin: 0 }}>
-              My Orders
+              {t.orders.title}
             </h1>
             <p style={{ margin: 0, fontSize: '11px', color: '#64748b' }}>
-              আপনার সম্পূর্ণ অর্ডার হিস্ট্রি ও বর্তমান স্ট্যাটাস
+              {t.orders.subtitle}
             </p>
           </div>
         </div>
@@ -159,7 +160,7 @@ export default function OrderHistoryPage() {
             else if (searchInput) fetchOrders(searchInput);
           }}
           style={{ background: 'rgba(30, 41, 59, 0.6)', border: '1px solid rgba(255, 255, 255, 0.08)', color: '#a6f36a', padding: '6px 10px', borderRadius: '10px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
-          title="রিফ্রেশ করুন"
+          title={t.orders.refresh}
         >
           🔄
         </button>
@@ -175,12 +176,12 @@ export default function OrderHistoryPage() {
         marginBottom: '20px',
       }}>
         <p style={{ fontSize: '12px', color: '#94a3b8', margin: '0 0 10px' }}>
-          অন্য কোনো অর্ডার দেখতে নম্বর বা Order ID লিখুন:
+          {t.orders.searchLabel}
         </p>
         <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '8px' }}>
           <input
             type="text"
-            placeholder="01XXXXXXXXX অথবা HC-XXXX"
+            placeholder={t.orders.placeholder}
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             style={{
@@ -207,7 +208,7 @@ export default function OrderHistoryPage() {
               cursor: 'pointer',
             }}
           >
-            Find
+            {t.findBtn}
           </button>
         </form>
       </div>
@@ -215,7 +216,7 @@ export default function OrderHistoryPage() {
       {/* Orders List View */}
       {loading ? (
         <div style={{ textAlign: 'center', padding: '60px 0', color: '#64748b', fontSize: '13px' }}>
-          অর্ডার বিবরণ যাচাই করা হচ্ছে...
+          {t.orders.verifying}
         </div>
       ) : orders.length === 0 ? (
         <div style={{
@@ -227,9 +228,9 @@ export default function OrderHistoryPage() {
           textAlign: 'center',
         }}>
           <div style={{ fontSize: '36px', marginBottom: '10px' }}>📦</div>
-          <h3 style={{ fontSize: '16px', color: '#f8fafc', margin: '0 0 4px' }}>কোনো পূর্ববর্তী অর্ডার পাওয়া যায়নি</h3>
+          <h3 style={{ fontSize: '16px', color: '#f8fafc', margin: '0 0 4px' }}>{t.orders.noneTitle}</h3>
           <p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 20px' }}>
-            {searched ? 'এই তথ্য দিয়ে কোনো অর্ডার রেকর্ড নেই।' : 'আপনি এখনো কোনো সার্ভিস অর্ডার করেননি।'}
+            {searched ? t.orders.noneSearched : t.orders.noneYet}
           </p>
           <Link
             href="/"
@@ -244,7 +245,7 @@ export default function OrderHistoryPage() {
               fontSize: '13px',
             }}
           >
-            সার্ভিসগুলো দেখুন
+            {t.orders.browse}
           </Link>
         </div>
       ) : (
@@ -252,7 +253,7 @@ export default function OrderHistoryPage() {
           {orders.map((ord) => {
             const badge = getStatusBadge(ord.status);
             const isCancelled = ord.status?.toLowerCase() === 'cancelled';
-            const supportMsg = encodeURIComponent(`হ্যালো Hub Cart সাপোর্ট, আমার অর্ডার আইডি ${ord.order_id} (${ord.service_name}) সংক্রান্ত সহায়তা প্রয়োজন।`);
+            const supportMsg = encodeURIComponent(t.orders.supportMsg.replace('{id}', ord.order_id).replace('{service}', ord.service_name));
 
             return (
               <div
@@ -269,7 +270,7 @@ export default function OrderHistoryPage() {
                 {/* Order Top Bar */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', paddingBottom: '10px', borderBottom: '1px solid rgba(255, 255, 255, 0.06)' }}>
                   <div>
-                    <span style={{ fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>ORDER ID</span>
+                    <span style={{ fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>{t.orders.orderId}</span>
                     <div style={{ fontSize: '14px', fontWeight: '900', color: isCancelled ? '#f87171' : '#a6f36a' }}>
                       {ord.order_id}
                     </div>
@@ -299,13 +300,13 @@ export default function OrderHistoryPage() {
 
                 {/* Payment Meta */}
                 <div style={{ fontSize: '11px', color: '#94a3b8', lineHeight: 1.6, marginBottom: '14px' }}>
-                  <div>পেমেন্ট মেথড: <strong style={{ color: '#cbd5e1' }}>{ord.payment_method}</strong></div>
+                  <div>{t.orders.paymentMethod} <strong style={{ color: '#cbd5e1' }}>{ord.payment_method}</strong></div>
                   {ord.trx_id && ord.trx_id !== 'N/A' && (
-                    <div>TrxID: <code style={{ color: '#f8fafc', background: 'rgba(30, 41, 59, 0.8)', padding: '2px 6px', borderRadius: '4px' }}>{ord.trx_id}</code></div>
+                    <div>{t.invoice.trxId} <code style={{ color: '#f8fafc', background: 'rgba(30, 41, 59, 0.8)', padding: '2px 6px', borderRadius: '4px' }}>{ord.trx_id}</code></div>
                   )}
                   {ord.created_at && (
                     <div style={{ fontSize: '10px', color: '#64748b', marginTop: '2px' }}>
-                      তারিখ: {new Date(ord.created_at).toLocaleString('bn-BD', { dateStyle: 'medium', timeStyle: 'short' })}
+                      {t.orders.date} {new Date(ord.created_at).toLocaleString(lang === 'bn' ? 'bn-BD' : 'en-US', { dateStyle: 'medium', timeStyle: 'short' })}
                     </div>
                   )}
                 </div>
@@ -333,7 +334,7 @@ export default function OrderHistoryPage() {
                         gap: '4px',
                       }}
                     >
-                      ⚡ ট্র্যাকিং
+                      {t.orders.tracking}
                     </Link>
                   )}
 
@@ -357,7 +358,7 @@ export default function OrderHistoryPage() {
                       gap: '4px',
                     }}
                   >
-                    📄 মেমো স্লিপ
+                    {t.orders.memo}
                   </Link>
 
                   <a
@@ -382,7 +383,7 @@ export default function OrderHistoryPage() {
                       gap: '4px',
                     }}
                   >
-                    💬 সাপোর্ট
+                    {t.orders.support}
                   </a>
                 </div>
 

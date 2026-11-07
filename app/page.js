@@ -17,10 +17,12 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useLanguage } from '../context/LanguageContext';
 
 const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
 
 export default function HomePage() {
+  const { t } = useLanguage();
   const [products, setProducts] = useState([]);
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(true);
@@ -307,22 +309,19 @@ export default function HomePage() {
       {/* ---------- Hero ---------- */}
       <section className="hc-hero">
         <div className="hc-hero-content">
-          <div className="hc-eyebrow">Your digital essentials, elevated</div>
+          <div className="hc-eyebrow">{t.home.eyebrow}</div>
           <h1>
-            Good choices.
+            {t.home.heroTitle1}
             <br />
-            <em>Better digital life.</em>
+            <em>{t.home.heroTitle2}</em>
           </h1>
-          <p>
-            Discover premium digital services and everyday essentials, selected
-            to make your online life simpler, smarter and more rewarding.
-          </p>
+          <p>{t.home.heroSub}</p>
           <div className="hc-hero-actions">
             <Link href="/categories" className="hc-primary">
-              Explore collection <span aria-hidden="true">↗</span>
+              {t.home.explore} <span aria-hidden="true">↗</span>
             </Link>
             <Link href="/orders" className="hc-secondary">
-              Track an order
+              {t.home.trackOrder}
             </Link>
           </div>
         </div>
@@ -333,22 +332,22 @@ export default function HomePage() {
         <div className="hc-benefit">
           <span className="hc-benefit-icon">✦</span>
           <div>
-            <strong>Curated digital goods</strong>
-            <small>Useful services, thoughtfully selected</small>
+            <strong>{t.home.benefit1Title}</strong>
+            <small>{t.home.benefit1Sub}</small>
           </div>
         </div>
         <div className="hc-benefit">
           <span className="hc-benefit-icon">⌁</span>
           <div>
-            <strong>Simple, smooth ordering</strong>
-            <small>A clear path from browse to checkout</small>
+            <strong>{t.home.benefit2Title}</strong>
+            <small>{t.home.benefit2Sub}</small>
           </div>
         </div>
         <div className="hc-benefit">
           <span className="hc-benefit-icon">♡</span>
           <div>
-            <strong>Here when you need us</strong>
-            <small>Customer support that stays connected</small>
+            <strong>{t.home.benefit3Title}</strong>
+            <small>{t.home.benefit3Sub}</small>
           </div>
         </div>
       </section>
@@ -357,12 +356,12 @@ export default function HomePage() {
       <section aria-labelledby="products-heading">
         <div className="hc-section-head">
           <div>
-            <div className="hc-kicker">The good stuff</div>
-            <h2 id="products-heading">Popular picks</h2>
-            <p>Find your next digital essential.</p>
+            <div className="hc-kicker">{t.home.kicker}</div>
+            <h2 id="products-heading">{t.home.popular}</h2>
+            <p>{t.home.popularSub}</p>
           </div>
           <Link href="/categories" className="hc-all-link">
-            Browse all ↗
+            {t.home.browseAll}
           </Link>
         </div>
 
@@ -376,9 +375,9 @@ export default function HomePage() {
           <div className="hc-empty">
             <div style={{ fontSize: 28, marginBottom: 10 }}>◌</div>
             <strong style={{ color: '#e7ebf0', display: 'block', marginBottom: 7 }}>
-              Nothing to show just yet
+              {t.home.emptyTitle}
             </strong>
-            <span>Check back soon — new services are on the way.</span>
+            <span>{t.home.emptySub}</span>
           </div>
         ) : (
           <div className="hc-product-grid">
@@ -396,7 +395,7 @@ export default function HomePage() {
                 </div>
                 <div className="hc-product-body">
                   <h3 className="hc-product-title">{prod.title}</h3>
-                  <div className="hc-product-meta">Digital service · Instant order</div>
+                  <div className="hc-product-meta">{t.home.productMeta}</div>
                   <div className="hc-product-bottom">
                     <span className="hc-price">৳{prod.price}</span>
                     <span className="hc-buy" aria-label="View product">
@@ -413,11 +412,11 @@ export default function HomePage() {
       {/* ---------- Footer note ---------- */}
       <aside className="hc-footer-note">
         <div>
-          <strong>A better way to shop digital.</strong>
-          <p>Explore the collection and find the service that fits your needs.</p>
+          <strong>{t.home.footerNoteTitle}</strong>
+          <p>{t.home.footerNoteSub}</p>
         </div>
         <Link href="/categories" className="hc-primary">
-          Discover more ↗
+          {t.home.discoverMore}
         </Link>
       </aside>
     </main>

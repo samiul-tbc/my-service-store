@@ -2,14 +2,16 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useLanguage } from '../../../context/LanguageContext';
 
 const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
 
-// Vercel Environment Variables থেকে ডাটা নেওয়া হচ্ছে
+// Vercel Environment Variables থেকে ডাটা নেওয়া হচ্ছে
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://mieygzqgoekinxppdepb.supabase.co';
 const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
 
 export default function InvoicePage() {
+  const { lang, t } = useLanguage();
   const params = useParams();
   const router = useRouter();
   const orderIdParam = params?.id;
@@ -55,7 +57,7 @@ export default function InvoicePage() {
   if (loading) {
     return (
       <div style={{ textAlign: 'center', padding: '100px 20px', color: '#94a3b8' }}>
-        ক্যাশ মেমো প্রস্তুত হচ্ছে...
+        {t.invoice.preparing}
       </div>
     );
   }
@@ -63,12 +65,12 @@ export default function InvoicePage() {
   if (!order) {
     return (
       <div style={{ textAlign: 'center', padding: '100px 20px', color: '#94a3b8' }}>
-        <h3>ইনভয়েস পাওয়া যায়নি!</h3>
+        <h3>{t.invoice.notFound}</h3>
         <button
           onClick={() => router.push('/')}
           style={{ marginTop: '12px', padding: '10px 18px', background: '#a6f36a', color: '#10170c', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold' }}
         >
-          হোমে ফিরে যান
+          {t.invoice.backHome}
         </button>
       </div>
     );
@@ -86,7 +88,7 @@ export default function InvoicePage() {
           onClick={() => router.back()}
           style={{ border: 'none', background: 'none', color: '#94a3b8', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
         >
-          ← পেছনে যান
+          {t.invoice.back}
         </button>
 
         <button
@@ -106,11 +108,11 @@ export default function InvoicePage() {
             boxShadow: '0 4px 14px rgba(166, 243, 106, 0.4)'
           }}
         >
-          <span>🖨️</span> মেমো ডাউনলোড / প্রিন্ট
+          <span>🖨️</span> {t.invoice.print}
         </button>
       </div>
 
-      {/* ক্যাশ মেমো / ইনভয়েস কার্ড */}
+      {/* ক্যাশ মেমো / ইনভয়েস কার্ড */}
       <div id="invoice-card" style={{
         background: 'rgba(15, 23, 42, 0.9)',
         backdropFilter: 'blur(20px)',
@@ -152,25 +154,25 @@ export default function InvoicePage() {
               Hub Cart
             </h2>
             <span style={{ fontSize: '9px', fontWeight: '800', color: '#a6f36a', letterSpacing: '1.4px' }}>
-              OFFICIAL CASH MEMO
+              {t.invoice.official}
             </span>
           </div>
         </div>
 
-        {/* ইনভয়েস ও কাস্টমার মেটা ডাটা */}
+        {/* ইনভয়েস ও কাস্টমার মেটা ডাটা */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', background: 'rgba(30, 41, 59, 0.5)', padding: '14px', borderRadius: '16px', marginBottom: '20px', fontSize: '12px', lineHeight: '1.6' }}>
           <div>
-            <div style={{ color: '#64748b', fontSize: '10px', fontWeight: 'bold' }}>বিল গ্রহীতা (CUSTOMER):</div>
+            <div style={{ color: '#64748b', fontSize: '10px', fontWeight: 'bold' }}>{t.invoice.customer}</div>
             <div style={{ color: '#f8fafc', fontWeight: 'bold' }}>{order.customer_name}</div>
             <div style={{ color: '#cbd5e1' }}>📞 {order.whatsapp_number}</div>
             {order.telegram_username && <div style={{ color: '#cbd5e1' }}>✈️ {order.telegram_username}</div>}
           </div>
 
           <div style={{ textAlign: 'right' }}>
-            <div style={{ color: '#64748b', fontSize: '10px', fontWeight: 'bold' }}>মেমো নম্বর (MEMO ID):</div>
+            <div style={{ color: '#64748b', fontSize: '10px', fontWeight: 'bold' }}>{t.invoice.memoId}</div>
             <div style={{ color: '#a6f36a', fontWeight: '900', fontSize: '13px' }}>{order.order_id}</div>
             <div style={{ color: '#cbd5e1', fontSize: '11px', marginTop: '2px' }}>
-              {new Date(order.created_at || Date.now()).toLocaleDateString('bn-BD', {
+              {new Date(order.created_at || Date.now()).toLocaleDateString(lang === 'bn' ? 'bn-BD' : 'en-US', {
                 year: 'numeric',
                 month: 'short',
                 day: 'numeric',
@@ -184,8 +186,8 @@ export default function InvoicePage() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', color: '#94a3b8', fontSize: '11px', textAlign: 'left' }}>
-                <th style={{ padding: '8px 4px', fontWeight: 'bold' }}>সার্ভিস / পণ্য</th>
-                <th style={{ padding: '8px 4px', textAlign: 'right', fontWeight: 'bold' }}>মূল্য</th>
+                <th style={{ padding: '8px 4px', fontWeight: 'bold' }}>{t.invoice.service}</th>
+                <th style={{ padding: '8px 4px', textAlign: 'right', fontWeight: 'bold' }}>{t.invoice.price}</th>
               </tr>
             </thead>
             <tbody>
@@ -204,26 +206,26 @@ export default function InvoicePage() {
         {/* পেমেন্ট বিবরণ ও মোট হিসাব */}
         <div style={{ borderTop: '1px dashed rgba(255, 255, 255, 0.15)', paddingTop: '16px', marginBottom: '22px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>
-            <span>পেমেন্ট মেথড:</span>
+            <span>{t.invoice.paymentMethod}</span>
             <strong style={{ color: '#f8fafc' }}>{order.payment_method}</strong>
           </div>
           {order.trx_id && (
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#94a3b8', marginBottom: '8px' }}>
-              <span>ট্রানজেকশন আইডি:</span>
+              <span>{t.invoice.trxId}</span>
               <code style={{ color: '#f8fafc', background: 'rgba(30, 41, 59, 0.8)', padding: '1px 6px', borderRadius: '4px' }}>
                 {order.trx_id}
               </code>
             </div>
           )}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '12px', paddingTop: '10px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
-            <span style={{ fontSize: '15px', fontWeight: '900', color: '#f8fafc' }}>সর্বমোট পরিশোধিত:</span>
+            <span style={{ fontSize: '15px', fontWeight: '900', color: '#f8fafc' }}>{t.invoice.totalPaid}</span>
             <span style={{ fontSize: '22px', fontWeight: '900', color: '#a6f36a' }}>৳{order.price}</span>
           </div>
         </div>
 
         {/* ফুটার সিকিউরিটি নোট */}
         <div style={{ textAlign: 'center', borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '14px', fontSize: '11px', color: '#64748b', lineHeight: 1.5 }}>
-          Hub Cart একটি ভেরিফাইড ও সিকিউর প্ল্যাটফর্ম। আমাদের সাথে থাকার জন্য ধন্যবাদ!
+          {t.invoice.thanks}
         </div>
 
       </div>

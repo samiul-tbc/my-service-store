@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useLanguage } from '../../context/LanguageContext';
 
 const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
 
@@ -67,6 +68,7 @@ const CATEGORIES = [
 ];
 
 export default function CategoriesPage() {
+  const { t } = useLanguage();
   const [selectedCat, setSelectedCat] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [products, setProducts] = useState([]);
@@ -117,10 +119,10 @@ export default function CategoriesPage() {
       {/* হেডার */}
       <div style={{ marginBottom: '18px' }}>
         <h1 style={{ fontSize: '28px', fontWeight: '900', color: '#f8fafc', margin: '0 0 4px', letterSpacing: '-0.6px', fontFamily: 'Manrope, sans-serif' }}>
-          Explore Categories
+          {t.cat.title}
         </h1>
         <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>
-          আপনার প্রয়োজনীয় ডিজিটাল সার্ভিস ক্যাটাগরি বেছে নিন
+          {t.cat.subtitle}
         </p>
       </div>
 
@@ -130,7 +132,7 @@ export default function CategoriesPage() {
           type="search"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="সার্ভিস খুঁজুন… (যেমন: YouTube, Canva, Root)"
+          placeholder={t.cat.searchPlaceholder}
           style={{ width: '100%', boxSizing: 'border-box', padding: '11px 14px', borderRadius: '12px', background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255, 255, 255, 0.1)', color: '#fff', fontSize: '13px', outline: 'none' }}
         />
       </div>
@@ -167,8 +169,8 @@ export default function CategoriesPage() {
               }}>
                 {cat.svg}
               </div>
-              <h3 style={{ fontSize: '13px', fontWeight: 'bold', margin: '0 0 2px', color: '#f8fafc' }}>{cat.name}</h3>
-              <p style={{ margin: 0, fontSize: '10px', color: '#64748b' }}>{cat.desc}</p>
+              <h3 style={{ fontSize: '13px', fontWeight: 'bold', margin: '0 0 2px', color: '#f8fafc' }}>{t.cat.names[cat.id]}</h3>
+              <p style={{ margin: 0, fontSize: '10px', color: '#64748b' }}>{t.cat.descs[cat.id]}</p>
             </div>
           );
         })}
@@ -178,17 +180,17 @@ export default function CategoriesPage() {
       <div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 'bold', margin: 0, color: '#f8fafc' }}>
-            {searchQuery.trim() ? `Search: \u201c${searchQuery.trim()}\u201d` : CATEGORIES.find((c) => c.id === selectedCat)?.name} ({filtered.length})
+            {searchQuery.trim() ? t.cat.searchLabel.replace('{query}', searchQuery.trim()) : t.cat.names[selectedCat]} ({filtered.length})
           </h2>
         </div>
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '40px 0', color: '#64748b', fontSize: '12px' }}>লোড হচ্ছে...</div>
+          <div style={{ textAlign: 'center', padding: '40px 0', color: '#64748b', fontSize: '12px' }}>{t.cat.loading}</div>
         ) : filtered.length === 0 ? (
           <div style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255, 255, 255, 0.06)', borderRadius: '16px', padding: '30px', textAlign: 'center', color: '#64748b', fontSize: '12px' }}>
             {searchQuery.trim()
-              ? `\u201c${searchQuery.trim()}\u201d নামে কোনো সার্ভিস পাওয়া যায়নি। অন্য নামে খুঁজে দেখুন।`
-              : 'এই ক্যাটাগরিতে এখনো কোনো সার্ভিস যুক্ত করা হয়নি।'}
+              ? t.cat.noResults.replace('{query}', searchQuery.trim())
+              : t.cat.emptyCategory}
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '14px' }}>
@@ -222,7 +224,7 @@ export default function CategoriesPage() {
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span style={{ fontSize: '14px', fontWeight: '900', color: '#a6f36a' }}>৳{prod.price}</span>
                     <span style={{ padding: '4px 8px', borderRadius: '6px', background: 'linear-gradient(135deg, #a6f36a, #d2ffad)', color: '#10170c', fontSize: '10px', fontWeight: 'bold' }}>
-                      Buy
+                      {t.cat.buy}
                     </span>
                   </div>
                 </div>

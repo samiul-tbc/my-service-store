@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLanguage } from '../../../context/LanguageContext';
 
 const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
 const LOGO_UPAY = 'https://i.postimg.cc/Gh9qphTM/upay-logo-mobile-banking-app-icon-transparent-background-free-png.png';
@@ -8,6 +9,8 @@ const UPAY_NUMBER = '01894693890';
 
 export default function UpayPaymentPage() {
   const router = useRouter();
+  const { t, lang } = useLanguage();
+  const brandName = lang === 'en' ? 'Upay' : 'Upay';
   const [orderData, setOrderData] = useState(null);
   const [trxId, setTrxId] = useState('');
   const [copied, setCopied] = useState(false);
@@ -32,7 +35,7 @@ export default function UpayPaymentPage() {
 
   const handleVerify = async () => {
     if (!trxId.trim()) {
-      alert('দয়া করে Upay TrxID লিখুন');
+      alert(t.pay.alertTrx.replaceAll('{brand}', brandName));
       return;
     }
 
@@ -49,7 +52,7 @@ export default function UpayPaymentPage() {
           price: orderAmount,
           customerName: orderData.customerName || 'Customer',
           whatsappNumber: orderData.whatsappNumber || '',
-          telegramUsername: orderData.telegramUsername || 'নেই',
+          telegramUsername: orderData.telegramUsername || t.pay.none,
           paymentMethod: 'Upay (Send Money)',
           trxId: trxId.trim(),
         }),
@@ -78,17 +81,17 @@ export default function UpayPaymentPage() {
         localStorage.removeItem('hubcart_current_order');
         router.push(`/order-success?orderId=${generatedOrderId}`);
       } else {
-        alert(data.error || data.message || 'অর্ডার সাবমিট করতে সমস্যা হয়েছে।');
+        alert(data.error || data.message || t.pay.alertSubmitFail);
       }
     } catch (err) {
-      alert('সার্ভার সংযোগ সমস্যা। আবার চেষ্টা করুন।');
+      alert(t.pay.alertServer);
     } finally {
       setSubmitting(false);
     }
   };
 
   if (!orderData) {
-    return <div style={{ textAlign: 'center', padding: '80px 20px', color: '#64748b' }}>অর্ডার লোড হচ্ছে...</div>;
+    return <div style={{ textAlign: 'center', padding: '80px 20px', color: '#64748b' }}>{t.pay.loading}</div>;
   }
 
   return (
@@ -107,28 +110,28 @@ export default function UpayPaymentPage() {
       </div>
 
       <div style={{ background: '#002f6c', borderRadius: '16px', padding: '20px 16px', color: '#ffffff', marginBottom: '20px' }}>
-        <h4 style={{ margin: '0 0 12px', fontSize: '15px', fontWeight: 'bold' }}>ট্রানজেকশন আইডি দিন</h4>
+        <h4 style={{ margin: '0 0 12px', fontSize: '15px', fontWeight: 'bold' }}>{t.pay.enterTrx}</h4>
 
         <input
           type="text"
-          placeholder="TrxID (যেমন: UP8927X)"
+          placeholder={t.pay.trxPlaceholder}
           value={trxId}
           onChange={(e) => setTrxId(e.target.value)}
           style={{ width: '100%', boxSizing: 'border-box', padding: '12px', borderRadius: '8px', border: 'none', fontSize: '14px', outline: 'none', color: '#000', marginBottom: '16px' }}
         />
 
         <div style={{ fontSize: '12px', lineHeight: '1.8', opacity: 0.95 }}>
-          <div>• *268# ডায়াল করুন অথবা উপায় অ্যাপ খুলুন।</div>
-          <div>• Send Money অপশন বেছে নিন।</div>
+          <div>{t.pay.stepDial.replaceAll('{brand}', brandName).replace('*247#', '*268#')}</div>
+          <div>{t.pay.stepSendMenu}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '4px 0' }}>
-            <span>• এই নম্বরে টাকা পাঠান: <strong>{UPAY_NUMBER}</strong></span>
+            <span>{t.pay.stepSendTo} <strong>{UPAY_NUMBER}</strong></span>
             <button onClick={handleCopy} style={{ background: '#ffffff', color: '#002f6c', border: 'none', borderRadius: '4px', padding: '2px 8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}>
-              {copied ? 'কপি হয়েছে' : 'কপি'}
+              {copied ? t.pay.copied : t.pay.copy}
             </button>
           </div>
-          <div>• টাকার পরিমাণ: <strong>৳{orderData.price}</strong></div>
-          <div>• উপায় পিন দিয়ে কনফার্ম করুন।</div>
-          <div>• ট্রানজ্যাকশন আইডি লিখে ভেরিফাই চাপুন।</div>
+          <div>{t.pay.stepAmount} <strong>৳{orderData.price}</strong></div>
+          <div>{t.pay.stepPin.replaceAll('{brand}', brandName)}</div>
+          <div>{t.pay.stepVerify}</div>
         </div>
       </div>
 
@@ -147,7 +150,7 @@ export default function UpayPaymentPage() {
           cursor: submitting ? 'not-allowed' : 'pointer',
         }}
       >
-        {submitting ? 'যাচাই করা হচ্ছে...' : 'ভেরিফাই'}
+        {submitting ? t.pay.verifying : t.pay.verify}
       </button>
     </div>
   );

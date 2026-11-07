@@ -1,11 +1,13 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useLanguage } from '../../context/LanguageContext';
 
 const LOGO_HUB_CART = 'https://i.postimg.cc/4Y3TK6bN/5707.png';
 const WHATSAPP_NUMBER = '8801893432478'; // এখানে আপনার WhatsApp নম্বর দিন
 
 export default function CartPage() {
+  const { t } = useLanguage();
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -40,7 +42,7 @@ export default function CartPage() {
   };
 
   const clearCart = () => {
-    if (confirm('আপনি কি কার্ট খালি করতে চান?')) {
+    if (confirm(t.cart.clearConfirm)) {
       setCartItems([]);
       localStorage.removeItem('hubcart_cart');
     }
@@ -50,18 +52,18 @@ export default function CartPage() {
 
   // সম্পূর্ণ কার্ট অর্ডার মেসেজ জেনারেটর
   const handleWhatsAppCheckout = () => {
-    let orderText = `🛒 *Hub Cart Order Summary*:\n\n`;
+    let orderText = `${t.cart.summaryHeader}\n\n`;
     cartItems.forEach((item, idx) => {
       orderText += `${idx + 1}. ${item.title} (x${item.quantity || 1}) - ৳${Number(item.price) * (item.quantity || 1)}\n`;
     });
-    orderText += `\n*সর্বমোট মূল্য:* ৳${totalAmount}\n\nআমি এই অর্ডারটি কনফার্ম করতে চাই।`;
+    orderText += `\n*${t.cart.totalLabel}* ৳${totalAmount}\n\n${t.cart.orderIntro}`;
 
     const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(orderText)}`;
     window.open(url, '_blank');
   };
 
   if (loading) {
-    return <div style={{ textAlign: 'center', padding: '80px 20px', color: '#64748b' }}>কার্ট লোড হচ্ছে...</div>;
+    return <div style={{ textAlign: 'center', padding: '80px 20px', color: '#64748b' }}>{t.cart.loading}</div>;
   }
 
   return (
@@ -71,10 +73,10 @@ export default function CartPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
         <div>
           <h1 style={{ fontSize: '20px', fontWeight: '900', color: '#f8fafc', margin: '0 0 2px' }}>
-            Shopping Cart
+            {t.cart.title}
           </h1>
           <p style={{ margin: 0, fontSize: '11px', color: '#64748b' }}>
-            {cartItems.length} টি সার্ভিস কার্টে রয়েছে
+            {t.cart.itemsInCart.replace('{count}', cartItems.length)}
           </p>
         </div>
         {cartItems.length > 0 && (
@@ -82,7 +84,7 @@ export default function CartPage() {
             onClick={clearCart}
             style={{ background: 'transparent', border: 'none', color: '#f87171', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
           >
-            Clear All
+            {t.cart.clearAll}
           </button>
         )}
       </div>
@@ -115,8 +117,8 @@ export default function CartPage() {
               <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
             </svg>
           </div>
-          <h3 style={{ fontSize: '17px', color: '#f8fafc', margin: '0 0 6px' }}>আপনার কার্ট খালি</h3>
-          <p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 22px' }}>কোনো সার্ভিস সিলেক্ট করেননি। হোমপেজ থেকে প্যাকেজ বেছে নিন।</p>
+          <h3 style={{ fontSize: '17px', color: '#f8fafc', margin: '0 0 6px' }}>{t.cart.emptyTitle}</h3>
+          <p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 22px' }}>{t.cart.emptySub}</p>
           <Link
             href="/"
             style={{
@@ -131,7 +133,7 @@ export default function CartPage() {
               boxShadow: '0 4px 15px rgba(166, 243, 106, 0.35)',
             }}
           >
-            সার্ভিসগুলো দেখুন
+            {t.cart.browse}
           </Link>
         </div>
       ) : (
@@ -168,7 +170,7 @@ export default function CartPage() {
                   </div>
                 </div>
 
-                {/* কোয়ান্টিটি ও ডিলিট বাটন */}
+                {/* কোয়ান্টিটি ও ডিলিট বাটন */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(30, 41, 59, 0.8)', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
                     <button
@@ -211,15 +213,15 @@ export default function CartPage() {
             marginBottom: '16px',
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#94a3b8', marginBottom: '8px' }}>
-              <span>সাবটোটাল</span>
+              <span>{t.cart.subtotal}</span>
               <span>৳{totalAmount}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#94a3b8', marginBottom: '14px' }}>
-              <span>সার্ভিস ফি</span>
-              <span style={{ color: '#4ade80' }}>ফ্রি</span>
+              <span>{t.cart.serviceFee}</span>
+              <span style={{ color: '#4ade80' }}>{t.cart.free}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '16px', fontWeight: '900', color: '#f8fafc', borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '12px' }}>
-              <span>সর্বমোট</span>
+              <span>{t.cart.total}</span>
               <span style={{ color: '#a6f36a' }}>৳{totalAmount}</span>
             </div>
           </div>
@@ -244,7 +246,7 @@ export default function CartPage() {
               boxShadow: '0 4px 15px rgba(22, 163, 74, 0.35)',
             }}
           >
-            💬 WhatsApp-এ অর্ডার সম্পন্ন করুন
+            {t.cart.checkoutWhatsapp}
           </button>
         </div>
       )}

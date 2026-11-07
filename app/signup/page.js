@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useLanguage } from '../../context/LanguageContext';
 
 const LOGO_HUB_CART = 'https://i.postimg.cc/4Y3TK6bN/5707.png';
 
@@ -19,6 +20,7 @@ const COUNTRY_CODES = [
 
 export default function SignUpPage() {
   const router = useRouter();
+  const { t } = useLanguage();
 
   // ইনপুট স্টেট
   const [fullName, setFullName] = useState('');
@@ -62,10 +64,10 @@ export default function SignUpPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error_description || data.msg || data.message || 'রেজিস্ট্রেশন ব্যর্থ হয়েছে');
+        throw new Error(data.error_description || data.msg || data.message || t.auth.signupFail);
       }
 
-      setSuccessMsg('✅ অ্যাকাউন্ট তৈরি সফল হয়েছে! লগইন পেজে নেওয়া হচ্ছে...');
+      setSuccessMsg(t.auth.signupSuccessRedirect);
       setTimeout(() => {
         router.push('/login');
       }, 1500);
@@ -109,7 +111,7 @@ export default function SignUpPage() {
             style={{ width: '44px', height: '44px', objectFit: 'contain', margin: '0 auto 6px', filter: 'drop-shadow(0 2px 8px rgba(166, 243, 106, 0.4))' }}
           />
           <h2 style={{ fontSize: '20px', fontWeight: '900', margin: '0 0 4px', color: '#f8fafc' }}>Hub Cart</h2>
-          <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>নতুন অ্যাকাউন্ট তৈরি করুন</p>
+          <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>{t.auth.signupTitle}</p>
         </div>
 
         {/* এরর বা সাকসেস মেসেজ */}
@@ -126,11 +128,11 @@ export default function SignUpPage() {
 
         <form onSubmit={handleSignUp}>
           <div style={{ marginBottom: '12px' }}>
-            <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px', color: '#94a3b8' }}>আপনার পূর্ণ নাম *</label>
+            <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px', color: '#94a3b8' }}>{t.auth.nameSignup}</label>
             <input
               required
               type="text"
-              placeholder="যেমন: Samiul Islam"
+              placeholder={t.auth.namePlaceholder}
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               style={inputStyle}
@@ -139,7 +141,7 @@ export default function SignUpPage() {
 
           {/* WhatsApp নম্বর কান্ট্রি কোড সহ */}
           <div style={{ marginBottom: '12px' }}>
-            <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px', color: '#94a3b8' }}>WhatsApp নম্বর *</label>
+            <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px', color: '#94a3b8' }}>{t.auth.whatsapp}</label>
             <div style={{ display: 'flex', gap: '8px' }}>
               <select
                 value={selectedCountry.code}
@@ -179,7 +181,7 @@ export default function SignUpPage() {
           </div>
 
           <div style={{ marginBottom: '12px' }}>
-            <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px', color: '#94a3b8' }}>ইমেইল ঠিকানা *</label>
+            <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px', color: '#94a3b8' }}>{t.auth.emailSignup}</label>
             <input
               required
               type="email"
@@ -191,12 +193,12 @@ export default function SignUpPage() {
           </div>
 
           <div style={{ marginBottom: '18px' }}>
-            <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px', color: '#94a3b8' }}>পাসওয়ার্ড *</label>
+            <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px', color: '#94a3b8' }}>{t.auth.password}</label>
             <input
               required
               type="password"
               minLength={6}
-              placeholder="কমপক্ষে ৬ ডিজিটের পাসওয়ার্ড"
+              placeholder={t.auth.passwordSignupPlaceholder}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               style={inputStyle}
@@ -219,14 +221,14 @@ export default function SignUpPage() {
               boxShadow: '0 4px 14px rgba(166, 243, 106, 0.4)',
             }}
           >
-            {loading ? 'অ্যাকাউন্ট তৈরি হচ্ছে...' : 'অ্যাকাউন্ট তৈরি করুন'}
+            {loading ? t.auth.creating : t.auth.signupBtn}
           </button>
         </form>
 
         <div style={{ marginTop: '16px', textAlign: 'center', fontSize: '12px', color: '#94a3b8' }}>
-          আগে থেকেই অ্যাকাউন্ট আছে?{' '}
+          {t.auth.haveAccount}{' '}
           <Link href="/login" style={{ color: '#a6f36a', fontWeight: 'bold', textDecoration: 'none' }}>
-            লগইন করুন
+            {t.auth.loginHere}
           </Link>
         </div>
 
