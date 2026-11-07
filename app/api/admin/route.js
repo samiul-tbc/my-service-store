@@ -43,6 +43,25 @@ export async function GET(req) {
       return NextResponse.json({ groups });
     }
 
+    if (type === 'autodelivery') {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/site_settings?select=key,value`, {
+        cache: 'no-store',
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+        },
+      });
+      const rows = await res.json();
+      const configs = {};
+      if (Array.isArray(rows)) {
+        for (const row of rows) {
+          if (!row.key || !row.key.startsWith('autodelivery_')) continue;
+          try { configs[row.key.replace('autodelivery_', '')] = JSON.parse(row.value); } catch {}
+        }
+      }
+      return NextResponse.json({ configs });
+    }
+
     let endpoint = '';
     if (type === 'orders') endpoint = `${SUPABASE_URL}/rest/v1/orders?select=*&order=id.desc`;
     else if (type === 'products') endpoint = `${SUPABASE_URL}/rest/v1/products?select=*&order=id.desc`;
@@ -133,6 +152,42 @@ export async function POST(req) {
         body: JSON.stringify({ key: 'announcement', value: payload }),
       });
 
+      if (!res.ok) throw new Error(await res.text());
+      return NextResponse.json({ success: true });
+    }
+
+    // অটো-ডেলিভারি সেটিংস সেভ (প্রোডাক্ট অনুযায়ী)
+    if (action === 'save-autodelivery') {
+      const { productId, config } = payload || {};
+      if (!productId) return NextResponse.json({ error: 'productId প্রয়োজন' }, { status: 400 });
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/site_settings`, {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json',
+          Prefer: 'resolution=merge-duplicates',
+        },
+        body: JSON.stringify({ key: `autodelivery_${productId}`, value: JSON.stringify(config || {}) }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      return NextResponse.json({ success: true });
+    }
+
+    // ডেলিভারি করা কন্টেন্ট সেভ (অর্ডার অনুযায়ী — কাস্টমার ট্র্যাক পেজে দেখবে)
+    if (action === 'save-delivered') {
+      const { orderId, content } = payload || {};
+      if (!orderId) return NextResponse.json({ error: 'orderId প্রয়োজন' }, { status: 400 });
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/site_settings`, {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json',
+          Prefer: 'resolution=merge-duplicates',
+        },
+        body: JSON.stringify({ key: `delivered_${orderId}`, value: String(content || '') }),
+      });
       if (!res.ok) throw new Error(await res.text());
       return NextResponse.json({ success: true });
     }

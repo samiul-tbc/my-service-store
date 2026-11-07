@@ -5,8 +5,15 @@ const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_P
 
 export async function GET() {
   try {
-    const [prodRes, noticeRes] = await Promise.allSettled([
+    const [prodRes, noticeRes, settingsRes] = await Promise.allSettled([
       fetch(`${SUPABASE_URL}/rest/v1/products?select=*&order=id.desc`, {
+        cache: 'no-store',
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+        },
+      }),
+      fetch(`${SUPABASE_URL}/rest/v1/site_settings?select=key,value`, {
         cache: 'no-store',
         headers: {
           apikey: SUPABASE_KEY,
@@ -36,13 +43,33 @@ export async function GET() {
       }
     }
 
+    // Review aggregates per product (reviews live in site_settings)
+    const ratings = {};
+    if (settingsRes.status === 'fulfilled' && settingsRes.value.ok) {
+      const rows = await settingsRes.value.json();
+      if (Array.isArray(rows)) {
+        for (const row of rows) {
+          if (!row.key || !row.key.startsWith('reviews_')) continue;
+          try {
+            const arr = JSON.parse(row.value);
+            if (Array.isArray(arr) && arr.length) {
+              const pid = row.key.replace('reviews_', '');
+              const avg = arr.reduce((s, r) => s + (Number(r.rating) || 0), 0) / arr.length;
+              ratings[pid] = { rating: Math.round(avg * 10) / 10, reviewCount: arr.length };
+            }
+          } catch {}
+        }
+      }
+    }
+
     // Slim the payload: never ship base64 images inline — the client loads
     // them from the cached /api/img/<id> route instead.
     const slimProducts = products.map((p) => {
-      if (p && typeof p.image === 'string' && p.image.startsWith('data:')) {
-        return { ...p, image: `/api/img/${p.id}` };
-      }
-      return p;
+      const base = p && typeof p.image === 'string' && p.image.startsWith('data:')
+        ? { ...p, image: `/api/img/${p.id}` }
+        : p;
+      const r = ratings[String(base.id)] || { rating: 0, reviewCount: 0 };
+      return { ...base, rating: r.rating, reviewCount: r.reviewCount };
     });
 
     return NextResponse.json(

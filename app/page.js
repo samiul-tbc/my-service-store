@@ -427,6 +427,13 @@ export default function HomePage() {
                 </div>
                 <div className="hc-product-body">
                   <h3 className="hc-product-title">{prod.title}</h3>
+                  {prod.reviewCount > 0 && (
+                    <div style={{ fontSize: '11px', color: '#facc15', fontWeight: '700', marginBottom: '6px' }}>
+                      {'★'.repeat(Math.round(prod.rating))}<span style={{ color: '#475569' }}>{'★'.repeat(5 - Math.round(prod.rating))}</span>
+                      <span style={{ color: '#e2e8f0', marginLeft: '5px' }}>{prod.rating}</span>
+                      <span style={{ color: '#64748b', marginLeft: '3px' }}>({prod.reviewCount})</span>
+                    </div>
+                  )}
                   <div className="hc-product-meta">{t.home.productMeta}</div>
                   <div className="hc-product-bottom">
                     <span>

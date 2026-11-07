@@ -19,6 +19,7 @@ function TrackContent() {
   const [loading, setLoading] = useState(false);
   const [orders, setOrders] = useState([]);
   const [searched, setSearched] = useState(false);
+  const [deliveredMap, setDeliveredMap] = useState({});
 
   useEffect(() => {
     if (initialId) {
@@ -50,6 +51,26 @@ function TrackContent() {
       const data = await res.json();
       if (Array.isArray(data)) {
         setOrders(data);
+        // সম্পন্ন অর্ডারের ডেলিভারি তথ্য (যদি থাকে) — কাস্টমার এখানেই দেখতে পাবে
+        try {
+          const completed = data.filter((o) => (o.status || '').toLowerCase() === 'completed');
+          if (completed.length) {
+            const inList = completed.map((o) => `"delivered_${o.order_id}"`).join(',');
+            const r2 = await fetch(`${SUPABASE_URL}/rest/v1/site_settings?key=in.(${inList})&select=key,value`, {
+              cache: 'no-store',
+              headers: {
+                apikey: SUPABASE_KEY,
+                Authorization: `Bearer ${SUPABASE_KEY}`,
+              },
+            });
+            const rows = await r2.json();
+            if (Array.isArray(rows)) {
+              const map = {};
+              rows.forEach((r) => { if (r.value) map[r.key.replace('delivered_', '')] = r.value; });
+              setDeliveredMap(map);
+            }
+          }
+        } catch (e) { console.error(e); }
       } else {
         setOrders([]);
       }
@@ -261,6 +282,14 @@ function TrackContent() {
                 ) : (
                   <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.25)', borderRadius: '12px', padding: '10px 14px', fontSize: '12px', color: '#f87171', textAlign: 'center' }}>
                     {t.track.cancelled}
+                  </div>
+                )}
+
+                {deliveredMap[ord.order_id] && (
+                  <div style={{ marginTop: '16px', background: 'rgba(166, 243, 106, 0.07)', border: '1px solid rgba(166, 243, 106, 0.35)', borderRadius: '14px', padding: '14px' }}>
+                    <div style={{ fontSize: '13px', fontWeight: '900', color: '#a6f36a', marginBottom: '4px' }}>{t.track.deliveryTitle}</div>
+                    <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '8px' }}>{t.track.deliveryNote}</div>
+                    <div style={{ fontSize: '13px', color: '#f1f5f9', whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: 1.65, background: 'rgba(2, 6, 23, 0.55)', borderRadius: '10px', padding: '10px 12px' }}>{deliveredMap[ord.order_id]}</div>
                   </div>
                 )}
 

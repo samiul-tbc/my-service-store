@@ -172,6 +172,7 @@ export default function CategoriesPage() {
               </div>
               <h3 style={{ fontSize: '13px', fontWeight: 'bold', margin: '0 0 2px', color: '#f8fafc' }}>{t.cat.names[cat.id]}</h3>
               <p style={{ margin: 0, fontSize: '10px', color: '#64748b' }}>{t.cat.descs[cat.id]}</p>
+              <p style={{ margin: '5px 0 0', fontSize: '10px', color: '#a6f36a', fontWeight: '700' }}>{t.cat.countLabel.replace('{count}', products.filter((p) => cat.id === 'all' || p.category === cat.id).length)}</p>
             </div>
           );
         })}
@@ -211,7 +212,10 @@ export default function CategoriesPage() {
                   color: 'inherit',
                 }}
               >
-                <div style={{ width: '100%', height: '150px', background: '#0b0f19' }}>
+                <div style={{ width: '100%', height: '150px', background: '#0b0f19', position: 'relative' }}>
+                  {prod.original_price && Number(prod.original_price) > Number(prod.price) && (
+                    <span style={{ position: 'absolute', top: '8px', left: '8px', zIndex: 2, fontSize: '10px', fontWeight: '900', background: '#ef4444', color: '#ffffff', padding: '3px 7px', borderRadius: '999px' }}>-{Math.round((1 - Number(prod.price) / Number(prod.original_price)) * 100)}%</span>
+                  )}
                   <img
                     src={`/api/img/${prod.id}`}
                     alt={prod.title}
@@ -222,8 +226,21 @@ export default function CategoriesPage() {
                 </div>
                 <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
                   <h4 style={{ fontSize: '12px', fontWeight: '600', margin: '0 0 8px', color: '#f8fafc', minHeight: '32px', lineHeight: 1.3 }}>{prod.title}</h4>
+                  {prod.reviewCount > 0 && (
+                    <div style={{ fontSize: '11px', color: '#facc15', fontWeight: '700', marginBottom: '6px' }}>
+                      {'★'.repeat(Math.round(prod.rating))}<span style={{ color: '#475569' }}>{'★'.repeat(5 - Math.round(prod.rating))}</span>
+                      <span style={{ color: '#e2e8f0', marginLeft: '5px' }}>{prod.rating}</span>
+                      <span style={{ color: '#64748b', marginLeft: '3px' }}>({prod.reviewCount})</span>
+                    </div>
+                  )}
+                  
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: '14px', fontWeight: '900', color: '#a6f36a' }}>৳{prod.price}</span>
+                    <span style={{ display: 'flex', alignItems: 'baseline', gap: '5px' }}>
+                      <span style={{ fontSize: '14px', fontWeight: '900', color: '#a6f36a' }}>৳{prod.price}</span>
+                      {prod.original_price && Number(prod.original_price) > Number(prod.price) && (
+                        <span style={{ fontSize: '10px', color: '#64748b', textDecoration: 'line-through' }}>৳{prod.original_price}</span>
+                      )}
+                    </span>
                     <span style={{ padding: '4px 8px', borderRadius: '6px', background: 'linear-gradient(135deg, #a6f36a, #d2ffad)', color: '#10170c', fontSize: '10px', fontWeight: 'bold' }}>
                       {t.cat.buy}
                     </span>

@@ -53,6 +53,14 @@ export default function SecretAdminPage() {
   const [reviewsByProduct, setReviewsByProduct] = useState([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [copiedTrxId, setCopiedTrxId] = useState(null);
+  const [autodeliveryConfigs, setAutodeliveryConfigs] = useState({});
+  const [adModalProduct, setAdModalProduct] = useState(null);
+  const [adMode, setAdMode] = useState('off');
+  const [adText, setAdText] = useState('');
+  const [savingAd, setSavingAd] = useState(false);
+  const [adDeliveryHint, setAdDeliveryHint] = useState('');
+  const [adStockLine, setAdStockLine] = useState(null);
+  const [adProductId, setAdProductId] = useState(null);
   const [loadingOrders, setLoadingOrders] = useState(false);
   const previousOrderCount = useRef(0);
 
@@ -161,6 +169,7 @@ export default function SecretAdminPage() {
     fetchProducts(pin);
     fetchNotice(pin);
     fetchReviews(pin);
+    fetchAutodelivery(pin);
   };
 
   const fetchOrders = async (pin = pinInput, isSilent = false) => {
@@ -278,6 +287,84 @@ export default function SecretAdminPage() {
     URL.revokeObjectURL(url);
   };
 
+  const fetchAutodelivery = async (pin = pinInput) => {
+    try {
+      const res = await fetch('/api/admin?type=autodelivery', {
+        headers: { 'x-admin-pin': pin },
+      });
+      const data = await res.json();
+      if (data && data.configs) setAutodeliveryConfigs(data.configs);
+    } catch (err) { console.error(err); }
+  };
+
+  const postAdmin = async (action, payload) => {
+    const pin = sessionStorage.getItem('hubcart_admin_pin') || pinInput;
+    const res = await fetch('/api/admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+      body: JSON.stringify({ action, payload }),
+    });
+    return res.json();
+  };
+
+  const openAdModal = (prod) => {
+    const cfg = autodeliveryConfigs[prod.id] || {};
+    setAdMode(cfg.mode || 'off');
+    setAdText(cfg.mode === 'stock' ? (cfg.stock || []).join('\n') : (cfg.fixedText || ''));
+    setAdModalProduct(prod);
+  };
+
+  const handleSaveAutodelivery = async () => {
+    if (!adModalProduct) return;
+    setSavingAd(true);
+    try {
+      const prev = autodeliveryConfigs[adModalProduct.id] || {};
+      let config;
+      if (adMode === 'fixed') config = { ...prev, mode: 'fixed', fixedText: adText };
+      else if (adMode === 'stock') config = { ...prev, mode: 'stock', stock: adText.split('\n').map((x) => x.trim()).filter(Boolean) };
+      else config = { ...prev, mode: 'off' };
+      const data = await postAdmin('save-autodelivery', { productId: adModalProduct.id, config });
+      if (data.success) {
+        setAutodeliveryConfigs((p) => ({ ...p, [adModalProduct.id]: config }));
+        setAdModalProduct(null);
+      } else {
+        alert('সেভ করা যায়নি!');
+      }
+    } catch (err) {
+      alert('নেটওয়ার্ক সমস্যা!');
+    } finally {
+      setSavingAd(false);
+    }
+  };
+
+  const openDeliveryModal = (ord) => {
+    setDeliveryModalOrder(ord);
+    setDeliveryExtraNote('');
+    setAdStockLine(null);
+    setAdProductId(null);
+    setAdDeliveryHint('');
+    const prod = products.find((p) => p.title === ord.service_name);
+    if (!prod) return;
+    const cfg = autodeliveryConfigs[prod.id];
+    if (!cfg || !cfg.mode || cfg.mode === 'off') return;
+    if (cfg.mode === 'fixed' && cfg.fixedText) {
+      setDeliveryExtraNote(cfg.fixedText);
+      setAdDeliveryHint('🤖 Auto-Delivery (Fixed) থেকে তথ্য ভরা হয়েছে — চাইলে বদলে নিতে পারো।');
+    } else if (cfg.mode === 'stock') {
+      const used = cfg.used || [];
+      const next = (cfg.stock || []).find((l) => !used.includes(l));
+      if (next) {
+        setDeliveryExtraNote(next);
+        setAdStockLine(next);
+        setAdProductId(prod.id);
+        const remaining = (cfg.stock || []).length - used.length - 1;
+        setAdDeliveryHint(`🤖 Auto-Delivery স্টক থেকে নেওয়া হয়েছে — পাঠানোর পর স্টকে বাকি থাকবে ${remaining}টি।`);
+      } else {
+        setAdDeliveryHint('⚠️ এই প্রোডাক্টের Auto-Delivery স্টক শেষ! Products ট্যাব থেকে নতুন স্টক যোগ করো।');
+      }
+    }
+  };
+
   const handleSaveNotice = async (e) => {
     e.preventDefault();
     setSavingNotice(true);
@@ -346,7 +433,7 @@ export default function SecretAdminPage() {
     }
   };
 
-  const handleSendWhatsAppDelivery = () => {
+  const handleSendWhatsAppDelivery = async () => {
     if (!deliveryModalOrder) return;
 
     const ord = deliveryModalOrder;
@@ -372,6 +459,22 @@ export default function SecretAdminPage() {
     }
 
     message += `যেকোনো সহায়তায় আমাদের জানান। Hub Cart-এর সাথে থাকার জন্য ধন্যবাদ! 🌟`;
+
+    // অটো-ডেলিভারি হিসাব: ডেলিভার্ড কন্টেন্ট সেভ (কাস্টমার ট্র্যাক পেজে দেখতে পাবে) + স্টক ব্যবহৃত চিহ্নিত
+    try {
+      const note = deliveryExtraNote.trim();
+      if (note) {
+        await postAdmin('save-delivered', { orderId: ord.order_id, content: note });
+      }
+      if (adStockLine && adProductId) {
+        const cfg = { ...(autodeliveryConfigs[adProductId] || {}) };
+        cfg.used = [...(cfg.used || []), adStockLine];
+        await postAdmin('save-autodelivery', { productId: adProductId, config: cfg });
+        setAutodeliveryConfigs((p) => ({ ...p, [adProductId]: cfg }));
+        setAdStockLine(null);
+        setAdProductId(null);
+      }
+    } catch (e) { console.error(e); }
 
     window.open(`https://wa.me/${digits}?text=${encodeURIComponent(message)}`, '_blank');
     handleUpdateOrderStatus(ord.id, 'completed');
@@ -1057,10 +1160,7 @@ export default function SecretAdminPage() {
 
                   <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '10px', display: 'flex', gap: '8px' }}>
                     <button
-                      onClick={() => {
-                        setDeliveryModalOrder(ord);
-                        setDeliveryExtraNote('');
-                      }}
+                      onClick={() => openDeliveryModal(ord)}
                       style={{
                         flex: 1,
                         background: 'rgba(34, 197, 94, 0.15)',
@@ -1235,6 +1335,10 @@ export default function SecretAdminPage() {
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#f8fafc' }}>{prod.title}</div>
                       <div style={{ fontSize: '11px', color: '#94a3b8' }}>৳{prod.price} • {prod.category}</div>
+                      {(() => { const cfg = autodeliveryConfigs[prod.id]; if (!cfg || !cfg.mode || cfg.mode === 'off') return null; return (
+                        <div style={{ fontSize: '10px', color: '#a6f36a', fontWeight: '700', marginTop: '2px' }}>
+                          {cfg.mode === 'stock' ? `🚀 Auto-Delivery: স্টক বাকি ${(cfg.stock || []).length - (cfg.used || []).length}টি` : '🚀 Auto-Delivery: Fixed'}
+                        </div> ); })()}
                     </div>
                     <div style={{ display: 'flex', gap: '6px' }}>
                       <button
@@ -1242,6 +1346,12 @@ export default function SecretAdminPage() {
                         style={{ background: 'rgba(166, 243, 106, 0.15)', border: '1px solid rgba(166, 243, 106, 0.3)', color: '#a6f36a', padding: '6px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
                       >
                         Edit
+                      </button>
+                      <button
+                        onClick={() => openAdModal(prod)}
+                        style={{ background: 'rgba(56, 189, 248, 0.12)', border: '1px solid rgba(56, 189, 248, 0.35)', color: '#7dd3fc', padding: '6px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                      >
+                        🚀 Auto
                       </button>
                       <button
                         onClick={() => handleDeleteProduct(prod.id, prod.title)}
@@ -1402,6 +1512,57 @@ export default function SecretAdminPage() {
         </div>
       )}
 
+      {/* অটো-ডেলিভারি সেটিংস মডাল */}
+      {adModalProduct && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0, 0, 0, 0.8)', backdropFilter: 'blur(8px)', zIndex: 1000,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px',
+        }}>
+          <div style={{
+            width: '100%', maxWidth: '440px', background: '#0f172a',
+            border: '1px solid rgba(56, 189, 248, 0.4)', borderRadius: '24px', padding: '24px',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.6)', maxHeight: '88vh', overflowY: 'auto',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <h3 style={{ margin: 0, fontSize: '15px', color: '#f8fafc', fontWeight: 'bold' }}>🚀 Auto-Delivery সেটিংস</h3>
+              <button onClick={() => setAdModalProduct(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '16px', cursor: 'pointer' }}>✕</button>
+            </div>
+            <p style={{ fontSize: '12px', color: '#94a3b8', margin: '0 0 14px' }}>{adModalProduct.title}</p>
+
+            <div style={{ display: 'flex', gap: '6px', marginBottom: '12px' }}>
+              {[['off', '⛔ বন্ধ'], ['fixed', '📌 Fixed তথ্য'], ['stock', '📦 স্টক লিস্ট']].map(([m, label]) => (
+                <button key={m} type="button" onClick={() => { setAdMode(m); const cfg = autodeliveryConfigs[adModalProduct.id] || {}; setAdText(m === 'stock' ? (cfg.stock || []).join('\n') : (cfg.fixedText || '')); }}
+                  style={{ flex: 1, padding: '8px 4px', borderRadius: '10px', border: adMode === m ? '1.5px solid #38bdf8' : '1px solid rgba(255,255,255,0.12)', background: adMode === m ? 'rgba(56,189,248,0.15)' : 'transparent', color: adMode === m ? '#7dd3fc' : '#94a3b8', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {adMode === 'fixed' && (
+              <>
+                <p style={{ fontSize: '11px', color: '#94a3b8', margin: '0 0 6px', lineHeight: 1.6 }}>প্রতিটি অর্ডারে একই তথ্য গেলে এখানে লিখে রাখো (যেমন: ডাউনলোড লিংক, নির্দেশনা)। ডেলিভারি দেওয়ার সময় নিজে নিজে বসে যাবে।</p>
+                <textarea value={adText} onChange={(e) => setAdText(e.target.value)} rows={5} placeholder="ডেলিভারি তথ্য লিখুন..." style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(30,41,59,0.8)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '12px', padding: '10px', color: '#f8fafc', fontSize: '12px', lineHeight: 1.6 }} />
+              </>
+            )}
+            {adMode === 'stock' && (
+              <>
+                <p style={{ fontSize: '11px', color: '#94a3b8', margin: '0 0 6px', lineHeight: 1.6 }}>প্রতিটি লাইনে একটি করে ডেলিভারি আইটেম (অ্যাকাউন্ট/কোড/লিংক)। প্রতিবার উপরের থেকে একটা করে যাবে, ব্যবহৃত হলে চিহ্নিত থাকবে। ব্যবহৃত: {(autodeliveryConfigs[adModalProduct.id]?.used || []).length}টি</p>
+                <textarea value={adText} onChange={(e) => setAdText(e.target.value)} rows={7} placeholder={'user1@example.com / pass123\nuser2@example.com / pass456'} style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(30,41,59,0.8)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '12px', padding: '10px', color: '#f8fafc', fontSize: '12px', lineHeight: 1.6 }} />
+              </>
+            )}
+            {adMode === 'off' && (
+              <p style={{ fontSize: '11px', color: '#94a3b8', lineHeight: 1.6 }}>এই প্রোডাক্টের জন্য অটো-ডেলিভারি বন্ধ আছে — ডেলিভারির সময় আগের মতো হাতে তথ্য লিখতে হবে।</p>
+            )}
+
+            <button onClick={handleSaveAutodelivery} disabled={savingAd}
+              style={{ width: '100%', marginTop: '14px', padding: '12px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #38bdf8, #818cf8)', color: '#0b1020', fontWeight: '900', fontSize: '13px', cursor: 'pointer' }}>
+              {savingAd ? 'সেভ হচ্ছে...' : '💾 সেভ করো'}
+            </button>
+          </div>
+        </div>
+      )}
+
       {deliveryModalOrder && (
         <div style={{
           position: 'fixed',
@@ -1440,6 +1601,12 @@ export default function SecretAdminPage() {
               <div>📦 <strong>সার্ভিস:</strong> {deliveryModalOrder.service_name}</div>
               <div>🆔 <strong>অর্ডার:</strong> {deliveryModalOrder.order_id}</div>
             </div>
+
+            {adDeliveryHint && (
+              <div style={{ background: 'rgba(166, 243, 106, 0.1)', border: '1px solid rgba(166, 243, 106, 0.3)', color: '#d9f99d', fontSize: '11px', fontWeight: 'bold', padding: '8px 10px', borderRadius: '10px', marginBottom: '10px' }}>
+                {adDeliveryHint}
+              </div>
+            )}
 
             <div style={{ marginBottom: '10px' }}>
               <span style={{ fontSize: '10px', color: '#94a3b8', display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>কুইক টেমপ্লেট নির্বাচন করুন:</span>
