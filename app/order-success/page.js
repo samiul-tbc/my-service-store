@@ -13,6 +13,18 @@ function OrderSuccessContent() {
   const [smsStatus, setSmsStatus] = useState('sending');
   const hasTriggered = useRef(false);
 
+  // কার্ট চেকআউট সফল হলে কার্ট খালি করা
+  useEffect(() => {
+    try {
+      if (localStorage.getItem('hubcart_pending_cart_clear') === '1') {
+        localStorage.removeItem('hubcart_cart');
+        localStorage.removeItem('hubcart_pending_cart_clear');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
+
   useEffect(() => {
     if (hasTriggered.current) return;
 

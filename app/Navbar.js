@@ -65,6 +65,16 @@ export default function Navbar() {
           </div>
         </Link>
 
+        {/* ডেস্কটপ নেভিগেশন (শুধু বড় স্ক্রিনে) */}
+        <nav className="hc-desktop-nav">
+          <Link href="/">{t.nav.home}</Link>
+          <Link href="/categories">{t.nav.categories}</Link>
+          <Link href="/orders">{t.nav.orders}</Link>
+          <Link href="/track">{t.footer.trackOrder}</Link>
+          <Link href="/cart">{t.footer.cart}</Link>
+          <Link href="/profile">{t.nav.profile}</Link>
+        </nav>
+
         {/* ডানপাশের আইকনসমূহ */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           

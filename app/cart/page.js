@@ -248,6 +248,30 @@ export default function CartPage() {
           >
             {t.cart.checkoutWhatsapp}
           </button>
+
+          {/* অনলাইন পেমেন্ট চেকআউট বাটন */}
+          <Link
+            href="/cart-checkout"
+            style={{
+              width: '100%',
+              boxSizing: 'border-box',
+              marginTop: '10px',
+              padding: '14px',
+              background: 'transparent',
+              color: '#a6f36a',
+              border: '1.5px solid #a6f36a',
+              borderRadius: '14px',
+              fontWeight: 'bold',
+              fontSize: '14px',
+              textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+            }}
+          >
+            {t.cart.onlineCheckout}
+          </Link>
         </div>
       )}
 

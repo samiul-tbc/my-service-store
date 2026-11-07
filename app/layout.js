@@ -3,10 +3,21 @@ import Navbar from './Navbar';
 import BottomNav from './BottomNav';
 import Footer from './Footer';
 import { LanguageProvider } from '../context/LanguageContext';
+import SwRegister from '../components/SwRegister';
 
 export const metadata = {
   title: 'Hub Cart - Shop Smart • Live Better',
   description: 'Digital tools and services',
+  manifest: '/manifest.json',
+  appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'Hub Cart' },
+  icons: {
+    icon: '/icons/icon-192.png',
+    apple: '/icons/icon-192.png',
+  },
+};
+
+export const viewport = {
+  themeColor: '#080b10',
 };
 
 export default function RootLayout({ children }) {
@@ -24,6 +35,7 @@ export default function RootLayout({ children }) {
 
           {/* বটম ফ্লোটিং ডক (ডায়নামিক ভাষা ও অ্যাক্টিভ কালার সহ) */}
           <BottomNav />
+          <SwRegister />
         </LanguageProvider>
       </body>
     </html>

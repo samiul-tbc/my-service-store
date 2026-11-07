@@ -10,3 +10,25 @@
 ::-webkit-scrollbar-track{background:#0b0f16}
 ::-webkit-scrollbar-thumb{background:#26303d;border-radius:8px;border:2px solid #0b0f16}
 ::-webkit-scrollbar-thumb:hover{background:#a6f36a}
+
+/* === Phase 2: desktop nav, bottom-nav hide, motion polish === */
+.hc-desktop-nav{display:none}
+@media(min-width:1024px){
+  .hc-desktop-nav{display:flex;gap:26px;align-items:center}
+  .hc-bottom-nav{display:none!important}
+}
+.hc-desktop-nav a{color:#cbd5e1;text-decoration:none;font-size:14px;font-weight:600;transition:color .15s}
+.hc-desktop-nav a:hover{color:#a6f36a}
+@keyframes hc-fade-up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.hc-hero-content{animation:hc-fade-up .55s ease both}
+.hc-benefit{animation:hc-fade-up .5s ease both}
+.hc-benefit:nth-child(2){animation-delay:.08s}
+.hc-benefit:nth-child(3){animation-delay:.16s}
+.hc-product{animation:hc-fade-up .5s ease both}
+.hc-product:nth-child(2){animation-delay:.06s}
+.hc-product:nth-child(3){animation-delay:.12s}
+.hc-product:nth-child(4){animation-delay:.18s}
+.hc-product:nth-child(5){animation-delay:.24s}
+.hc-product:nth-child(6){animation-delay:.3s}
+button:active{transform:scale(.98)}
+img{user-select:none}

@@ -57,7 +57,7 @@ export default function BottomNav() {
   ];
 
   return (
-    <div style={{
+    <div className="hc-bottom-nav" style={{
       position: 'fixed',
       bottom: 0,
       left: 0,
