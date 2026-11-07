@@ -17,6 +17,7 @@ export default function ProcessedOrderPage() {
   const router = useRouter();
   const { t } = useLanguage();
   const [orderData, setOrderData] = useState(null);
+  const [checked, setChecked] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState('manual_mfs');
   const [loading, setLoading] = useState(false);
 
@@ -29,6 +30,7 @@ export default function ProcessedOrderPage() {
         console.error('Order load error:', e);
       }
     }
+    setChecked(true);
   }, []);
 
   const calculateUSDT = (bdtPrice) => {
@@ -105,6 +107,14 @@ export default function ProcessedOrderPage() {
       return;
     }
   };
+
+  if (!checked) {
+    return (
+      <div style={{ textAlign: 'center', padding: '80px 20px', color: '#94a3b8' }}>
+        <h3>Loading...</h3>
+      </div>
+    );
+  }
 
   if (!orderData) {
     return (

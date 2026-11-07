@@ -628,7 +628,7 @@ export default function SecretAdminPage() {
 
   if (!isAuthenticated) {
     return (
-      <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+      <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', background: 'radial-gradient(ellipse at 50% 30%, rgba(166, 243, 106, 0.08), transparent 55%)' }}>
         <div style={{
           width: '100%',
           maxWidth: '380px',
@@ -687,6 +687,7 @@ export default function SecretAdminPage() {
               {verifying ? 'যাচাই করা হচ্ছে...' : 'প্রবেশ করুন →'}
             </button>
           </form>
+          <Link href="/" style={{ display: 'inline-block', marginTop: '16px', fontSize: '12px', color: '#94a3b8', textDecoration: 'none', fontWeight: 'bold' }}>← স্টোরে ফিরে যান</Link>
         </div>
       </div>
     );
@@ -750,7 +751,7 @@ export default function SecretAdminPage() {
       </div>
 
       {/* মেট্রিক্স কার্ড */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px', marginBottom: '16px' }}>
         <div style={{ background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(166, 243, 106, 0.2)', borderRadius: '16px', padding: '12px', textAlign: 'center' }}>
           <span style={{ fontSize: '10px', color: '#94a3b8', display: 'block', fontWeight: 'bold' }}>মোট সেলস</span>
           <span style={{ fontSize: '16px', fontWeight: '900', color: '#a6f36a' }}>৳{totalRevenue}</span>
@@ -848,7 +849,7 @@ export default function SecretAdminPage() {
             borderRadius: '12px',
             border: 'none',
             background: activeTab === 'orders' ? 'linear-gradient(135deg, #a6f36a, #d2ffad)' : 'transparent',
-            color: activeTab === 'orders' ? '#ffffff' : '#94a3b8',
+            color: activeTab === 'orders' ? '#10170c' : '#94a3b8',
             fontWeight: 'bold',
             fontSize: '13px',
             cursor: 'pointer',
@@ -867,7 +868,7 @@ export default function SecretAdminPage() {
             borderRadius: '12px',
             border: 'none',
             background: activeTab === 'products' ? 'linear-gradient(135deg, #a6f36a, #d2ffad)' : 'transparent',
-            color: activeTab === 'products' ? '#ffffff' : '#94a3b8',
+            color: activeTab === 'products' ? '#10170c' : '#94a3b8',
             fontWeight: 'bold',
             fontSize: '13px',
             cursor: 'pointer',
@@ -884,7 +885,7 @@ export default function SecretAdminPage() {
             borderRadius: '12px',
             border: 'none',
             background: activeTab === 'reviews' ? 'linear-gradient(135deg, #a6f36a, #d2ffad)' : 'transparent',
-            color: activeTab === 'reviews' ? '#ffffff' : '#94a3b8',
+            color: activeTab === 'reviews' ? '#10170c' : '#94a3b8',
             fontWeight: 'bold',
             fontSize: '13px',
             cursor: 'pointer',

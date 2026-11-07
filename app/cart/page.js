@@ -7,7 +7,7 @@ const LOGO_HUB_CART = 'https://i.postimg.cc/4Y3TK6bN/5707.png';
 const WHATSAPP_NUMBER = '8801319760720'; // এখানে আপনার WhatsApp নম্বর দিন
 
 export default function CartPage() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -76,7 +76,7 @@ export default function CartPage() {
             {t.cart.title}
           </h1>
           <p style={{ margin: 0, fontSize: '11px', color: '#64748b' }}>
-            {t.cart.itemsInCart.replace('{count}', cartItems.length)}
+            {lang === 'en' && cartItems.length === 1 ? t.cart.itemsInCartOne : t.cart.itemsInCart.replace('{count}', cartItems.length)}
           </p>
         </div>
         {cartItems.length > 0 && (

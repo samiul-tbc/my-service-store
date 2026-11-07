@@ -116,6 +116,14 @@ export default function HomePage() {
           pointer-events:none;
         }
         .hc-hero-content{ position:relative; z-index:1; max-width:680px; }
+        .hc-hero-visual{ position:relative; z-index:1; flex:none; width:330px; height:290px; margin-left:auto; }
+        .hc-hero-card{ position:absolute; border-radius:20px; overflow:hidden; border:1px solid rgba(166,243,106,.28); box-shadow:0 24px 50px rgba(0,0,0,.45); background:#0d1118; }
+        .hc-hero-card img{ width:100%; height:100%; object-fit:cover; display:block; }
+        .hc-hero-card.main{ width:225px; height:225px; right:0; top:0; animation:hc-floaty 5s ease-in-out infinite; }
+        .hc-hero-card.sub{ width:155px; height:155px; left:0; bottom:0; animation:hc-floaty 6s ease-in-out infinite reverse; }
+        .hc-hero-card span{ position:absolute; left:10px; bottom:10px; background:#a6f36a; color:#10170c; font-size:12px; font-weight:900; padding:4px 10px; border-radius:999px; }
+        @keyframes hc-floaty{ 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(-9px) } }
+        @media(max-width:900px){ .hc-hero-visual{ display:none } }
         .hc-eyebrow{
           display:inline-flex; align-items:center; gap:9px;
           color:var(--hc-accent);
@@ -328,6 +336,20 @@ export default function HomePage() {
             </Link>
           </div>
         </div>
+              {products.length > 0 && (
+          <div className="hc-hero-visual" aria-hidden="true">
+            <div className="hc-hero-card main">
+              <img src={products[0].image} alt="" />
+              <span>৳{products[0].price}</span>
+            </div>
+            {products[1] && (
+              <div className="hc-hero-card sub">
+                <img src={products[1].image} alt="" />
+                <span>৳{products[1].price}</span>
+              </div>
+            )}
+          </div>
+        )}
       </section>
 
       {/* ---------- Benefits ---------- */}

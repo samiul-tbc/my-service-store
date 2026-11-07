@@ -26,7 +26,7 @@ export default function ProductDetailPage() {
   const [revAvg, setRevAvg] = useState(0);
   const [revCount, setRevCount] = useState(0);
   const [revName, setRevName] = useState('');
-  const [revRating, setRevRating] = useState(5);
+  const [revRating, setRevRating] = useState(0);
   const [revText, setRevText] = useState('');
   const [revBusy, setRevBusy] = useState(false);
   const [revDone, setRevDone] = useState(false);
@@ -145,7 +145,7 @@ export default function ProductDetailPage() {
   const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${whatsappMsg}`;
 
   return (
-    <div style={{ maxWidth: '760px', margin: '0 auto', padding: '18px 16px 40px' }}>
+    <div style={{ maxWidth: '760px', margin: '0 auto', padding: '18px 16px 120px' }}>
       
       {/* ব্যাক বাটন */}
       <button
@@ -186,6 +186,9 @@ export default function ProductDetailPage() {
             <span style={{ fontSize: '24px', fontWeight: '900', color: '#a6f36a' }}>৳{product.price}</span>
             {product.original_price && (
               <span style={{ fontSize: '13px', color: '#64748b', textDecoration: 'line-through' }}>৳{product.original_price}</span>
+            )}
+            {product.original_price && Number(product.original_price) > Number(product.price) && (
+              <span style={{ fontSize: '11px', fontWeight: '900', background: '#ef4444', color: '#ffffff', padding: '3px 8px', borderRadius: '999px', alignSelf: 'center' }}>-{Math.round((1 - Number(product.price) / Number(product.original_price)) * 100)}%</span>
             )}
           </div>
 
