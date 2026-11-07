@@ -77,6 +77,9 @@ export default function HomePage() {
           margin:0 auto;
           padding:22px 0 112px;
         }
+        @media(min-width:1024px){
+          .hc-shell{ padding-bottom:40px; }
+        }
 
         /* Notice bar */
         .hc-notice{
@@ -356,21 +359,21 @@ export default function HomePage() {
       {/* ---------- Benefits ---------- */}
       <section className="hc-benefits" aria-label="Store benefits">
         <div className="hc-benefit">
-          <span className="hc-benefit-icon">✦</span>
+          <span className="hc-benefit-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg></span>
           <div>
             <strong>{t.home.benefit1Title}</strong>
             <small>{t.home.benefit1Sub}</small>
           </div>
         </div>
         <div className="hc-benefit">
-          <span className="hc-benefit-icon">⌁</span>
+          <span className="hc-benefit-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
           <div>
             <strong>{t.home.benefit2Title}</strong>
             <small>{t.home.benefit2Sub}</small>
           </div>
         </div>
         <div className="hc-benefit">
-          <span className="hc-benefit-icon">♡</span>
+          <span className="hc-benefit-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span>
           <div>
             <strong>{t.home.benefit3Title}</strong>
             <small>{t.home.benefit3Sub}</small>

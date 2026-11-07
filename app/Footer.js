@@ -25,7 +25,7 @@ const headingStyle = {
 export default function Footer() {
   const { t } = useLanguage();
   return (
-    <footer
+    <footer className="hc-footer"
       style={{
         borderTop: '1px solid rgba(255, 255, 255, 0.075)',
         background: '#0a0e14',
