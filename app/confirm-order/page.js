@@ -130,6 +130,15 @@ export default function ConfirmPage() {
           </span>
         </div>
 
+        <div style={{ backgroundColor: '#0b1220', border: '1px dashed #334155', borderRadius: '12px', padding: '12px 16px', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', marginBottom: '8px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '13px', color: '#f8fafc', fontWeight: '700' }}>💳 {t.confirm.payPreviewTitle}</span>
+            <span style={{ fontSize: '13px', color: '#a6f36a', fontWeight: '800' }}>{t.confirm.totalDue}: ৳{productData.price}</span>
+          </div>
+          <p style={{ fontSize: '12px', color: '#94a3b8', margin: '0 0 6px', lineHeight: 1.6 }}>{t.confirm.payPreviewNote}</p>
+          <div style={{ fontSize: '13px', color: '#f8fafc', fontWeight: '700' }}>bKash • Nagad • Rocket • Upay • Crypto</div>
+        </div>
+
         <form onSubmit={handleOrderSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
             <label style={{ display: 'block', fontSize: '13px', color: '#cbd5e1', marginBottom: '6px', fontWeight: '600' }}>

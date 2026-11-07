@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useLanguage } from '../../../context/LanguageContext';
+import { productImageSrc } from '../../../lib/productImage';
 
 const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
 const LOGO_WHATSAPP = 'https://download.logo.wine/logo/WhatsApp/WhatsApp-Logo.wine.png';
@@ -20,6 +21,43 @@ export default function ProductDetailPage() {
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [reviews, setReviews] = useState([]);
+  const [revAvg, setRevAvg] = useState(0);
+  const [revCount, setRevCount] = useState(0);
+  const [revName, setRevName] = useState('');
+  const [revRating, setRevRating] = useState(5);
+  const [revText, setRevText] = useState('');
+  const [revBusy, setRevBusy] = useState(false);
+  const [revDone, setRevDone] = useState(false);
+
+  async function loadReviews(pid) {
+    try {
+      const r = await fetch(`/api/reviews?productId=${pid}`);
+      const d = await r.json();
+      if (Array.isArray(d.reviews)) { setReviews(d.reviews); setRevAvg(d.avg || 0); setRevCount(d.count || 0); }
+    } catch {}
+  }
+
+  useEffect(() => { if (id) loadReviews(id); }, [id]);
+
+  async function submitReview(e) {
+    e.preventDefault();
+    if (!revName.trim() || !revText.trim() || !revRating) { alert(t.rev.fillAll); return; }
+    setRevBusy(true);
+    try {
+      const r = await fetch('/api/reviews', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId: Number(id), name: revName.trim(), rating: revRating, text: revText.trim() }),
+      });
+      const d = await r.json();
+      if (r.ok && d.ok) {
+        setRevDone(true); setRevText('');
+        await loadReviews(id);
+      } else { alert(t.rev.failed); }
+    } catch { alert(t.rev.failed); }
+    finally { setRevBusy(false); }
+  }
+
 
   useEffect(() => {
     if (!id) return;
@@ -105,7 +143,7 @@ export default function ProductDetailPage() {
       }}>
         <div style={{ width: '100%', height: '240px', background: '#0b0f19', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <img
-            src={product.image || LOGO_HUB_CART}
+            src={productImageSrc(product, LOGO_HUB_CART)}
             alt={product.title}
             onError={(e) => { e.currentTarget.src = LOGO_HUB_CART; }}
             style={{ width: '100%', height: '100%', objectFit: 'contain' }}
@@ -135,6 +173,49 @@ export default function ProductDetailPage() {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* কাস্টমার রিভিউ */}
+      <div style={{ background: 'rgba(15, 23, 42, 0.75)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '24px', padding: '20px', marginTop: '16px', marginBottom: '70px' }}>
+        <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#f8fafc', margin: '0 0 6px' }}>⭐ {t.rev.title}</h3>
+        {revCount > 0 ? (
+          <p style={{ fontSize: '13px', color: '#94a3b8', margin: '0 0 14px' }}>
+            <span style={{ color: '#facc15', fontSize: '15px' }}>{'★'.repeat(Math.round(revAvg))}{'☆'.repeat(5 - Math.round(revAvg))}</span>{' '}
+            <strong style={{ color: '#f8fafc' }}>{revAvg.toFixed(1)}/5</strong> · {t.rev.basedOn.replace('{count}', revCount)}
+          </p>
+        ) : (
+          <p style={{ fontSize: '13px', color: '#94a3b8', margin: '0 0 14px' }}>{t.rev.noReviews}</p>
+        )}
+
+        {reviews.map((r, i) => (
+          <div key={i} style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '12px 0' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+              <strong style={{ fontSize: '13px', color: '#f8fafc' }}>{r.name}</strong>
+              <span style={{ color: '#facc15', fontSize: '13px' }}>{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}</span>
+            </div>
+            <p style={{ fontSize: '13px', color: '#cbd5e1', lineHeight: 1.6, margin: '4px 0 0', whiteSpace: 'pre-line' }}>{r.text}</p>
+          </div>
+        ))}
+
+        <form onSubmit={submitReview} style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '16px', marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <h4 style={{ fontSize: '13px', fontWeight: '700', color: '#f8fafc', margin: 0 }}>{t.rev.writeYours}</h4>
+          {revDone && <p style={{ fontSize: '13px', color: '#4ade80', margin: 0 }}>{t.rev.thanks}</p>}
+          <input value={revName} onChange={(e) => setRevName(e.target.value)} placeholder={t.rev.namePlaceholder} maxLength={60}
+            style={{ background: '#0b1220', border: '1px solid #26334d', borderRadius: '10px', padding: '10px 12px', color: '#f8fafc', fontSize: '13px' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '12px', color: '#94a3b8' }}>{t.rev.ratingLabel}:</span>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <button key={n} type="button" onClick={() => setRevRating(n)} aria-label={`${n} star`}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '22px', lineHeight: 1, padding: 0, color: n <= revRating ? '#facc15' : '#475569' }}>★</button>
+            ))}
+          </div>
+          <textarea value={revText} onChange={(e) => setRevText(e.target.value)} placeholder={t.rev.textPlaceholder} rows={3} maxLength={600}
+            style={{ background: '#0b1220', border: '1px solid #26334d', borderRadius: '10px', padding: '10px 12px', color: '#f8fafc', fontSize: '13px', resize: 'vertical' }} />
+          <button type="submit" disabled={revBusy}
+            style={{ background: 'linear-gradient(135deg, #a6f36a, #d2ffad)', color: '#10170c', border: 'none', padding: '11px', borderRadius: '12px', fontWeight: '800', fontSize: '13px', cursor: revBusy ? 'not-allowed' : 'pointer' }}>
+            {revBusy ? t.rev.submitting : t.rev.submit}
+          </button>
+        </form>
       </div>
 
       {/* নিচের ফিক্সড অর্ডার বার */}

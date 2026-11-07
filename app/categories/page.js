@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '../../context/LanguageContext';
+import { productImageSrc } from '../../lib/productImage';
 
 const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
 
@@ -82,7 +83,7 @@ export default function CategoriesPage() {
   useEffect(() => {
     async function loadProducts() {
       try {
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/products?select=id,title,price,original_price,category,image&order=id.desc`, {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/products?select=id,title,price,original_price,category&order=id.desc`, {
           cache: 'no-store',
           headers: {
             apikey: SUPABASE_KEY,
@@ -212,7 +213,7 @@ export default function CategoriesPage() {
               >
                 <div style={{ width: '100%', height: '150px', background: '#0b0f19' }}>
                   <img
-                    src={prod.image || LOGO_HUB_CART}
+                    src={productImageSrc(prod, LOGO_HUB_CART)}
                     alt={prod.title}
                     loading="lazy"
                     onError={(e) => { e.currentTarget.src = LOGO_HUB_CART; }}

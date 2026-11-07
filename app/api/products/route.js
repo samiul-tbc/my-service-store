@@ -36,7 +36,19 @@ export async function GET() {
       }
     }
 
-    return NextResponse.json({ products, notice });
+    // Slim the payload: never ship base64 images inline — the client loads
+    // them from the cached /api/img/<id> route instead.
+    const slimProducts = products.map((p) => {
+      if (p && typeof p.image === 'string' && p.image.startsWith('data:')) {
+        return { ...p, image: `/api/img/${p.id}` };
+      }
+      return p;
+    });
+
+    return NextResponse.json(
+      { products: slimProducts, notice },
+      { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' } }
+    );
   } catch (err) {
     return NextResponse.json({ error: err.message, products: [], notice: '' }, { status: 500 });
   }

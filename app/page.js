@@ -18,6 +18,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '../context/LanguageContext';
+import { productImageSrc } from '../lib/productImage';
 
 const LOGO_HUB_CART = 'https://i.postimg.cc/ZRRgvqSQ/20261030-234214.png';
 
@@ -235,6 +236,8 @@ export default function HomePage() {
           display:flex; align-items:center; justify-content:space-between;
           gap:10px; margin-top:auto;
         }
+        .hc-old-price{ font-size:12px; color:#64748b; text-decoration:line-through; margin-left:7px; font-weight:600; }
+        .hc-off-badge{ position:absolute; top:10px; left:10px; z-index:2; background:#ef4444; color:#fff; font-size:11px; font-weight:800; padding:3px 8px; border-radius:999px; box-shadow:0 4px 10px rgba(239,68,68,.4); }
         .hc-price{
           font-family:Manrope,sans-serif;
           font-size:19px; font-weight:800; color:var(--hc-accent); letter-spacing:-.5px;
@@ -385,19 +388,27 @@ export default function HomePage() {
               <Link key={prod.id} href={`/product/${prod.id}`} className="hc-product">
                 <div className="hc-product-media">
                   <img
-                    src={prod.image || LOGO_HUB_CART}
+                    src={productImageSrc(prod, LOGO_HUB_CART)}
                     alt={prod.title || 'Hub Cart product'}
                     loading="lazy"
                     onError={(e) => {
                       e.currentTarget.src = LOGO_HUB_CART;
                     }}
                   />
+                  {prod.original_price && Number(prod.original_price) > Number(prod.price) && (
+                    <span className="hc-off-badge">-{Math.round((1 - Number(prod.price) / Number(prod.original_price)) * 100)}%</span>
+                  )}
                 </div>
                 <div className="hc-product-body">
                   <h3 className="hc-product-title">{prod.title}</h3>
                   <div className="hc-product-meta">{t.home.productMeta}</div>
                   <div className="hc-product-bottom">
-                    <span className="hc-price">৳{prod.price}</span>
+                    <span>
+                      <span className="hc-price">৳{prod.price}</span>
+                      {prod.original_price && Number(prod.original_price) > Number(prod.price) && (
+                        <span className="hc-old-price">৳{prod.original_price}</span>
+                      )}
+                    </span>
                     <span className="hc-buy" aria-label="View product">
                       ↗
                     </span>
