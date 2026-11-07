@@ -56,7 +56,7 @@ export default function PaymentGatewayPage() {
           <img
             src={LOGO_HUB_CART}
             alt="Hub Cart"
-            onError={(e) => { e.currentTarget.src = 'https://i.postimg.cc/4Y3TK6bN/5707.png'; }}
+            onError={(e) => { e.currentTarget.src = '/logo-icon.png'; }}
             style={{ width: '58px', height: '58px', objectFit: 'contain' }}
           />
         </div>

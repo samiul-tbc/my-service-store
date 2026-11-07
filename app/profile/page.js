@@ -3,11 +3,18 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '../../context/LanguageContext';
 
-const LOGO_HUB_CART = 'https://i.postimg.cc/4Y3TK6bN/5707.png';
+const LOGO_HUB_CART = '/logo-icon.png';
+
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://mieygzqgoekinxppdepb.supabase.co';
+const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
 
 export default function ProfilePage() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [myOrders, setMyOrders] = useState([]);
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editTelegram, setEditTelegram] = useState('');
   const { t } = useLanguage();
 
   useEffect(() => {
@@ -21,6 +28,33 @@ export default function ProfilePage() {
     }
     setLoading(false);
   }, []);
+
+  useEffect(() => {
+    if (!user?.phone) return;
+    const digits = String(user.phone).replace(/\D/g, '');
+    const suffix = digits.slice(-10);
+    if (suffix.length < 9) return;
+    (async () => {
+      try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/orders?whatsapp_number=like.*${suffix}&select=*&order=id.desc`, {
+          cache: 'no-store',
+          headers: {
+            apikey: SUPABASE_KEY,
+            Authorization: `Bearer ${SUPABASE_KEY}`,
+          },
+        });
+        const data = await res.json();
+        if (Array.isArray(data)) setMyOrders(data);
+      } catch (e) { console.error(e); }
+    })();
+  }, [user?.phone]);
+
+  const handleSaveProfile = () => {
+    const updated = { ...user, name: editName.trim() || user.name, telegram: editTelegram.trim() };
+    localStorage.setItem('hubcart_user', JSON.stringify(updated));
+    setUser(updated);
+    setEditing(false);
+  };
 
   const handleLogout = () => {
     if (confirm(t.prof.logoutConfirm)) {
@@ -135,7 +169,62 @@ export default function ProfilePage() {
           <span style={{ display: 'block', fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>{t.prof.whatsapp}</span>
           <span style={{ color: '#f8fafc' }}>{user.phone || t.prof.notAdded}</span>
         </div>
+        {editing ? (
+          <div style={{ paddingTop: '12px' }}>
+            <span style={{ display: 'block', fontSize: '10px', color: '#64748b', fontWeight: 'bold', marginBottom: '4px' }}>{t.auth.name.replace(' *', '')}</span>
+            <input value={editName} onChange={(e) => setEditName(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', borderRadius: '10px', background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255, 255, 255, 0.12)', color: '#ffffff', fontSize: '13px', outline: 'none' }} />
+            <span style={{ display: 'block', fontSize: '10px', color: '#64748b', fontWeight: 'bold', margin: '10px 0 4px' }}>{t.prof.telegram}</span>
+            <input value={editTelegram} onChange={(e) => setEditTelegram(e.target.value)} placeholder="@username" style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', borderRadius: '10px', background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255, 255, 255, 0.12)', color: '#ffffff', fontSize: '13px', outline: 'none' }} />
+            <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+              <button onClick={handleSaveProfile} style={{ flex: 1, padding: '10px', border: 'none', borderRadius: '10px', background: 'linear-gradient(135deg, #a6f36a, #d2ffad)', color: '#10170c', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}>{t.prof.save}</button>
+              <button onClick={() => setEditing(false)} style={{ flex: 1, padding: '10px', borderRadius: '10px', background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', color: '#94a3b8', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}>{t.prof.cancel}</button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div style={{ paddingTop: '12px', fontSize: '13px' }}>
+              <span style={{ display: 'block', fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>{t.prof.telegram}</span>
+              <span style={{ color: '#f8fafc' }}>{user.telegram || t.prof.notAdded}</span>
+            </div>
+            <button onClick={() => { setEditName(user.name || ''); setEditTelegram(user.telegram || ''); setEditing(true); }} style={{ marginTop: '14px', width: '100%', padding: '9px', borderRadius: '10px', background: 'rgba(166, 243, 106, 0.1)', border: '1px solid rgba(166, 243, 106, 0.3)', color: '#a6f36a', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}>{t.prof.edit}</button>
+          </>
+        )}
       </div>
+
+      {/* পরিসংখ্যান */}
+      {myOrders.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '14px' }}>
+          {[
+            { label: t.prof.totalOrders, value: myOrders.length },
+            { label: t.prof.completedOrders, value: myOrders.filter((o) => o.status === 'completed').length },
+            { label: t.prof.totalSpent, value: '৳' + myOrders.filter((o) => o.status === 'completed').reduce((s, o) => s + (Number(o.price) || 0), 0) },
+          ].map((st) => (
+            <div key={st.label} style={{ background: 'rgba(15, 23, 42, 0.75)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', padding: '12px 8px', textAlign: 'center' }}>
+              <div style={{ fontSize: '17px', fontWeight: '900', color: '#a6f36a' }}>{st.value}</div>
+              <div style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 'bold', marginTop: '2px' }}>{st.label}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* সাম্প্রতিক অর্ডার */}
+      {myOrders.length > 0 && (
+        <div style={{ background: 'rgba(15, 23, 42, 0.75)', borderRadius: '20px', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '16px 18px', marginBottom: '14px' }}>
+          <h4 style={{ margin: '0 0 10px', fontSize: '13px', fontWeight: '900', color: '#f8fafc' }}>{t.prof.recentOrders}</h4>
+          {myOrders.slice(0, 3).map((o) => (
+            <Link key={o.id} href={`/track?id=${o.order_id}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', padding: '9px 0', borderTop: '1px solid rgba(255,255,255,0.05)', textDecoration: 'none' }}>
+              <span style={{ minWidth: 0 }}>
+                <span style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#f1f5f9', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{o.service_name}</span>
+                <span style={{ fontSize: '10px', color: '#64748b' }}>#{o.order_id}</span>
+              </span>
+              <span style={{ textAlign: 'right', flexShrink: 0 }}>
+                <span style={{ display: 'block', fontSize: '12px', fontWeight: '900', color: '#a6f36a' }}>৳{o.price}</span>
+                <span style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'capitalize' }}>{ { pending: '⏳', verifying: '🔍', processing: '⚡', completed: '✅', cancelled: '❌' }[o.status] || '' } {o.status}</span>
+              </span>
+            </Link>
+          ))}
+        </div>
+      )}
 
       {/* My Orders শর্টকাট বাটন */}
       <Link
@@ -159,6 +248,15 @@ export default function ProfilePage() {
         </div>
         <span style={{ color: '#64748b', fontSize: '14px' }}>→</span>
       </Link>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
+        <Link href="/track" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', borderRadius: '14px', background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255, 255, 255, 0.08)', color: '#f8fafc', fontSize: '12px', fontWeight: 'bold', textDecoration: 'none' }}>
+          🔍 {t.footer.trackOrder}
+        </Link>
+        <a href="https://wa.me/8801319760720" target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', borderRadius: '14px', background: 'rgba(34, 197, 94, 0.12)', border: '1px solid rgba(34, 197, 94, 0.35)', color: '#4ade80', fontSize: '12px', fontWeight: 'bold', textDecoration: 'none' }}>
+          💬 {t.prof.support}
+        </a>
+      </div>
 
       {/* লগআউট বাটন */}
       <button
