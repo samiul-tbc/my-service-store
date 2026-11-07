@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useLanguage } from '../../context/LanguageContext';
 
 const LOGO_HUB_CART = 'https://i.postimg.cc/4Y3TK6bN/5707.png';
-const WHATSAPP_NUMBER = '8801893432478'; // এখানে আপনার WhatsApp নম্বর দিন
+const WHATSAPP_NUMBER = '8801319760720'; // এখানে আপনার WhatsApp নম্বর দিন
 
 export default function CartPage() {
   const { t } = useLanguage();
