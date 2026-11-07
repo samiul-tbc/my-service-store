@@ -24,7 +24,7 @@ export default function CryptoPayPage() {
       try {
         setOrderData(JSON.parse(saved));
       } catch (e) {
-        console.error('Order parse error:', e);
+        console.error('Order load error:', e);
       }
     }
   }, []);
@@ -44,7 +44,7 @@ export default function CryptoPayPage() {
     if (!orderData) return;
 
     if (!trxId.trim()) {
-      alert('দয়া করে Transaction Hash বা Bybit TrxID দিন!');
+      alert('Please provide your Transaction Hash or Bybit TxID!');
       return;
     }
 
@@ -54,17 +54,17 @@ export default function CryptoPayPage() {
     const finalOrderId = orderData.orderId || orderData.id || `HC-${Date.now().toString().slice(-6)}`;
 
     try {
-      // ১. ডাটাবেজে ক্রিপ্টো অর্ডার বুক করা
+      // 1. Save crypto order to database
       const res = await fetch('/api/order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           serviceName: productName,
           price: orderAmount,
-          customerName: orderData.customerName || 'Customer',
+          customerName: orderData.customerName || 'International Customer',
           whatsappNumber: orderData.whatsappNumber || '',
-          telegramUsername: orderData.telegramUsername || 'নেই',
-          paymentMethod: 'Crypto (Bybit USDT TRC20)',
+          telegramUsername: orderData.telegramUsername || 'N/A',
+          paymentMethod: 'Crypto (USDT TRC20)',
           trxId: trxId.trim(),
           status: 'pending',
         }),
@@ -75,7 +75,7 @@ export default function CryptoPayPage() {
       if (res.ok) {
         const generatedOrderId = data.orderId || data.order_id || data.id || finalOrderId;
 
-        // ২. WhatsApp মেমো লিংকসহ মেসেজ পাঠানো
+        // 2. Trigger notification
         try {
           await fetch('/api/send-whatsapp', {
             method: 'POST',
@@ -88,16 +88,16 @@ export default function CryptoPayPage() {
             }),
           });
         } catch (waErr) {
-          console.error('WhatsApp alert error:', waErr);
+          console.error('Notification error:', waErr);
         }
 
         localStorage.removeItem('hubcart_current_order');
         router.push(`/order-success?orderId=${generatedOrderId}`);
       } else {
-        alert(data.error || 'অর্ডার সাবমিট করা যায়নি। আবার চেষ্টা করুন।');
+        alert(data.error || 'Failed to submit order. Please try again.');
       }
     } catch (err) {
-      alert('সার্ভার এরর! পুনরায় চেষ্টা করুন।');
+      alert('Server connection error! Please check your network and try again.');
     } finally {
       setLoading(false);
     }
@@ -119,7 +119,7 @@ export default function CryptoPayPage() {
             cursor: 'pointer',
           }}
         >
-          Back to Home
+          Back to Store
         </button>
       </div>
     );
@@ -131,7 +131,7 @@ export default function CryptoPayPage() {
   return (
     <div style={{ maxWidth: '480px', margin: '20px auto', padding: '0 16px 80px' }}>
       
-      {/* হেডার কার্ড */}
+      {/* Header Card */}
       <div style={{
         background: 'rgba(15, 23, 42, 0.85)',
         backdropFilter: 'blur(16px)',
@@ -149,11 +149,11 @@ export default function CryptoPayPage() {
           </h2>
         </div>
         <p style={{ margin: 0, fontSize: '12px', color: '#94a3b8' }}>
-          Bybit বা যেকোনো ক্রিপ্টো ওয়ালেট থেকে সেন্ড করতে পারেন
+          Send USDT using Bybit, Binance, Trust Wallet, or any TRC20 wallet
         </p>
 
         <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(30, 41, 59, 0.7)', borderRadius: '14px' }}>
-          <span style={{ fontSize: '12px', color: '#94a3b8' }}>মোট পরিশোধযোগ্য মূল্য:</span>
+          <span style={{ fontSize: '12px', color: '#94a3b8' }}>Total Payable Amount:</span>
           <div style={{ fontSize: '24px', fontWeight: '900', color: '#38bdf8' }}>
             ${usdtPrice} USDT <span style={{ fontSize: '13px', color: '#94a3b8' }}>(৳{orderData.price})</span>
           </div>
@@ -169,7 +169,7 @@ export default function CryptoPayPage() {
         marginBottom: '16px',
         textAlign: 'center'
       }}>
-        <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#38bdf8', display: 'block', marginBottom: '12px' }}>
+        <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#38bdf8', display: 'block', marginBottom: '12px', letterSpacing: '0.5px' }}>
           🌐 Network: TRON (TRC20)
         </span>
 
@@ -191,7 +191,7 @@ export default function CryptoPayPage() {
 
         {/* Address Display & Copy */}
         <div style={{ background: '#0b0f19', padding: '12px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-          <span style={{ fontSize: '10px', color: '#94a3b8', display: 'block', marginBottom: '4px', textAlign: 'left' }}>
+          <span style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '6px', textAlign: 'left' }}>
             Deposit Wallet Address:
           </span>
           <div style={{
@@ -220,12 +220,12 @@ export default function CryptoPayPage() {
               cursor: 'pointer',
             }}
           >
-            {copied ? '✓ Address Copied!' : 'Copy Wallet Address'}
+            {copied ? '✓ Wallet Address Copied!' : 'Copy Wallet Address'}
           </button>
         </div>
       </div>
 
-      {/* Confirmation Form */}
+      {/* Payment Confirmation Form */}
       <form onSubmit={handleSubmitOrder} style={{
         background: 'rgba(15, 23, 42, 0.85)',
         border: '1px solid rgba(255, 255, 255, 0.08)',
@@ -233,12 +233,12 @@ export default function CryptoPayPage() {
         padding: '16px',
       }}>
         <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#cbd5e1', marginBottom: '6px' }}>
-          Transaction Hash / TrxID দিন: *
+          Transaction Hash / Bybit TxID: *
         </label>
         <input
           type="text"
           required
-          placeholder="যেমন: e6d78a9c... অথবা Bybit TrxID"
+          placeholder="e.g. e6d78a9c... or Internal Transfer ID"
           value={trxId}
           onChange={(e) => setTrxId(e.target.value)}
           style={{
@@ -270,7 +270,7 @@ export default function CryptoPayPage() {
             cursor: loading ? 'not-allowed' : 'pointer',
           }}
         >
-          {loading ? 'অর্ডার সাবমিট হচ্ছে...' : 'Confirm Payment →'}
+          {loading ? 'Submitting Order...' : 'Confirm Payment →'}
         </button>
       </form>
 
