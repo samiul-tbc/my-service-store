@@ -20,6 +20,7 @@ export default function ProductDetailPage() {
   const id = params?.id;
 
   const [product, setProduct] = useState(null);
+  const [added, setAdded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [reviews, setReviews] = useState([]);
   const [revAvg, setRevAvg] = useState(0);
@@ -82,6 +83,28 @@ export default function ProductDetailPage() {
     }
     fetchProduct();
   }, [id]);
+
+  // কার্টে যোগ করুন — hubcart_cart-এ আইটেম রাখে (checkout cart page থেকে)
+  const handleAddToCart = () => {
+    if (!product) return;
+    try {
+      const existing = JSON.parse(localStorage.getItem('hubcart_cart') || '[]');
+      const found = existing.find((i) => i.id === product.id);
+      let updated;
+      if (found) {
+        updated = existing.map((i) => i.id === product.id ? { ...i, quantity: (i.quantity || 1) + 1 } : i);
+      } else {
+        updated = [...existing, {
+          id: product.id, title: product.title, price: product.price,
+          original_price: product.original_price,
+          image: productImageSrc(product, ''), category: product.category, quantity: 1,
+        }];
+      }
+      localStorage.setItem('hubcart_cart', JSON.stringify(updated));
+      setAdded(true);
+      setTimeout(() => setAdded(false), 2000);
+    } catch (e) { console.error(e); }
+  };
 
   // এখনই কিনুন বাটনে ক্লিক করলে ডাটা সেভ করে নতুন পেজে নিয়ে যাবে
   const handleBuyNow = () => {
@@ -263,6 +286,19 @@ export default function ProductDetailPage() {
           />
           <span>{t.prod.whatsappOrder}</span>
         </a>
+
+        <button
+          onClick={handleAddToCart}
+          style={{
+            flex: 1, border: '1.5px solid rgba(166, 243, 106, 0.55)',
+            background: added ? 'rgba(166, 243, 106, 0.22)' : 'rgba(166, 243, 106, 0.08)',
+            color: '#a6f36a', padding: '12px 8px', borderRadius: '14px',
+            fontWeight: 'bold', fontSize: '13px', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+          }}
+        >
+          <span>{added ? t.prod.addedToCart : t.prod.addToCart}</span>
+        </button>
 
         <button
           onClick={handleBuyNow}
