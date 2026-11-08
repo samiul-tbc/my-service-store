@@ -87,7 +87,7 @@
     .hero-box { max-width: 1050px; width: 100%; padding: 74px 45px; text-align: center; }
     .royal-badge { display: inline-flex; align-items: center; gap: 10px; padding: 8px 24px; border-radius: 50px; background: rgba(212, 175, 55, 0.1); border: 1px solid rgba(212, 175, 55, 0.35); color: var(--gold-light); font-size: 13px; letter-spacing: 3px; text-transform: uppercase; font-weight: 700; margin-bottom: 25px; }
     .hero-box h1 { font-size: clamp(42px, 8.5vw, 80px); line-height: 1.18; font-weight: 800; margin-bottom: 22px; }
-    .hero-box h1 .ltr { display: inline-block; opacity: 0; transform: translateY(34px) rotate(4deg); animation: ltrRise 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+    .hero-box h1 .ltr { display: inline-block; opacity: 0; transform: translateY(34px) rotate(4deg); background: linear-gradient(120deg, #cf9531 0%, #fff5c0 25%, #e8b653 50%, #fff5c0 75%, #af7720 100%); background-size: 200% auto; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: ltrRise 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards, shineGold 5s linear infinite; }
     @keyframes ltrRise { to { opacity: 1; transform: translateY(0) rotate(0); } }
     .type-writer-script { font-size: 21px; min-height: 64px; line-height: 1.8; font-weight: 300; color: #e2e8f0; max-width: 820px; margin: 0 auto 34px; }
     .type-writer-script::after { content: '▍'; color: var(--gold-primary); animation: cursorBlink 0.8s step-end infinite; font-size: 17px; }
@@ -384,7 +384,7 @@
   <!-- WHEEL -->
   <section class="grand-section" id="wheel-sec">
     <span class="sec-sub reveal">Royal Blessings</span>
-    <h2 class="sec-title reveal reveal-d1">বিশেষ <span class="shimmer-gold">সম্মাননা হুইল</span></h2>
+    <h2 class="sec-title reveal reveal-d1" style="margin-bottom: 66px;">বিশেষ <span class="shimmer-gold">সম্মাননা হুইল</span></h2>
     <div class="wheel-card glass-card-3d reveal" data-tilt>
       <div class="wheel-core">
         <div class="wheel-circle-wrap">
