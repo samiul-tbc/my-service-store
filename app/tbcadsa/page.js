@@ -11,7 +11,6 @@ const CATEGORIES = [
  { id: 'social-package', name: 'Social Boost' },
  { id: 'subscriptions', name: 'VIP Subs' },
  { id: 'e-service', name: 'E-Service' },
- { id: 'birthday', name: 'Birthday Card' },
 ];
 
 const QUICK_TEMPLATES = [
