@@ -60,6 +60,7 @@ export default function Footer() {
           <Link href="/categories" style={linkStyle}>{t.footer.categories}</Link>
           <Link href="/cart" style={linkStyle}>{t.footer.cart}</Link>
           <Link href="/orders" style={linkStyle}>{t.footer.trackOrder}</Link>
+          <Link href="/guide" style={linkStyle}>{t.footer.guides}</Link>
           <Link href="/profile" style={linkStyle}>{t.footer.myProfile}</Link>
         </div>
 

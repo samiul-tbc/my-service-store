@@ -90,6 +90,29 @@ export async function GET(req) {
       return NextResponse.json({ coupons });
     }
 
+    if (type === 'search-log') {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/site_settings?key=like.searchlog_*&select=key,value&order=key.desc&limit=1000`, {
+        cache: 'no-store',
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+        },
+      });
+      const rows = await res.json();
+      const counts = {};
+      if (Array.isArray(rows)) {
+        for (const row of rows) {
+          const q = String(row.value || '').trim();
+          if (!q) continue;
+          const k = q.toLowerCase();
+          counts[k] = counts[k] || { q, count: 0 };
+          counts[k].count += 1;
+        }
+      }
+      const items = Object.values(counts).sort((a, b) => b.count - a.count).slice(0, 30);
+      return NextResponse.json({ items, total: Array.isArray(rows) ? rows.length : 0 });
+    }
+
     if (type === 'product-flags') {
       const flags = await readProductFlags();
       return NextResponse.json({ flags });

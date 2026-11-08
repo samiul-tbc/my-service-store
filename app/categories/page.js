@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useMemo } from 'react';
+import { logMissedSearch } from '../../lib/shop';
 import Link from 'next/link';
 import { useLanguage } from '../../context/LanguageContext';
 import WishHeart from '../../components/WishHeart';
@@ -120,6 +121,12 @@ export default function CategoriesPage() {
     return arr;
   }, [filtered, sortBy]);
 
+  useEffect(() => {
+    if (!loading && searchQuery.trim().length >= 3 && sorted.length === 0) {
+      logMissedSearch(searchQuery);
+    }
+  }, [loading, searchQuery, sorted.length]);
+
   // Hide categories that have no products (e.g. an empty "Social Boost (0)"),
   // but keep everything visible while products are still loading.
   const visibleCategories = loading
@@ -189,6 +196,7 @@ export default function CategoriesPage() {
           );
         })}
       </div>
+
 
       {/* ফিল্টার করা প্রোডাক্ট তালিকা */}
       <div>

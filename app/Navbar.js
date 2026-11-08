@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { logMissedSearch } from '../lib/shop';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import LanguageToggle from '../components/LanguageToggle';
@@ -30,6 +31,12 @@ export default function Navbar() {
   const suggestions = q
     ? catalog.filter((p) => (p.title || '').toLowerCase().includes(q) || (p.category || '').toLowerCase().includes(q)).slice(0, 6)
     : catalog.slice(0, 4);
+
+  useEffect(() => {
+    if (searchOpen && q.length >= 3 && catalog.length > 0 && suggestions.length === 0) {
+      logMissedSearch(searchQuery);
+    }
+  }, [searchOpen, q, catalog.length, suggestions.length]);
 
   const goProduct = (id) => {
     setSearchOpen(false);

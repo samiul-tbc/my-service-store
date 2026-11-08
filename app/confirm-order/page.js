@@ -30,6 +30,7 @@ export default function ConfirmPage() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [telegram, setTelegram] = useState('');
   const [coupon, setCoupon] = useState(null);
+  const [vip, setVip] = useState(null);
 
   useEffect(() => {
     try {
@@ -59,6 +60,19 @@ export default function ConfirmPage() {
     }
   }, []);
 
+  useEffect(() => {
+    const digits = `${selectedCountry.code}${phoneNumber}`.replace(/\D/g, '');
+    if (digits.length < 11) { setVip(null); return; }
+    const tm = setTimeout(async () => {
+      try {
+        const r = await fetch('/api/vip-check', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone: digits, subtotal: Number(productData.price) || 0 }) });
+        const d = await r.json();
+        if (r.ok) setVip(d);
+      } catch {}
+    }, 600);
+    return () => clearTimeout(tm);
+  }, [phoneNumber, selectedCountry, productData]);
+
   const handleOrderSubmit = (e) => {
     e.preventDefault();
 
@@ -81,7 +95,7 @@ export default function ConfirmPage() {
 
     const productName = productData.title || productData.serviceName || 'Product Order';
     const productPrice = Number(productData.price) || 10;
-    const discount = coupon ? couponDiscount(coupon, productPrice) : 0;
+    const discount = coupon ? couponDiscount(coupon, productPrice) : (vip && vip.eligible ? Math.round(productPrice * 0.05) : 0);
 
     const fullOrder = {
       id: generatedOrderId,
@@ -92,6 +106,7 @@ export default function ConfirmPage() {
       subtotal: productPrice,
       discount: discount,
       couponCode: coupon ? coupon.code : '',
+      vipApplied: !coupon && discount > 0,
       customerName: name.trim(),
       whatsappNumber: fullPhoneNumber,
       telegramUsername: telegram.trim() || 'N/A',
@@ -150,6 +165,16 @@ export default function ConfirmPage() {
         <div style={{ marginBottom: '20px' }}>
           <CouponBox subtotal={Number(productData.price) || 0} applied={coupon} onApply={setCoupon} />
         </div>
+        {vip && !coupon && vip.eligible && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(166, 243, 106, 0.1)', border: '1px solid rgba(166, 243, 106, 0.4)', borderRadius: '12px', padding: '10px 12px', marginBottom: '20px' }}>
+            <Icon name="gift" size={16} color="#a6f36a" />
+            <span style={{ fontSize: '13px', fontWeight: '700', color: '#a6f36a' }}>{t.shop.vipReward.replace('{amount}', String(vip.discount || 0))}</span>
+          </div>
+        )}
+        {vip && !coupon && !vip.eligible && vip.completed > 0 && (
+          <p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 20px' }}>{t.shop.vipNext.replace('{n}', String(vip.toNext || 3))}</p>
+        )}
+
 
         <form onSubmit={handleOrderSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>

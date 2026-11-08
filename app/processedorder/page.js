@@ -250,7 +250,7 @@ export default function ProcessedOrderPage() {
               <span style={{ fontWeight: 'bold', color: '#f8fafc' }}>৳ {orderData.subtotal}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1', fontSize: '13px', marginBottom: '8px' }}>
-              <span>{t.shop.discount}{orderData.couponCode ? ` (${orderData.couponCode})` : ''}</span>
+              <span>{t.shop.discount}{orderData.couponCode ? ` (${orderData.couponCode})` : orderData.vipApplied ? ' (VIP)' : ''}</span>
               <span style={{ fontWeight: 'bold', color: '#f87171' }}>−৳ {orderData.discount}</span>
             </div>
           </>

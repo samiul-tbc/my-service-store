@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { findCoupon, couponDiscount } from '../../../lib/coupons-server';
+import { getVipStatus, vipDiscountFor } from '../../../lib/vip-server';
+import { insertSettingVersion } from '../../../lib/settings-store';
 
 const SUPABASE_URL = 'https://mieygzqgoekinxppdepb.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
@@ -27,6 +29,40 @@ export async function POST(req) {
       } catch (e) { console.error('Coupon re-validation error:', e); }
     }
 
+    // VIP loyalty: কুপন না থাকলে, প্রতি ৩টি completed অর্ডারে একবার ৫% ছাড়
+    let vipNote = '';
+    let vipApplied = false;
+    if (!couponNote && Number(subtotal) > 0) {
+      try {
+        const vip = await getVipStatus(whatsappNumber);
+        if (vip.eligible) {
+          const discount = vipDiscountFor(Number(subtotal));
+          if (discount > 0) {
+            finalPrice = Number(subtotal) - discount;
+            vipNote = `VIP 5% (-৳${discount})`;
+            vipApplied = true;
+          }
+        }
+      } catch (e) { console.error('VIP check error:', e); }
+    }
+
+    // Duplicate TrxID যাচাই — একই TrxID আগের কোনো অর্ডারে থাকলে সতর্কতা
+    let dupNote = '';
+    const trxClean = String(trxId || '').trim();
+    if (trxClean && trxClean.toUpperCase() !== 'N/A') {
+      try {
+        const dupRes = await fetch(`${SUPABASE_URL}/rest/v1/orders?trx_id=ilike.${encodeURIComponent(trxClean)}&select=order_id,service_name&limit=3`, {
+          headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+        });
+        if (dupRes.ok) {
+          const dups = await dupRes.json();
+          if (Array.isArray(dups) && dups.length > 0) {
+            dupNote = `Duplicate TrxID! আগের অর্ডার: ${dups[0].order_id}`;
+          }
+        }
+      } catch (e) { console.error('Dup TrxID check error:', e); }
+    }
+
     // ৪ ডিজিটের ইউনিক অর্ডার আইডি তৈরি (যেমন: HC-7391)
     const orderId = `HC-${Math.floor(1000 + Math.random() * 9000)}`;
 
@@ -52,6 +88,14 @@ export async function POST(req) {
       }),
     });
 
+    // VIP ছাড় ব্যবহার হলে marker রেখে দেওয়া (পরের ৩ অর্ডারের আগে আর পাবে না)
+    if (vipApplied) {
+      try {
+        const phoneKey = String(whatsappNumber || '').replace(/\D/g, '').slice(-10);
+        if (phoneKey) await insertSettingVersion(`vip_used_${phoneKey}`, orderId);
+      } catch (e) { console.error('VIP marker error:', e); }
+    }
+
     // ২. Telegram বট নোটিফিকেশন
     const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
     const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
@@ -60,13 +104,13 @@ export async function POST(req) {
       const message = `🛒 <b>Hub Cart - নতুন অর্ডার এসেছে!</b>\n\n` +
         `🆔 <b>অর্ডার আইডি:</b> <code>${orderId}</code>\n` +
         `📦 <b>সার্ভিস / পণ্য:</b> ${serviceName}\n` +
-        `💰 <b>মূল্য:</b> ৳${finalPrice}${couponNote ? ` (কুপন: ${couponNote})` : ''}\n\n` +
+        `💰 <b>মূল্য:</b> ৳${finalPrice}${couponNote ? ` (কুপন: ${couponNote})` : ''}${vipNote ? ` (VIP: ${vipNote})` : ''}\n\n` +
         `👤 <b>কাস্টমার:</b> ${customerName}\n` +
         `📞 <b>WhatsApp:</b> ${whatsappNumber}\n` +
         `✈️ <b>Telegram:</b> ${telegramUsername || 'দেওয়া হয়নি'}\n\n` +
         `💳 <b>পেমেন্ট মেথড:</b> ${paymentMethod}\n` +
         `🔢 <b>TrxID:</b> <code>${trxId || 'N/A'}</code>\n\n` +
-        `⚡ <b>স্ট্যাটাস:</b> ⏳ Pending`;
+        `${dupNote ? `⚠️ <b>সতর্কতা:</b> ${dupNote}\n` : ''}⚡ <b>স্ট্যাটাস:</b> ⏳ Pending`;
 
       await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
         method: 'POST',

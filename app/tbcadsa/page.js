@@ -61,6 +61,7 @@ export default function SecretAdminPage() {
  const [coupons, setCoupons] = useState([]);
  const [statusNotify, setStatusNotify] = useState(null);
  const [productFlags, setProductFlags] = useState({});
+ const [searchLog, setSearchLog] = useState(null);
  const [tgTestState, setTgTestState] = useState('');
  const [custSearch, setCustSearch] = useState('');
  const [newCoupon, setNewCoupon] = useState({ code: '', type: 'pct', value: '', min: '' });
@@ -277,6 +278,12 @@ export default function SecretAdminPage() {
  } catch (e) { console.error(e); }
  };
 
+ const trxCount = (trx) => {
+ const k = String(trx || '').trim().toUpperCase();
+ if (!k || k === 'N/A') return 0;
+ return orders.filter((o) => String(o.trx_id || '').trim().toUpperCase() === k).length;
+ };
+
  const handleExportCSV = () => {
  const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
  const rows = [
@@ -307,7 +314,16 @@ export default function SecretAdminPage() {
  };
 
  useEffect(() => {
- if (activeTab === 'products') fetchProductFlags();
+ if (activeTab === 'products') {
+ fetchProductFlags();
+ (async () => {
+ try {
+ const res = await fetch('/api/admin?type=search-log', { headers: { 'x-admin-pin': pinInput } });
+ const data = await res.json();
+ if (data && Array.isArray(data.items)) setSearchLog(data);
+ } catch {}
+ })();
+ }
  }, [activeTab]);
 
  const fetchOffers = async (pin = pinInput) => {
@@ -1315,7 +1331,8 @@ export default function SecretAdminPage() {
  {ord.telegram_username && <div> <strong>Telegram:</strong> {ord.telegram_username}</div>}
  <div> <strong>পেমেন্ট:</strong> {ord.payment_method}</div>
  <div> <strong>TrxID:</strong> <code style={{ color: '#f8fafc', background: '#0b0f19', padding: '2px 6px', borderRadius: '4px' }}>{ord.trx_id}</code>{' '}
- <button type="button" onClick={() => handleCopyTrx(ord.trx_id, ord.id)} style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: copiedTrxId === ord.id ? '#4ade80' : '#cbd5e1', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer' }}>{copiedTrxId === ord.id ? ' কপি হয়েছে' : ' কপি'}</button></div>
+ <button type="button" onClick={() => handleCopyTrx(ord.trx_id, ord.id)} style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: copiedTrxId === ord.id ? '#4ade80' : '#cbd5e1', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer' }}>{copiedTrxId === ord.id ? ' কপি হয়েছে' : ' কপি'}</button>{' '}
+ {trxCount(ord.trx_id) > 1 && (<span style={{ display: 'inline-block', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.55)', color: '#f87171', padding: '2px 8px', borderRadius: '999px', fontSize: '10px', fontWeight: '900' }}>Duplicate TrxID!</span>)}</div>
  </div>
 
  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
@@ -1583,6 +1600,18 @@ export default function SecretAdminPage() {
  ))}
  </div>
  )}
+ </div>
+ </div>
+ )}
+
+ {searchLog && searchLog.items.length > 0 && (
+ <div style={{ background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '20px', padding: '20px', marginTop: '16px' }}>
+ <h3 style={{ fontSize: '15px', fontWeight: 'bold', margin: '0 0 4px', color: '#f8fafc' }}>কাস্টমার খুঁজে পায়নি ({searchLog.total})</h3>
+ <p style={{ fontSize: '12px', color: '#94a3b8', margin: '0 0 12px' }}>সার্চ করে কোনো রেজাল্ট পায়নি — এই জিনিসগুলোর চাহিদা আছে কিন্তু ক্যাটালগে নেই।</p>
+ <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+ {searchLog.items.map((it, i) => (
+ <span key={i} style={{ fontSize: '12px', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.35)', color: '#7dd3fc', padding: '5px 11px', borderRadius: '999px', fontWeight: '700' }}>{it.q} • {it.count}বার</span>
+ ))}
  </div>
  </div>
  )}

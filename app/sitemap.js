@@ -18,6 +18,10 @@ export default async function sitemap() {
     '/terms',
     '/refund',
     '/faq',
+    '/guide',
+    '/guide/how-to-order',
+    '/guide/payment-guide',
+    '/guide/after-order',
   ];
 
   const routes = staticPaths.map((path) => ({
