@@ -10,6 +10,7 @@ const CATEGORIES = [
  { id: 'android-panel', name: 'Android Panel' },
  { id: 'social-package', name: 'Social Boost' },
  { id: 'subscriptions', name: 'VIP Subs' },
+ { id: 'e-service', name: 'E-Service' },
 ];
 
 const QUICK_TEMPLATES = [
