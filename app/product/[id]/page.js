@@ -6,6 +6,7 @@ import { useLanguage } from '../../../context/LanguageContext';
 import Icon from '../../../components/icons';
 import { productImageSrc } from '../../../lib/productImage';
 import WishHeart from '../../../components/WishHeart';
+import EmojiText from '../../../components/EmojiText';
 import { pushRecent } from '../../../lib/shop';
 
 const LOGO_HUB_CART = '/logo-icon.png';
@@ -208,7 +209,7 @@ export default function ProductDetailPage() {
           <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '16px' }}>
             <h4 style={{ fontSize: '12px', fontWeight: 'bold', margin: '0 0 6px', color: '#94a3b8', textTransform: 'uppercase' }}>{t.prod.details}</h4>
             <p style={{ fontSize: '13px', color: '#cbd5e1', lineHeight: '1.6', whiteSpace: 'pre-line', margin: 0 }}>
-              {product.description || t.prod.noDesc}
+              <EmojiText text={product.description || t.prod.noDesc} />
             </p>
           </div>
         </div>
