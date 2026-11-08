@@ -37,6 +37,8 @@ export default function ConfirmPage() {
   const [bMsg, setBMsg] = useState('');
   const [bFrom, setBFrom] = useState('');
   const [bTheme, setBTheme] = useState('midnight');
+  const [bRel, setBRel] = useState('friend');
+  const [bThemeTouched, setBThemeTouched] = useState(false);
   const isBirthday = productData?.category === 'birthday';
 
   useEffect(() => {
@@ -119,7 +121,7 @@ export default function ConfirmPage() {
       discount: discount,
       couponCode: coupon ? coupon.code : '',
       vipApplied: !coupon && discount > 0,
-      birthday: isBirthday ? { name: bName.trim(), birth: bBirth, photo: bPhoto.trim(), msg: bMsg.trim(), from: bFrom.trim(), theme: bTheme } : null,
+      birthday: isBirthday ? { name: bName.trim(), birth: bBirth, photo: bPhoto.trim(), msg: bMsg.trim(), from: bFrom.trim(), theme: bTheme, rel: bRel } : null,
       customerName: name.trim(),
       whatsappNumber: fullPhoneNumber,
       telegramUsername: telegram.trim() || 'N/A',
@@ -205,6 +207,18 @@ export default function ConfirmPage() {
               <textarea value={bMsg} onChange={(e) => setBMsg(e.target.value)} placeholder={t.bday.msgPh} rows={3} maxLength={400} style={{ width: '100%', padding: '11px 12px', background: '#0b1220', border: '1px solid #26334d', borderRadius: '10px', color: '#f8fafc', fontSize: '14px', outline: 'none', boxSizing: 'border-box', marginBottom: '12px', resize: 'vertical' }} />
               <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '5px', fontWeight: '600' }}>{t.bday.from}</label>
               <input type="text" value={bFrom} onChange={(e) => setBFrom(e.target.value)} placeholder={t.bday.fromPh} style={{ width: '100%', padding: '11px 12px', background: '#0b1220', border: '1px solid #26334d', borderRadius: '10px', color: '#f8fafc', fontSize: '14px', outline: 'none', boxSizing: 'border-box', marginBottom: '12px' }} />
+              <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '6px', fontWeight: '600' }}>{t.bday.rel}</label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '7px', marginBottom: '12px' }}>
+                {[
+                  { id: 'premika', label: t.bday.relPremika, th: 'candy' },
+                  { id: 'apu', label: t.bday.relApu, th: 'midnight' },
+                  { id: 'junior', label: t.bday.relJunior, th: 'candy' },
+                  { id: 'friend', label: t.bday.relFriend, th: 'ocean' },
+                  { id: 'vai', label: t.bday.relVai, th: 'midnight' },
+                ].map((r) => (
+                  <button key={r.id} type="button" onClick={() => { setBRel(r.id); if (!bThemeTouched) setBTheme(r.th); }} style={{ padding: '8px 13px', borderRadius: '999px', border: bRel === r.id ? '2px solid #f472b6' : '1px solid #26334d', background: bRel === r.id ? 'rgba(244,114,182,0.16)' : '#0b1220', color: '#f8fafc', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}>{r.label}</button>
+                ))}
+              </div>
               <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '6px', fontWeight: '600' }}>{t.bday.theme}</label>
               <div style={{ display: 'flex', gap: '8px' }}>
                 {[
@@ -212,7 +226,7 @@ export default function ConfirmPage() {
                   { id: 'candy', label: t.bday.themeCandy, c1: '#42082c', c2: '#fb7185' },
                   { id: 'ocean', label: t.bday.themeOcean, c1: '#07305c', c2: '#38bdf8' },
                 ].map((th) => (
-                  <button key={th.id} type="button" onClick={() => setBTheme(th.id)} style={{ flex: 1, padding: '9px 4px', borderRadius: '10px', border: bTheme === th.id ? `2px solid ${th.c2}` : '1px solid #26334d', background: th.c1, color: '#f8fafc', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}>
+                  <button key={th.id} type="button" onClick={() => { setBTheme(th.id); setBThemeTouched(true); }} style={{ flex: 1, padding: '9px 4px', borderRadius: '10px', border: bTheme === th.id ? `2px solid ${th.c2}` : '1px solid #26334d', background: th.c1, color: '#f8fafc', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}>
                     <span style={{ display: 'block', width: '16px', height: '16px', borderRadius: '50%', background: th.c2, margin: '0 auto 5px' }} />
                     {th.label}
                   </button>

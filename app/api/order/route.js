@@ -108,6 +108,7 @@ export async function POST(req) {
           from: birthday.from ? String(birthday.from).slice(0, 60) : '',
           photo: /^https?:\/\//i.test(birthday.photo || '') ? String(birthday.photo).slice(0, 500) : '',
           theme: ['midnight', 'candy', 'ocean'].includes(birthday.theme) ? birthday.theme : 'midnight',
+          rel: ['premika', 'apu', 'junior', 'friend', 'vai'].includes(birthday.rel) ? birthday.rel : 'friend',
         };
         const { encodeBirthday, BIRTHDAY_SITE } = await import('../../../lib/birthday');
         bdayLink = `${BIRTHDAY_SITE}/wish.html?d=${encodeBirthday(clean)}`;
