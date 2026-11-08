@@ -60,6 +60,7 @@ export default function SecretAdminPage() {
  const [savingAd, setSavingAd] = useState(false);
  const [coupons, setCoupons] = useState([]);
  const [statusNotify, setStatusNotify] = useState(null);
+ const [productFlags, setProductFlags] = useState({});
  const [tgTestState, setTgTestState] = useState('');
  const [custSearch, setCustSearch] = useState('');
  const [newCoupon, setNewCoupon] = useState({ code: '', type: 'pct', value: '', min: '' });
@@ -305,6 +306,10 @@ export default function SecretAdminPage() {
  } catch (err) { console.error(err); }
  };
 
+ useEffect(() => {
+ if (activeTab === 'products') fetchProductFlags();
+ }, [activeTab]);
+
  const fetchOffers = async (pin = pinInput) => {
  try {
  const res = await fetch('/api/admin?type=offers', {
@@ -313,6 +318,26 @@ export default function SecretAdminPage() {
  const data = await res.json();
  if (data && Array.isArray(data.coupons)) setCoupons(data.coupons);
  } catch (err) { console.error(err); }
+ };
+
+ const fetchProductFlags = async (pin = pinInput) => {
+ try {
+ const res = await fetch('/api/admin?type=product-flags', { headers: { 'x-admin-pin': pin } });
+ const data = await res.json();
+ if (data && data.flags) setProductFlags(data.flags);
+ } catch {}
+ };
+
+ const handleToggleFlag = async (prod, flag) => {
+ const current = productFlags[prod.id] || {};
+ const currentValue = flag === 'published' ? current.published !== false : !!current.featured;
+ const next = { ...current, published: current.published !== false, featured: !!current.featured, [flag]: !currentValue };
+ setProductFlags((prev) => ({ ...prev, [prod.id]: next }));
+ try {
+ const data = await postAdmin('set-product-flag', { productId: prod.id, flag, value: !currentValue });
+ if (data && data.flags) setProductFlags(data.flags);
+ else { alert('সেভ হয়নি! আবার চেষ্টা করুন।'); fetchProductFlags(); }
+ } catch { alert('নেটওয়ার্ক সমস্যা!'); fetchProductFlags(); }
  };
 
  const handleSaveCoupons = async (list) => {
@@ -1510,15 +1535,31 @@ export default function SecretAdminPage() {
  {products.map((prod) => (
  <div key={prod.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', border: '1px solid rgba(255, 255, 255, 0.06)', borderRadius: '14px', background: 'rgba(30, 41, 59, 0.5)' }}>
  <img src={prod.image} alt={prod.title} style={{ width: '46px', height: '46px', objectFit: 'cover', borderRadius: '10px', background: '#0b0f19' }} />
- <div style={{ flex: 1 }}>
- <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#f8fafc' }}>{prod.title}</div>
+ <div style={{ flex: 1, opacity: (productFlags[prod.id] && productFlags[prod.id].published === false) ? 0.45 : 1 }}>
+ <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#f8fafc' }}>{prod.title}{(productFlags[prod.id] && productFlags[prod.id].published === false) ? ' • HIDDEN' : ''}</div>
  <div style={{ fontSize: '11px', color: '#94a3b8' }}>৳{prod.price} • {prod.category}</div>
  {(() => { const cfg = autodeliveryConfigs[prod.id]; if (!cfg || !cfg.mode || cfg.mode === 'off') return null; return (
  <div style={{ fontSize: '10px', color: '#a6f36a', fontWeight: '700', marginTop: '2px' }}>
  {cfg.mode === 'stock' ? ` Auto-Delivery: স্টক বাকি ${(cfg.stock || []).length - (cfg.used || []).length}টি` : ' Auto-Delivery: Fixed'}
  </div> ); })()}
  </div>
- <div style={{ display: 'flex', gap: '6px' }}>
+ <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+ {(() => { const f = productFlags[prod.id] || {}; const pub = f.published !== false; const feat = !!f.featured; return (<>
+ <button
+ onClick={() => handleToggleFlag(prod, 'published')}
+ title="সাইটে দেখাবে কিনা"
+ style={{ background: pub ? 'rgba(74, 222, 128, 0.15)' : 'rgba(100, 116, 139, 0.2)', border: `1px solid ${pub ? 'rgba(74, 222, 128, 0.45)' : 'rgba(100, 116, 139, 0.5)'}`, color: pub ? '#4ade80' : '#94a3b8', padding: '6px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+ >
+ {pub ? 'Published: ON' : 'Published: OFF'}
+ </button>
+ <button
+ onClick={() => handleToggleFlag(prod, 'featured')}
+ title="সবার আগে দেখাবে কিনা"
+ style={{ background: feat ? 'rgba(250, 204, 21, 0.15)' : 'rgba(100, 116, 139, 0.15)', border: `1px solid ${feat ? 'rgba(250, 204, 21, 0.5)' : 'rgba(100, 116, 139, 0.4)'}`, color: feat ? '#facc15' : '#94a3b8', padding: '6px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+ >
+ {feat ? 'Featured: ON' : 'Featured'}
+ </button>
+ </>); })()}
  <button
  onClick={() => setEditingProduct(prod)}
  style={{ background: 'rgba(166, 243, 106, 0.15)', border: '1px solid rgba(166, 243, 106, 0.3)', color: '#a6f36a', padding: '6px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
@@ -1609,6 +1650,19 @@ export default function SecretAdminPage() {
  style={inputStyle}
  />
  </div>
+ </div>
+
+ <div style={{ marginBottom: '12px' }}>
+ <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '4px', fontWeight: 'bold' }}>ক্যাটাগরি</label>
+ <select
+ value={editingProduct.category || 'android-root'}
+ onChange={(e) => setEditingProduct({ ...editingProduct, category: e.target.value })}
+ style={{ ...inputStyle, background: '#1e293b' }}
+ >
+ {CATEGORIES.map((c) => (
+ <option key={c.id} value={c.id}>{c.name}</option>
+ ))}
+ </select>
  </div>
 
  <div style={{ marginBottom: '16px' }}>

@@ -45,11 +45,21 @@ export async function GET() {
 
     // Review aggregates per product (reviews live in site_settings)
     const ratings = {};
+    let productFlags = {};
+    let latestFlagKey = '';
     if (settingsRes.status === 'fulfilled' && settingsRes.value.ok) {
       const rows = await settingsRes.value.json();
       if (Array.isArray(rows)) {
         for (const row of rows) {
-          if (!row.key || !row.key.startsWith('reviews_')) continue;
+          if (!row.key) continue;
+          if (row.key.startsWith('product_flags_')) {
+            if (!latestFlagKey || row.key > latestFlagKey) {
+              latestFlagKey = row.key;
+              try { productFlags = JSON.parse(row.value) || {}; } catch {}
+            }
+            continue;
+          }
+          if (!row.key.startsWith('reviews_')) continue;
           try {
             const arr = JSON.parse(row.value);
             if (Array.isArray(arr) && arr.length) {
@@ -69,11 +79,15 @@ export async function GET() {
         ? { ...p, image: `/api/img/${p.id}` }
         : p;
       const r = ratings[String(base.id)] || { rating: 0, reviewCount: 0 };
-      return { ...base, rating: r.rating, reviewCount: r.reviewCount };
+      return { ...base, rating: r.rating, reviewCount: r.reviewCount, featured: !!((productFlags[String(base.id)] || {}).featured) };
     });
 
+    const visibleProducts = slimProducts
+      .filter((p) => (productFlags[String(p.id)] || {}).published !== false)
+      .sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
+
     return NextResponse.json(
-      { products: slimProducts, notice },
+      { products: visibleProducts, notice },
       { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' } }
     );
   } catch (err) {

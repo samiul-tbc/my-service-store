@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { readProductFlags, writeProductFlags } from '../../../lib/product-flags-server';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://mieygzqgoekinxppdepb.supabase.co';
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
@@ -78,6 +79,11 @@ export async function GET(req) {
         }
       }
       return NextResponse.json({ coupons });
+    }
+
+    if (type === 'product-flags') {
+      const flags = await readProductFlags();
+      return NextResponse.json({ flags });
     }
 
     let endpoint = '';
@@ -231,6 +237,27 @@ export async function POST(req) {
       } catch (e) {
         return NextResponse.json({ error: e.message }, { status: 500 });
       }
+    }
+
+    // প্রোডাক্ট Published / Featured টগল (versioned flags — INSERT-only storage)
+    if (action === 'set-product-flag') {
+      const productId = String((payload && payload.productId) || '');
+      const flag = payload && payload.flag === 'featured' ? 'featured' : 'published';
+      if (!productId) {
+        return NextResponse.json({ error: 'productId required' }, { status: 400 });
+      }
+      const flags = await readProductFlags();
+      const current = flags[productId] || {};
+      flags[productId] = {
+        published: current.published !== false,
+        featured: !!current.featured,
+        [flag]: !!(payload && payload.value),
+      };
+      const ok = await writeProductFlags(flags);
+      if (!ok) {
+        return NextResponse.json({ error: 'save_failed' }, { status: 502 });
+      }
+      return NextResponse.json({ success: true, flags });
     }
 
     // কুপন তালিকা সেভ (Offers ট্যাব)
