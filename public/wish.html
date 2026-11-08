@@ -1025,7 +1025,7 @@
       cake.add(shadow);
 
       // plate
-      const plate = new THREE.Mesh(new THREE.CylinderGeometry(4.35, 4.5, 0.17, 56), new THREE.MeshStandardMaterial({ color: 0xc7cede, metalness: 0.9, roughness: 0.28 }));
+      const plate = new THREE.Mesh(new THREE.CylinderGeometry(4.35, 4.5, 0.17, 56), new THREE.MeshStandardMaterial({ color: 0xe2e8f2, metalness: 0.45, roughness: 0.35 }));
       plate.position.y = -1.68; cake.add(plate);
       const rim = new THREE.Mesh(new THREE.TorusGeometry(4.35, 0.05, 10, 72), new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 1, roughness: 0.2 }));
       rim.rotation.x = Math.PI / 2; rim.position.y = -1.6; cake.add(rim);
@@ -1155,7 +1155,8 @@
         requestAnimationFrame(animateCake);
         if (!inView || document.hidden) return;
         const t = clock.getElapsedTime();
-        if (!dragging && performance.now() - lastInteract > 2200) targetRotY += 0.0035;
+        const dt = Math.min(t - (animateCake._pt || t), 0.1); animateCake._pt = t;
+        if (!dragging && performance.now() - lastInteract > 2200) targetRotY += dt * 0.25;
         cake.rotation.y += (targetRotY - cake.rotation.y) * 0.08;
         cake.position.y = Math.sin(t * 0.9) * 0.05;
         let litCount = 0;
