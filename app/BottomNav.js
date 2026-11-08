@@ -4,9 +4,15 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useLanguage } from '../context/LanguageContext';
 
+const HIDE_ON = ['/product/', '/cart', '/cart-checkout', '/confirm', '/confirm-order', '/payment', '/processedorder', '/order-success', '/invoice/'];
+
 export default function BottomNav() {
   const pathname = usePathname();
   const { t } = useLanguage();
+
+  if (pathname && HIDE_ON.some((pre) => pathname === pre || pathname.startsWith(pre))) {
+    return null;
+  }
 
   const navItems = [
     {
