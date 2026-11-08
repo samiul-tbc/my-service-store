@@ -11,7 +11,7 @@ const WA_PATH = 'M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.
 export default function WhatsFloat() {
   const pathname = usePathname();
   const { lang } = useLanguage();
-  if (!pathname || pathname.startsWith('/tbcadsa')) return null;
+  if (!pathname || pathname.startsWith('/tbcadsa') || pathname.startsWith('/birthday')) return null;
   const msg = lang === 'en'
     ? 'Hi Hub Cart! I want to know more about a service.'
     : 'হাই Hub Cart! একটা সার্ভিস সম্পর্কে জানতে চাই।';

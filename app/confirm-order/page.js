@@ -31,6 +31,12 @@ export default function ConfirmPage() {
   const [telegram, setTelegram] = useState('');
   const [coupon, setCoupon] = useState(null);
   const [vip, setVip] = useState(null);
+  const [bName, setBName] = useState('');
+  const [bAge, setBAge] = useState('');
+  const [bMsg, setBMsg] = useState('');
+  const [bFrom, setBFrom] = useState('');
+  const [bTheme, setBTheme] = useState('midnight');
+  const isBirthday = productData?.category === 'birthday';
 
   useEffect(() => {
     try {
@@ -86,6 +92,11 @@ export default function ConfirmPage() {
       return;
     }
 
+    if (isBirthday && !bName.trim()) {
+      alert(t.bday.alertName);
+      return;
+    }
+
     const cleanPhone = phoneNumber.trim().replace(/^0+/, '');
     const fullPhoneNumber = `${selectedCountry.code}${cleanPhone}`;
 
@@ -107,6 +118,7 @@ export default function ConfirmPage() {
       discount: discount,
       couponCode: coupon ? coupon.code : '',
       vipApplied: !coupon && discount > 0,
+      birthday: isBirthday ? { name: bName.trim(), age: bAge.trim(), msg: bMsg.trim(), from: bFrom.trim(), theme: bTheme } : null,
       customerName: name.trim(),
       whatsappNumber: fullPhoneNumber,
       telegramUsername: telegram.trim() || 'N/A',
@@ -177,6 +189,34 @@ export default function ConfirmPage() {
 
 
         <form onSubmit={handleOrderSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {isBirthday && (
+            <div style={{ background: 'rgba(244, 114, 182, 0.07)', border: '1px solid rgba(244, 114, 182, 0.35)', borderRadius: '16px', padding: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '14px', fontWeight: '800', color: '#f9a8d4', marginBottom: '12px' }}>
+                <Icon name="gift" size={16} color="#f9a8d4" /> {t.bday.formTitle}
+              </div>
+              <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '5px', fontWeight: '600' }}>{t.bday.forName} *</label>
+              <input type="text" value={bName} onChange={(e) => setBName(e.target.value)} placeholder={t.bday.forNamePh} style={{ width: '100%', padding: '11px 12px', background: '#0b1220', border: '1px solid #26334d', borderRadius: '10px', color: '#f8fafc', fontSize: '14px', outline: 'none', boxSizing: 'border-box', marginBottom: '12px' }} />
+              <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '5px', fontWeight: '600' }}>{t.bday.age}</label>
+              <input type="number" min="1" max="120" value={bAge} onChange={(e) => setBAge(e.target.value)} placeholder={t.bday.agePh} style={{ width: '100%', padding: '11px 12px', background: '#0b1220', border: '1px solid #26334d', borderRadius: '10px', color: '#f8fafc', fontSize: '14px', outline: 'none', boxSizing: 'border-box', marginBottom: '12px' }} />
+              <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '5px', fontWeight: '600' }}>{t.bday.msg}</label>
+              <textarea value={bMsg} onChange={(e) => setBMsg(e.target.value)} placeholder={t.bday.msgPh} rows={3} maxLength={400} style={{ width: '100%', padding: '11px 12px', background: '#0b1220', border: '1px solid #26334d', borderRadius: '10px', color: '#f8fafc', fontSize: '14px', outline: 'none', boxSizing: 'border-box', marginBottom: '12px', resize: 'vertical' }} />
+              <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '5px', fontWeight: '600' }}>{t.bday.from}</label>
+              <input type="text" value={bFrom} onChange={(e) => setBFrom(e.target.value)} placeholder={t.bday.fromPh} style={{ width: '100%', padding: '11px 12px', background: '#0b1220', border: '1px solid #26334d', borderRadius: '10px', color: '#f8fafc', fontSize: '14px', outline: 'none', boxSizing: 'border-box', marginBottom: '12px' }} />
+              <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '6px', fontWeight: '600' }}>{t.bday.theme}</label>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {[
+                  { id: 'midnight', label: t.bday.themeMidnight, c1: '#1d0b38', c2: '#ffd166' },
+                  { id: 'candy', label: t.bday.themeCandy, c1: '#42082c', c2: '#fb7185' },
+                  { id: 'ocean', label: t.bday.themeOcean, c1: '#07305c', c2: '#38bdf8' },
+                ].map((th) => (
+                  <button key={th.id} type="button" onClick={() => setBTheme(th.id)} style={{ flex: 1, padding: '9px 4px', borderRadius: '10px', border: bTheme === th.id ? `2px solid ${th.c2}` : '1px solid #26334d', background: th.c1, color: '#f8fafc', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}>
+                    <span style={{ display: 'block', width: '16px', height: '16px', borderRadius: '50%', background: th.c2, margin: '0 auto 5px' }} />
+                    {th.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <div>
             <label style={{ display: 'block', fontSize: '13px', color: '#cbd5e1', marginBottom: '6px', fontWeight: '600' }}>
               {t.confirm.name}

@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, Suspense } from 'react';
+import { birthdayPath } from '../../lib/birthday';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useLanguage } from '../../context/LanguageContext';
@@ -21,6 +22,7 @@ function TrackContent() {
   const [orders, setOrders] = useState([]);
   const [searched, setSearched] = useState(false);
   const [deliveredMap, setDeliveredMap] = useState({});
+  const [bdayMap, setBdayMap] = useState({});
   const [catalog, setCatalog] = useState([]);
 
   useEffect(() => {
@@ -89,6 +91,32 @@ function TrackContent() {
                 if (best) map[o.order_id] = best.value;
               });
               setDeliveredMap(map);
+            }
+          }
+        } catch (e) { console.error(e); }
+        // বার্থডে কার্ডের তথ্য থাকলে লিংক দেখানো (যেকোনো স্ট্যাটাসে)
+        try {
+          const ors = data.map((o) => `key.like.bday_${o.order_id}_*`).join(',');
+          if (ors) {
+            const r3 = await fetch(`${SUPABASE_URL}/rest/v1/site_settings?or=(${ors})&select=key,value`, {
+              cache: 'no-store',
+              headers: {
+                apikey: SUPABASE_KEY,
+                Authorization: `Bearer ${SUPABASE_KEY}`,
+              },
+            });
+            const rows3 = await r3.json();
+            if (Array.isArray(rows3)) {
+              const bmap = {};
+              data.forEach((o) => {
+                const base = `bday_${o.order_id}_`;
+                let best = null;
+                rows3.forEach((r) => {
+                  if (r.key.startsWith(base) && /^\d+$/.test(r.key.slice(base.length)) && (!best || r.key > best.key)) best = r;
+                });
+                if (best && best.value) { try { bmap[o.order_id] = JSON.parse(best.value); } catch {} }
+              });
+              setBdayMap(bmap);
             }
           }
         } catch (e) { console.error(e); }
@@ -311,6 +339,13 @@ function TrackContent() {
                     <div style={{ fontSize: '13px', fontWeight: '900', color: '#a6f36a', marginBottom: '4px' }}>{t.track.deliveryTitle}</div>
                     <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '8px' }}>{t.track.deliveryNote}</div>
                     <div style={{ fontSize: '13px', color: '#f1f5f9', whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: 1.65, background: 'rgba(2, 6, 23, 0.55)', borderRadius: '10px', padding: '10px 12px' }}>{deliveredMap[ord.order_id]}</div>
+                  </div>
+                )}
+
+                {bdayMap[ord.order_id] && (
+                  <div style={{ marginTop: '16px', background: 'linear-gradient(150deg, rgba(244, 114, 182, 0.13), rgba(147, 51, 234, 0.1))', border: '1px solid rgba(244, 114, 182, 0.45)', borderRadius: '14px', padding: '14px' }}>
+                    <div style={{ fontSize: '13px', fontWeight: '900', color: '#f9a8d4', marginBottom: '8px' }}>{t.bday.linkTitle}</div>
+                    <a href={birthdayPath(bdayMap[ord.order_id])} target="_blank" rel="noreferrer" style={{ display: 'inline-block', background: 'linear-gradient(135deg, #f472b6, #a855f7)', color: '#fff', fontWeight: '900', fontSize: '13px', padding: '10px 18px', borderRadius: '10px', textDecoration: 'none' }}>{t.bday.open}</a>
                   </div>
                 )}
 

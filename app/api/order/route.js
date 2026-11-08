@@ -9,7 +9,7 @@ const SUPABASE_KEY = 'sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
 export async function POST(req) {
   try {
     const body = await req.json();
-    const { serviceName, price, customerName, whatsappNumber, telegramUsername, paymentMethod, trxId, couponCode, subtotal } = body;
+    const { serviceName, price, customerName, whatsappNumber, telegramUsername, paymentMethod, trxId, couponCode, subtotal, birthday } = body;
 
     if (!serviceName || !customerName || !whatsappNumber) {
       return NextResponse.json({ error: 'প্রয়োজনীয় সকল তথ্য পূরণ করুন' }, { status: 400 });
@@ -96,6 +96,23 @@ export async function POST(req) {
       } catch (e) { console.error('VIP marker error:', e); }
     }
 
+    // Birthday card: তথ্য সংরক্ষণ (track page-এ লিংক দেখানোর জন্য) + লিংক তৈরি
+    let bdayLink = '';
+    if (birthday && birthday.name) {
+      try {
+        const clean = {
+          name: String(birthday.name).slice(0, 60),
+          age: birthday.age ? String(birthday.age).slice(0, 3) : '',
+          msg: birthday.msg ? String(birthday.msg).slice(0, 400) : '',
+          from: birthday.from ? String(birthday.from).slice(0, 60) : '',
+          theme: ['midnight', 'candy', 'ocean'].includes(birthday.theme) ? birthday.theme : 'midnight',
+        };
+        const { encodeBirthday, BIRTHDAY_SITE } = await import('../../../lib/birthday');
+        bdayLink = `${BIRTHDAY_SITE}/birthday?d=${encodeBirthday(clean)}`;
+        await insertSettingVersion(`bday_${orderId}`, JSON.stringify(clean));
+      } catch (e) { console.error('Birthday save error:', e); }
+    }
+
     // ২. Telegram বট নোটিফিকেশন
     const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
     const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
@@ -110,7 +127,7 @@ export async function POST(req) {
         `✈️ <b>Telegram:</b> ${telegramUsername || 'দেওয়া হয়নি'}\n\n` +
         `💳 <b>পেমেন্ট মেথড:</b> ${paymentMethod}\n` +
         `🔢 <b>TrxID:</b> <code>${trxId || 'N/A'}</code>\n\n` +
-        `${dupNote ? `⚠️ <b>সতর্কতা:</b> ${dupNote}\n` : ''}⚡ <b>স্ট্যাটাস:</b> ⏳ Pending`;
+        `${bdayLink ? `🎂 <b>Birthday Card:</b> ${bdayLink}\n` : ''}${dupNote ? `⚠️ <b>সতর্কতা:</b> ${dupNote}\n` : ''}⚡ <b>স্ট্যাটাস:</b> ⏳ Pending`;
 
       await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
         method: 'POST',
