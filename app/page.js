@@ -30,8 +30,6 @@ export default function HomePage() {
   const [products, setProducts] = useState([]);
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(true);
-  const [flashSale, setFlashSale] = useState(null);
-  const [flashLeft, setFlashLeft] = useState('');
   const [recent, setRecent] = useState([]);
 
   useEffect(() => {
@@ -43,7 +41,6 @@ export default function HomePage() {
         if (!active) return;
         if (Array.isArray(data.products)) setProducts(data.products);
         if (data.notice) setNotice(data.notice);
-        if (data.flashSale && data.flashSale.active && data.flashSale.endTime) setFlashSale(data.flashSale);
       } catch (err) {
         console.error('Home load error:', err);
       } finally {
@@ -55,23 +52,6 @@ export default function HomePage() {
     return () => { active = false; };
   }, []);
 
-  // Flash sale countdown
-  useEffect(() => {
-    if (!flashSale) return;
-    const target = new Date(flashSale.endTime).getTime();
-    const fmt = () => {
-      const diff = target - Date.now();
-      if (diff <= 0) { setFlashSale(null); return; }
-      const d = Math.floor(diff / 86400000);
-      const h = Math.floor((diff % 86400000) / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      const sec = Math.floor((diff % 60000) / 1000);
-      setFlashLeft(`${d > 0 ? d + 'd ' : ''}${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`);
-    };
-    fmt();
-    const iv = setInterval(fmt, 1000);
-    return () => clearInterval(iv);
-  }, [flashSale]);
 
   return (
     <main className="hc-shell">
@@ -344,19 +324,6 @@ export default function HomePage() {
         <div className="hc-notice">
           <span className="hc-notice-mark" style={{ display: "inline-flex", verticalAlign: "-2px" }}><Icon name="spark" size={13} color="#a6f36a" /></span>
           <span>{notice}</span>
-        </div>
-      )}
-
-      {/* ---------- Flash sale ---------- */}
-      {flashSale && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', padding: '13px 16px', borderRadius: '16px', marginBottom: '22px', background: 'linear-gradient(90deg, rgba(239, 68, 68, 0.16), rgba(166, 243, 106, 0.1))', border: '1px solid rgba(239, 68, 68, 0.4)', color: '#fecaca' }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#ef4444', color: '#ffffff', fontSize: '11px', fontWeight: '900', padding: '4px 10px', borderRadius: '999px', letterSpacing: '0.5px' }}>
-            <Icon name="bolt" size={12} color="#ffffff" /> {t.shop.flashLabel}
-          </span>
-          <span style={{ fontSize: '13px', fontWeight: '700', color: '#f8fafc', flex: 1, minWidth: '180px' }}>{flashSale.title}</span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#fca5a5', fontWeight: '700' }}>
-            <Icon name="clock" size={14} color="#fca5a5" /> {t.shop.flashEndsIn} <strong style={{ color: '#ffffff', fontVariantNumeric: 'tabular-nums' }}>{flashLeft}</strong>
-          </span>
         </div>
       )}
 

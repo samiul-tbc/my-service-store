@@ -63,7 +63,7 @@ export async function GET(req) {
     }
 
     if (type === 'offers') {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/site_settings?key=in.(coupons,flash_sale)&select=key,value`, {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/site_settings?key=eq.coupons&select=key,value`, {
         cache: 'no-store',
         headers: {
           apikey: SUPABASE_KEY,
@@ -72,14 +72,12 @@ export async function GET(req) {
       });
       const rows = await res.json();
       let coupons = [];
-      let flashSale = null;
       if (Array.isArray(rows)) {
         for (const row of rows) {
           if (row.key === 'coupons') { try { const v = JSON.parse(row.value); if (Array.isArray(v)) coupons = v; } catch {} }
-          if (row.key === 'flash_sale') { try { flashSale = JSON.parse(row.value); } catch {} }
         }
       }
-      return NextResponse.json({ coupons, flashSale });
+      return NextResponse.json({ coupons });
     }
 
     let endpoint = '';
@@ -236,26 +234,6 @@ export async function POST(req) {
       return NextResponse.json({ success: true, coupons: clean });
     }
 
-    // ফ্ল্যাশ সেল সেটিংস সেভ (Offers ট্যাব)
-    if (action === 'save-flashsale') {
-      const cfg = {
-        active: !!(payload && payload.active),
-        title: String((payload && payload.title) || '').slice(0, 120),
-        endTime: String((payload && payload.endTime) || ''),
-      };
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/site_settings`, {
-        method: 'POST',
-        headers: {
-          apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`,
-          'Content-Type': 'application/json',
-          Prefer: 'resolution=merge-duplicates',
-        },
-        body: JSON.stringify({ key: 'flash_sale', value: JSON.stringify(cfg) }),
-      });
-      if (!res.ok) throw new Error(await res.text());
-      return NextResponse.json({ success: true, flashSale: cfg });
-    }
 
     return NextResponse.json({ error: 'অবৈধ অ্যাকশন' }, { status: 400 });
   } catch (err) {

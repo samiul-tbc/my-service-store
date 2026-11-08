@@ -61,7 +61,7 @@ export default function SecretAdminPage() {
  const [coupons, setCoupons] = useState([]);
  const [newCoupon, setNewCoupon] = useState({ code: '', type: 'pct', value: '', min: '' });
  const [savingOffers, setSavingOffers] = useState(false);
- const [flashForm, setFlashForm] = useState({ active: false, title: '', endTime: '' });
+
  const [adDeliveryHint, setAdDeliveryHint] = useState('');
  const [adStockLine, setAdStockLine] = useState(null);
  const [adProductId, setAdProductId] = useState(null);
@@ -309,11 +309,6 @@ export default function SecretAdminPage() {
  });
  const data = await res.json();
  if (data && Array.isArray(data.coupons)) setCoupons(data.coupons);
- if (data && data.flashSale) setFlashForm({
- active: !!data.flashSale.active,
- title: data.flashSale.title || '',
- endTime: data.flashSale.endTime ? String(data.flashSale.endTime).slice(0, 16) : '',
- });
  } catch (err) { console.error(err); }
  };
 
@@ -337,19 +332,6 @@ export default function SecretAdminPage() {
  handleSaveCoupons(list);
  };
 
- const handleSaveFlash = async () => {
- setSavingOffers(true);
- try {
- const data = await postAdmin('save-flashsale', {
- active: flashForm.active,
- title: flashForm.title,
- endTime: flashForm.endTime ? new Date(flashForm.endTime).toISOString() : '',
- });
- if (data && data.success) alert('ফ্ল্যাশ সেল সেভ হয়েছে!');
- else alert('সেভ হয়নি!');
- } catch (e) { alert('নেটওয়ার্ক সমস্যা!'); }
- finally { setSavingOffers(false); }
- };
 
  const postAdmin = async (action, payload) => {
  const pin = sessionStorage.getItem('hubcart_admin_pin') || pinInput;
@@ -1098,19 +1080,6 @@ export default function SecretAdminPage() {
  </div>
  </div>
 
- <div style={{ background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', padding: '16px' }}>
- <h3 style={{ margin: '0 0 4px', fontSize: '15px', fontWeight: '900', color: '#f8fafc' }}>ফ্ল্যাশ সেল ব্যানার</h3>
- <p style={{ margin: '0 0 14px', fontSize: '12px', color: '#94a3b8' }}>চালু করলে হোমপেজে কাউন্টডাউনসহ ব্যানার দেখাবে। নির্ধারিত সময় পেরিয়ে গেলে নিজে নিজে লুকিয়ে যাবে।</p>
- <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#f1f5f9', fontWeight: 'bold', marginBottom: '12px', cursor: 'pointer' }}>
- <input type="checkbox" checked={flashForm.active} onChange={(e) => setFlashForm({ ...flashForm, active: e.target.checked })} style={{ width: '17px', height: '17px', accentColor: '#a6f36a' }} />
- ফ্ল্যাশ সেল চালু
- </label>
- <span style={{ display: 'block', fontSize: '11px', color: '#94a3b8', fontWeight: 'bold', marginBottom: '5px' }}>ব্যানারের লেখা</span>
- <input type="text" placeholder="যেমন: ঈদ স্পেশাল — সব সার্ভিসে ধামাকা অফার!" value={flashForm.title} onChange={(e) => setFlashForm({ ...flashForm, title: e.target.value })} style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', borderRadius: '10px', background: 'rgba(30, 41, 59, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)', color: '#ffffff', fontSize: '13px', outline: 'none', marginBottom: '12px' }} />
- <span style={{ display: 'block', fontSize: '11px', color: '#94a3b8', fontWeight: 'bold', marginBottom: '5px' }}>শেষ হওয়ার তারিখ ও সময়</span>
- <input type="datetime-local" value={flashForm.endTime} onChange={(e) => setFlashForm({ ...flashForm, endTime: e.target.value })} style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', borderRadius: '10px', background: 'rgba(30, 41, 59, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)', color: '#ffffff', fontSize: '13px', outline: 'none', marginBottom: '14px', colorScheme: 'dark' }} />
- <button type="button" onClick={handleSaveFlash} disabled={savingOffers} style={{ padding: '11px 18px', borderRadius: '10px', border: 'none', background: 'linear-gradient(135deg, #a6f36a, #d2ffad)', color: '#10170c', fontSize: '13px', fontWeight: '900', cursor: 'pointer' }}>{savingOffers ? 'সেভ হচ্ছে...' : 'ফ্ল্যাশ সেল সেভ করুন'}</button>
- </div>
  </div>
  )}
 
