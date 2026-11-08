@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { birthdayPath } from '../../lib/birthday';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -23,6 +23,12 @@ function TrackContent() {
   const [searched, setSearched] = useState(false);
   const [deliveredMap, setDeliveredMap] = useState({});
   const [bdayMap, setBdayMap] = useState({});
+  const [dlMap, setDlMap] = useState({});
+  const [dlPhone, setDlPhone] = useState({});
+  const [dlBusy, setDlBusy] = useState({});
+  const [dlErr, setDlErr] = useState({});
+  const [searchPhone, setSearchPhone] = useState('');
+  const dlChecked = useRef(new Set());
   const [catalog, setCatalog] = useState([]);
 
   useEffect(() => {
@@ -40,6 +46,74 @@ function TrackContent() {
       } catch (e) { console.error(e); }
     })();
   }, []);
+
+  const checkDownload = async (orderId, phone) => {
+    try {
+      const res = await fetch('/api/download', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'info', orderId, phone }) });
+      const j = await res.json();
+      if (j && (j.available || j.reason === 'limit')) {
+        dlChecked.current.add(orderId);
+        setDlMap((m) => ({ ...m, [orderId]: { remaining: j.remaining || 0, limit: j.limit || 3 } }));
+      }
+      return j;
+    } catch { return null; }
+  };
+
+  const verifyDownloadPhone = async (ord) => {
+    const phone = (dlPhone[ord.order_id] || '').replace(/\D/g, '');
+    if (phone.length < 10) { setDlErr((e) => ({ ...e, [ord.order_id]: t.track.dlWrong })); return; }
+    setDlBusy((b) => ({ ...b, [ord.order_id]: true }));
+    const j = await checkDownload(ord.order_id, phone);
+    setDlBusy((b) => ({ ...b, [ord.order_id]: false }));
+    if (!j || (!j.available && j.reason !== 'limit')) setDlErr((e) => ({ ...e, [ord.order_id]: t.track.dlWrong }));
+    else { setDlErr((e) => ({ ...e, [ord.order_id]: '' })); setSearchPhone(phone); }
+  };
+
+  const doDownload = async (ord) => {
+    const phone = searchPhone || (dlPhone[ord.order_id] || '').replace(/\D/g, '');
+    setDlBusy((b) => ({ ...b, [ord.order_id]: true }));
+    setDlErr((e) => ({ ...e, [ord.order_id]: '' }));
+    try {
+      const res = await fetch('/api/download', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'download', orderId: ord.order_id, phone }) });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        if (j.reason === 'limit') {
+          setDlMap((m) => ({ ...m, [ord.order_id]: { remaining: 0, limit: (m[ord.order_id] || {}).limit || 3 } }));
+          setDlErr((e) => ({ ...e, [ord.order_id]: t.track.dlGone }));
+        } else {
+          setDlErr((e) => ({ ...e, [ord.order_id]: t.track.dlWrong }));
+        }
+        return;
+      }
+      const blob = await res.blob();
+      const cd = res.headers.get('Content-Disposition') || '';
+      const fm = cd.match(/filename="([^"]+)"/);
+      const url = URL.createObjectURL(blob);
+      const aEl = document.createElement('a');
+      aEl.href = url;
+      aEl.download = fm ? fm[1] : 'download.html';
+      document.body.appendChild(aEl);
+      aEl.click();
+      aEl.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      await checkDownload(ord.order_id, phone);
+    } catch {
+      setDlErr((e) => ({ ...e, [ord.order_id]: t.track.dlWrong }));
+    } finally {
+      setDlBusy((b) => ({ ...b, [ord.order_id]: false }));
+    }
+  };
+
+  useEffect(() => {
+    if (!searchPhone || !orders.length || !catalog.length) return;
+    orders.forEach((ord) => {
+      if ((ord.status || '').toLowerCase() !== 'completed') return;
+      if (dlChecked.current.has(ord.order_id)) return;
+      const match = catalog.find((pr) => ord.service_name && pr.title && ord.service_name.includes(pr.title));
+      if (!match || !match.hasDownload) return;
+      checkDownload(ord.order_id, searchPhone);
+    });
+  }, [orders, catalog, searchPhone]);
 
   const handleSearch = async (queryToSearch) => {
     const query = (queryToSearch || searchQuery).trim();
@@ -65,6 +139,7 @@ function TrackContent() {
       const data = await res.json();
       if (Array.isArray(data)) {
         setOrders(data);
+        if (!isOrderId) setSearchPhone(query.replace(/\D/g, ''));
         // সম্পন্ন অর্ডারের ডেলিভারি তথ্য (যদি থাকে) — কাস্টমার এখানেই দেখতে পাবে
         try {
           const completed = data.filter((o) => (o.status || '').toLowerCase() === 'completed');
@@ -348,6 +423,37 @@ function TrackContent() {
                     <a href={birthdayPath(bdayMap[ord.order_id])} target="_blank" rel="noreferrer" style={{ display: 'inline-block', background: 'linear-gradient(135deg, #f472b6, #a855f7)', color: '#fff', fontWeight: '900', fontSize: '13px', padding: '10px 18px', borderRadius: '10px', textDecoration: 'none' }}>{t.bday.open}</a>
                   </div>
                 )}
+
+                {(() => {
+                  if ((ord.status || '').toLowerCase() !== 'completed') return null;
+                  const dlMatch = catalog.find((pr) => ord.service_name && pr.title && ord.service_name.includes(pr.title));
+                  if (!dlMatch || !dlMatch.hasDownload) return null;
+                  const info = dlMap[ord.order_id];
+                  return (
+                    <div style={{ marginTop: '16px', background: 'rgba(56, 189, 248, 0.07)', border: '1px solid rgba(56, 189, 248, 0.4)', borderRadius: '14px', padding: '14px' }}>
+                      <div style={{ fontSize: '13px', fontWeight: '900', color: '#38bdf8', marginBottom: '4px' }}>{t.track.dlTitle}</div>
+                      <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '10px' }}>{t.track.dlNote}</div>
+                      {info ? (
+                        info.remaining > 0 ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                            <button onClick={() => doDownload(ord)} disabled={dlBusy[ord.order_id]} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: 'linear-gradient(135deg, #0ea5e9, #2563eb)', color: '#fff', fontWeight: '900', fontSize: '13px', padding: '10px 18px', borderRadius: '10px', border: 'none', cursor: 'pointer', opacity: dlBusy[ord.order_id] ? 0.6 : 1 }}>
+                              <Icon name="download" size={15} />{t.track.dlBtn}
+                            </button>
+                            <span style={{ fontSize: '11px', color: '#7dd3fc', fontWeight: 'bold' }}>{t.track.dlLeft}: {info.remaining}/{info.limit}</span>
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: '12px', color: '#fca5a5', lineHeight: 1.6 }}>{t.track.dlGone}</div>
+                        )
+                      ) : (
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                          <input value={dlPhone[ord.order_id] || ''} onChange={(e) => setDlPhone((pp) => ({ ...pp, [ord.order_id]: e.target.value }))} placeholder={t.track.dlPhonePh} inputMode="tel" style={{ flex: '1 1 170px', background: 'rgba(2,6,23,0.55)', border: '1px solid rgba(148,163,184,0.35)', borderRadius: '10px', padding: '10px 12px', color: '#f1f5f9', fontSize: '13px', outline: 'none' }} />
+                          <button onClick={() => verifyDownloadPhone(ord)} disabled={dlBusy[ord.order_id]} style={{ background: 'rgba(56,189,248,0.15)', border: '1px solid rgba(56,189,248,0.5)', color: '#7dd3fc', fontWeight: '900', fontSize: '13px', padding: '10px 16px', borderRadius: '10px', cursor: 'pointer', opacity: dlBusy[ord.order_id] ? 0.6 : 1 }}>{t.track.dlVerify}</button>
+                        </div>
+                      )}
+                      {dlErr[ord.order_id] && <div style={{ fontSize: '12px', color: '#fca5a5', marginTop: '8px' }}>{dlErr[ord.order_id]}</div>}
+                    </div>
+                  );
+                })()}
 
                 {/* ক্যাশ মেমো / ইনভয়েস লিংক বাটন */}
                 <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>

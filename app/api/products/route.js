@@ -44,6 +44,7 @@ export async function GET() {
 
     // Review aggregates per product (reviews live in site_settings)
     const ratings = {};
+    const downloadIds = new Set();
     let productFlags = {};
     const latestReviews = {};
     let latestFlagKey = '';
@@ -59,6 +60,8 @@ export async function GET() {
             }
             continue;
           }
+          const dm = row.key.match(/^downloadcfg_(\d+)(?:_\d+)?$/);
+          if (dm) { downloadIds.add(dm[1]); continue; }
           const rm = row.key.match(/^reviews_(\d+)(?:_(\d+))?$/);
           if (!rm) continue;
           const ver = rm[2] || '';
@@ -86,7 +89,7 @@ export async function GET() {
         ? { ...p, image: `/api/img/${p.id}` }
         : p;
       const r = ratings[String(base.id)] || { rating: 0, reviewCount: 0 };
-      return { ...base, rating: r.rating, reviewCount: r.reviewCount, featured: !!((productFlags[String(base.id)] || {}).featured), infoForm: !!((productFlags[String(base.id)] || {}).infoForm) };
+      return { ...base, rating: r.rating, reviewCount: r.reviewCount, featured: !!((productFlags[String(base.id)] || {}).featured), infoForm: !!((productFlags[String(base.id)] || {}).infoForm), hasDownload: downloadIds.has(String(base.id)) };
     });
 
     const visibleProducts = slimProducts
