@@ -126,6 +126,11 @@
     /* CAKE (SVG) */
     .cake-zone { padding: 56px 30px; border-radius: 40px; margin: 10px 0; display: flex; flex-direction: column; align-items: center; gap: 22px; }
     .cake-svg-wrap { width: min(340px, 82vw); filter: drop-shadow(0 30px 44px rgba(0, 0, 0, 0.55)); animation: portraitFloat 7s ease-in-out infinite; }
+    .cake-3d-stage { position: relative; width: min(560px, 90vw); }
+    #cakeCanvas { width: 100%; height: 430px; display: block; border-radius: 24px; touch-action: none; cursor: grab; }
+    #cakeCanvas:active { cursor: grabbing; }
+    .cake-3d-hint { text-align: center; font-size: 12.5px; letter-spacing: 1.5px; color: rgba(255, 255, 255, 0.5); margin-top: 2px; }
+    @media (max-width: 800px) { #cakeCanvas { height: 350px; } }
     .flame { transform-origin: center bottom; transform-box: fill-box; animation: flicker 0.55s infinite alternate ease-in-out; transition: opacity 0.35s; }
     .flame.off { opacity: 0; }
     @keyframes flicker { 0% { transform: scale(0.92) rotate(-3deg); } 100% { transform: scale(1.13) rotate(4deg); } }
@@ -286,6 +291,21 @@
     </div>
   </section>
 
+  <!-- CAKE -->
+  <section class="grand-section" id="cake-sec">
+    <span class="sec-sub reveal">Interactive Ceremony</span>
+    <h2 class="sec-title reveal reveal-d1">ভার্চুয়াল <span class="shimmer-gold">কেক ও মোমবাতি প্রজ্জ্বলন</span></h2>
+
+    <div class="cake-zone glass-card-3d reveal" data-tilt>
+      <div class="cake-3d-stage" id="cakeStage">
+        <canvas id="cakeCanvas"></canvas>
+        <div class="cake-3d-hint">টেনে ঘোরান • মোমবাতিতে ট্যাপ করে নেভান</div>
+      </div>
+      <div class="cake-guidance" id="cakeNotice">মোমবাতিগুলোতে ট্যাপ করে উইশ করুন!</div>
+      <button class="btn-gold" id="btnRelight" style="display:none;" onclick="lightCandles()">পুনরায় প্রজ্বলন করুন</button>
+    </div>
+  </section>
+
   <!-- COUNTDOWN -->
   <section class="grand-section" id="countdown-sec">
     <span class="sec-sub reveal">Chronological Milestones</span>
@@ -322,62 +342,6 @@
       <div class="cd-unit glass-card-3d reveal reveal-d1" data-tilt><div class="cd-num" id="dHours">00</div><div class="cd-lbl">ঘণ্টা</div></div>
       <div class="cd-unit glass-card-3d reveal reveal-d2" data-tilt><div class="cd-num" id="dMinutes">00</div><div class="cd-lbl">মিনিট</div></div>
       <div class="cd-unit glass-card-3d reveal reveal-d3" data-tilt><div class="cd-num" id="dSeconds">00</div><div class="cd-lbl">সেকেন্ড</div></div>
-    </div>
-  </section>
-
-  <!-- CAKE -->
-  <section class="grand-section" id="cake-sec">
-    <span class="sec-sub reveal">Interactive Ceremony</span>
-    <h2 class="sec-title reveal reveal-d1">ভার্চুয়াল <span class="shimmer-gold">কেক ও মোমবাতি প্রজ্জ্বলন</span></h2>
-
-    <div class="cake-zone glass-card-3d reveal" data-tilt>
-      <div class="cake-svg-wrap">
-        <svg viewBox="0 0 340 300" width="100%" role="img" aria-label="Birthday cake">
-          <defs>
-            <linearGradient id="tierTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fda4af"/><stop offset="1" stop-color="#e11d48"/></linearGradient>
-            <linearGradient id="tierMid" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c084fc"/><stop offset="1" stop-color="#7c3aed"/></linearGradient>
-            <linearGradient id="tierBot" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fcd34d"/><stop offset="1" stop-color="#d97706"/></linearGradient>
-            <linearGradient id="plateGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f1f5f9"/><stop offset="1" stop-color="#64748b"/></linearGradient>
-            <radialGradient id="flameGrad" cx="0.5" cy="0.75" r="0.75"><stop offset="0" stop-color="#fff7cc"/><stop offset="0.45" stop-color="#ffd166"/><stop offset="0.8" stop-color="#ff8a3c"/><stop offset="1" stop-color="#ff8a3c" stop-opacity="0"/></radialGradient>
-            <radialGradient id="cherryGrad" cx="0.35" cy="0.3" r="0.9"><stop offset="0" stop-color="#fda4af"/><stop offset="1" stop-color="#be123c"/></radialGradient>
-            <pattern id="candleStripes" width="7" height="7" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><rect width="7" height="7" fill="#fff7ed"/><rect width="3.5" height="7" fill="#fb7185"/></pattern>
-          </defs>
-
-          <ellipse cx="170" cy="276" rx="152" ry="15" fill="url(#plateGrad)"/>
-          <ellipse cx="170" cy="271" rx="152" ry="15" fill="#e2e8f0" opacity="0.55"/>
-
-          <!-- bottom tier -->
-          <rect x="48" y="208" width="244" height="56" rx="13" fill="url(#tierBot)"/>
-          <g fill="#fff7ed"><circle cx="62" cy="212" r="9"/><circle cx="84" cy="214" r="9"/><circle cx="106" cy="212" r="9"/><circle cx="128" cy="214" r="9"/><circle cx="150" cy="212" r="9"/><circle cx="172" cy="214" r="9"/><circle cx="194" cy="212" r="9"/><circle cx="216" cy="214" r="9"/><circle cx="238" cy="212" r="9"/><circle cx="260" cy="214" r="9"/><circle cx="280" cy="212" r="9"/></g>
-          <g opacity="0.9"><rect x="86" y="238" width="13" height="3.6" rx="1.8" fill="#fff" transform="rotate(24 86 238)"/><rect x="150" y="246" width="13" height="3.6" rx="1.8" fill="#e11d48" transform="rotate(-18 150 246)"/><rect x="212" y="236" width="13" height="3.6" rx="1.8" fill="#38bdf8" transform="rotate(30 212 236)"/><rect x="248" y="248" width="13" height="3.6" rx="1.8" fill="#fff" transform="rotate(-26 248 248)"/></g>
-
-          <!-- middle tier -->
-          <rect x="72" y="156" width="196" height="52" rx="12" fill="url(#tierMid)"/>
-          <g fill="#ede9fe"><circle cx="86" cy="160" r="8"/><circle cx="106" cy="162" r="8"/><circle cx="126" cy="160" r="8"/><circle cx="146" cy="162" r="8"/><circle cx="166" cy="160" r="8"/><circle cx="186" cy="162" r="8"/><circle cx="206" cy="160" r="8"/><circle cx="226" cy="162" r="8"/><circle cx="246" cy="160" r="8"/></g>
-          <g opacity="0.9"><rect x="104" y="184" width="12" height="3.4" rx="1.7" fill="#fbeea4" transform="rotate(-22 104 184)"/><rect x="168" y="190" width="12" height="3.4" rx="1.7" fill="#fff" transform="rotate(16 168 190)"/><rect x="224" y="182" width="12" height="3.4" rx="1.7" fill="#fbeea4" transform="rotate(-30 224 182)"/></g>
-
-          <!-- top tier -->
-          <rect x="97" y="106" width="146" height="50" rx="11" fill="url(#tierTop)"/>
-          <g fill="#fff1f2"><circle cx="110" cy="110" r="7.5"/><circle cx="128" cy="112" r="7.5"/><circle cx="146" cy="110" r="7.5"/><circle cx="164" cy="112" r="7.5"/><circle cx="182" cy="110" r="7.5"/><circle cx="200" cy="112" r="7.5"/><circle cx="218" cy="110" r="7.5"/><circle cx="234" cy="111" r="7.5"/></g>
-          <circle cx="118" cy="102" r="6.5" fill="url(#cherryGrad)"/><circle cx="170" cy="99" r="6.5" fill="url(#cherryGrad)"/><circle cx="222" cy="102" r="6.5" fill="url(#cherryGrad)"/>
-
-          <!-- candles -->
-          <g class="candle-hit" onclick="blowCandle(1)">
-            <rect x="126" y="70" width="10" height="34" rx="3" fill="url(#candleStripes)"/>
-            <ellipse class="flame" id="f1" cx="131" cy="56" rx="7" ry="12" fill="url(#flameGrad)"/>
-          </g>
-          <g class="candle-hit" onclick="blowCandle(2)">
-            <rect x="165" y="66" width="10" height="38" rx="3" fill="url(#candleStripes)"/>
-            <ellipse class="flame" id="f2" cx="170" cy="52" rx="7.5" ry="13" fill="url(#flameGrad)"/>
-          </g>
-          <g class="candle-hit" onclick="blowCandle(3)">
-            <rect x="204" y="70" width="10" height="34" rx="3" fill="url(#candleStripes)"/>
-            <ellipse class="flame" id="f3" cx="209" cy="56" rx="7" ry="12" fill="url(#flameGrad)"/>
-          </g>
-        </svg>
-      </div>
-      <div class="cake-guidance" id="cakeNotice">মোমবাতিগুলোতে ট্যাপ করে উইশ করুন!</div>
-      <button class="btn-gold" id="btnRelight" style="display:none;" onclick="lightCandles()">পুনরায় প্রজ্বলন করুন</button>
     </div>
   </section>
 
@@ -616,7 +580,7 @@
       const scene = new THREE.Scene();
       scene.fog = new THREE.FogExp2(0x020104, 0.011);
       const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-      camera.position.z = 30;
+      camera.position.z = 25;
       const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -635,7 +599,7 @@
 
       const knotGeo = new THREE.TorusKnotGeometry(7, 1.8, 160, 26);
       const knotMesh = new THREE.Mesh(knotGeo, new THREE.MeshStandardMaterial({ color: TH.knot, metalness: 0.95, roughness: 0.14 }));
-      knotMesh.position.set(16, -2, -10); scene.add(knotMesh);
+      knotMesh.position.set(15, -2, -9); knotMesh.scale.set(1.18, 1.18, 1.18); scene.add(knotMesh);
       const knotMesh2 = new THREE.Mesh(knotGeo, new THREE.MeshStandardMaterial({ color: TH.knot2, metalness: 0.9, roughness: 0.2 }));
       knotMesh2.position.set(-18, 10, -14); knotMesh2.scale.set(0.6, 0.6, 0.6); scene.add(knotMesh2);
       addGlow(16, -2, -13, 34, TH.knot, 0.5);
@@ -828,24 +792,20 @@
       })();
     }
 
-    // ============ 9. CANDLES ============
+    // ============ 9. CANDLES (3D cake bridge) ============
     let blownOut = 0;
-    function blowCandle(num) {
-      const fl = document.getElementById('f' + num);
-      if (fl && !fl.classList.contains('off')) {
-        fl.classList.add('off');
-        blownOut++;
-        triggerRoyalConfetti();
-        if (blownOut === 3) {
-          document.getElementById('cakeNotice').textContent = `শুভ জন্মদিন ${DATA.name}!`;
-          document.getElementById('btnRelight').style.display = 'inline-flex';
-          grandConfetti();
-        }
+    window.addEventListener('candleblown', () => {
+      blownOut++;
+      triggerRoyalConfetti();
+      if (blownOut === 3) {
+        document.getElementById('cakeNotice').textContent = `শুভ জন্মদিন ${DATA.name}!`;
+        document.getElementById('btnRelight').style.display = 'inline-flex';
+        grandConfetti();
       }
-    }
+    });
     function lightCandles() {
       blownOut = 0;
-      for (let i = 1; i <= 3; i++) document.getElementById('f' + i).classList.remove('off');
+      if (window.CAKE3D) window.CAKE3D.relight();
       document.getElementById('cakeNotice').textContent = 'মোমবাতিগুলোতে ট্যাপ করে উইশ করুন!';
       document.getElementById('btnRelight').style.display = 'none';
       playGlassChime();
@@ -965,6 +925,222 @@
     }
     runDecryptTerminal();
     setInterval(runDecryptTerminal, 14000);
+  </script>
+
+  <script>
+    // ============ REAL 3D CAKE (Three.js, interactive) ============
+    (function initCake3D() {
+      const canvas = document.getElementById('cakeCanvas');
+      const stage = document.getElementById('cakeStage');
+      if (!canvas || typeof THREE === 'undefined') {
+        if (stage) stage.insertAdjacentHTML('beforeend', '<div style="text-align:center;color:#f9a8d4;font-size:14px;padding:20px;">3D কেক লোড হয়নি — ইন্টারনেট সংযোগ দেখুন</div>');
+        return;
+      }
+      let renderer;
+      try {
+        renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+      } catch (e) { return; }
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+      camera.position.set(0, 2.4, 9.4);
+      camera.lookAt(0, 0.35, 0);
+
+      // ---- textures drawn on canvas ----
+      function stripeTexture() {
+        const c = document.createElement('canvas'); c.width = c.height = 64;
+        const x = c.getContext('2d');
+        x.fillStyle = '#fff7ed'; x.fillRect(0, 0, 64, 64);
+        x.fillStyle = '#fb7185';
+        for (let i = -64; i < 128; i += 18) { x.save(); x.translate(i, 0); x.rotate(0.6); x.fillRect(0, -20, 8, 120); x.restore(); }
+        const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
+      }
+      function flameTexture() {
+        const c = document.createElement('canvas'); c.width = 128; c.height = 192;
+        const x = c.getContext('2d');
+        const g = x.createRadialGradient(64, 138, 4, 64, 118, 86);
+        g.addColorStop(0, 'rgba(255,252,220,1)');
+        g.addColorStop(0.35, 'rgba(255,209,102,0.95)');
+        g.addColorStop(0.7, 'rgba(255,138,60,0.55)');
+        g.addColorStop(1, 'rgba(255,120,40,0)');
+        x.fillStyle = g;
+        x.beginPath();
+        x.moveTo(64, 6);
+        x.bezierCurveTo(96, 74, 104, 104, 88, 140);
+        x.bezierCurveTo(76, 166, 52, 166, 40, 140);
+        x.bezierCurveTo(24, 104, 32, 74, 64, 6);
+        x.fill();
+        return new THREE.CanvasTexture(c);
+      }
+      function shadowTexture() {
+        const c = document.createElement('canvas'); c.width = c.height = 256;
+        const x = c.getContext('2d');
+        const g = x.createRadialGradient(128, 128, 10, 128, 128, 128);
+        g.addColorStop(0, 'rgba(0,0,0,0.55)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+        x.fillStyle = g; x.fillRect(0, 0, 256, 256);
+        return new THREE.CanvasTexture(c);
+      }
+
+      const cake = new THREE.Group();
+      scene.add(cake);
+
+      // soft shadow
+      const shadow = new THREE.Mesh(new THREE.PlaneGeometry(11.5, 11.5), new THREE.MeshBasicMaterial({ map: shadowTexture(), transparent: true, depthWrite: false }));
+      shadow.rotation.x = -Math.PI / 2; shadow.position.y = -1.86;
+      cake.add(shadow);
+
+      // plate
+      const plate = new THREE.Mesh(new THREE.CylinderGeometry(4.35, 4.5, 0.17, 56), new THREE.MeshStandardMaterial({ color: 0xc7cede, metalness: 0.9, roughness: 0.28 }));
+      plate.position.y = -1.68; cake.add(plate);
+      const rim = new THREE.Mesh(new THREE.TorusGeometry(4.35, 0.05, 10, 72), new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 1, roughness: 0.2 }));
+      rim.rotation.x = Math.PI / 2; rim.position.y = -1.6; cake.add(rim);
+
+      // tiers
+      const tiers = [
+        { r: 3.35, h: 1.15, y: -1.02, color: 0xd97706, icing: 0xfff7ed },
+        { r: 2.5, h: 1.05, y: 0.08, color: 0x7c3aed, icing: 0xede9fe },
+        { r: 1.7, h: 0.95, y: 1.08, color: 0xe11d48, icing: 0xfff1f2 },
+      ];
+      tiers.forEach((t) => {
+        const body = new THREE.Mesh(new THREE.CylinderGeometry(t.r, t.r * 1.02, t.h, 56), new THREE.MeshStandardMaterial({ color: t.color, metalness: 0.15, roughness: 0.42 }));
+        body.position.y = t.y; cake.add(body);
+        const topY = t.y + t.h / 2;
+        const icingDisc = new THREE.Mesh(new THREE.CylinderGeometry(t.r + 0.015, t.r + 0.015, 0.09, 56), new THREE.MeshStandardMaterial({ color: t.icing, metalness: 0.05, roughness: 0.6 }));
+        icingDisc.position.y = topY - 0.02; cake.add(icingDisc);
+        const dripRing = new THREE.Mesh(new THREE.TorusGeometry(t.r - 0.02, 0.085, 10, 56), icingDisc.material);
+        dripRing.rotation.x = Math.PI / 2; dripRing.position.y = topY - 0.07; cake.add(dripRing);
+      });
+
+      // sprinkles on tier sides
+      const sprinkleCols = [0xffffff, 0xfbeea4, 0x38bdf8, 0xfb7185, 0xa6f36a];
+      const sprinkleGeo = new THREE.BoxGeometry(0.17, 0.05, 0.05);
+      tiers.forEach((t) => {
+        for (let i = 0; i < 16; i++) {
+          const m = new THREE.Mesh(sprinkleGeo, new THREE.MeshStandardMaterial({ color: sprinkleCols[i % sprinkleCols.length], roughness: 0.5 }));
+          const ang = Math.random() * Math.PI * 2;
+          const yy = t.y + (Math.random() - 0.5) * t.h * 0.55;
+          m.position.set(Math.cos(ang) * (t.r + 0.02), yy, Math.sin(ang) * (t.r + 0.02));
+          m.rotation.set(Math.random(), ang, Math.random());
+          cake.add(m);
+        }
+      });
+
+      // cherries on the top tier
+      const cherryMat = new THREE.MeshStandardMaterial({ color: 0xbe123c, metalness: 0.2, roughness: 0.15 });
+      for (let i = 0; i < 7; i++) {
+        const ang = (i / 7) * Math.PI * 2;
+        const ch = new THREE.Mesh(new THREE.SphereGeometry(0.17, 18, 14), cherryMat);
+        ch.position.set(Math.cos(ang) * 1.32, 1.62, Math.sin(ang) * 1.32);
+        cake.add(ch);
+      }
+
+      // candles + flames
+      const stripeTex = stripeTexture();
+      const flameTex = flameTexture();
+      const candleMat = new THREE.MeshStandardMaterial({ map: stripeTex, roughness: 0.5 });
+      const candleXs = [-0.85, 0, 0.85];
+      const candles = [];
+      candleXs.forEach((cx, i) => {
+        const grp = new THREE.Group();
+        const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.88, 16), candleMat);
+        stick.position.y = 0.44;
+        const flame = new THREE.Sprite(new THREE.SpriteMaterial({ map: flameTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+        flame.scale.set(0.62, 0.95, 1);
+        flame.position.y = 1.18;
+        const hit = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.46, 1.7, 8), new THREE.MeshBasicMaterial({ visible: false }));
+        hit.position.y = 0.8;
+        hit.userData.candleIndex = i;
+        grp.add(stick); grp.add(flame); grp.add(hit);
+        grp.position.set(cx, 1.56, i === 1 ? 0.18 : -0.1);
+        cake.add(grp);
+        candles.push({ grp: grp, flame: flame, hit: hit, lit: true, phase: i * 1.7 });
+      });
+      const candleLight = new THREE.PointLight(0xffb45e, 1.5, 9);
+      candleLight.position.set(0, 3.1, 0.6);
+      cake.add(candleLight);
+
+      scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+      const key = new THREE.DirectionalLight(0xfff2cf, 1.15); key.position.set(4, 7, 6); scene.add(key);
+      const rimLight = new THREE.PointLight(0x9333ea, 1.6, 30); rimLight.position.set(-6, 3, -5); scene.add(rimLight);
+      const fill = new THREE.PointLight(0x38bdf8, 0.8, 30); fill.position.set(6, -1, 4); scene.add(fill);
+
+      // ---- interaction: drag to rotate, tap a candle to blow it ----
+      let targetRotY = 0.5, dragging = false, downX = 0, downY = 0, lastX = 0, moved = 0, lastInteract = 0;
+      const raycaster = new THREE.Raycaster();
+      const pointer = new THREE.Vector2();
+      canvas.addEventListener('pointerdown', (e) => {
+        dragging = true; moved = 0; downX = lastX = e.clientX; downY = e.clientY;
+        canvas.setPointerCapture(e.pointerId);
+      });
+      canvas.addEventListener('pointermove', (e) => {
+        if (!dragging) return;
+        const dx = e.clientX - lastX; lastX = e.clientX;
+        moved += Math.abs(dx) + Math.abs(e.movementY || 0);
+        targetRotY += dx * 0.011;
+        lastInteract = performance.now();
+      });
+      canvas.addEventListener('pointerup', (e) => {
+        dragging = false;
+        lastInteract = performance.now();
+        const dist = Math.hypot(e.clientX - downX, e.clientY - downY);
+        if (dist < 7) {
+          const rect = canvas.getBoundingClientRect();
+          pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+          pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+          raycaster.setFromCamera(pointer, camera);
+          const hits = raycaster.intersectObjects(candles.map((c) => c.hit));
+          if (hits.length) {
+            const c = candles[hits[0].object.userData.candleIndex];
+            if (c && c.lit) {
+              c.lit = false;
+              window.dispatchEvent(new Event('candleblown'));
+            }
+          }
+        }
+      });
+
+      window.CAKE3D = {
+        relight: () => { candles.forEach((c) => { c.lit = true; }); },
+      };
+
+      // ---- render loop (only when visible) ----
+      let inView = false;
+      new IntersectionObserver((entries) => { inView = entries[0].isIntersecting; }, { threshold: 0.05 }).observe(canvas);
+      function resize() {
+        const w = canvas.clientWidth || stage.clientWidth;
+        const h = canvas.clientHeight || 430;
+        renderer.setSize(w, h, false);
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+      }
+      resize();
+      window.addEventListener('resize', resize);
+      const clock = new THREE.Clock();
+      function animateCake() {
+        requestAnimationFrame(animateCake);
+        if (!inView || document.hidden) return;
+        const t = clock.getElapsedTime();
+        if (!dragging && performance.now() - lastInteract > 2200) targetRotY += 0.0035;
+        cake.rotation.y += (targetRotY - cake.rotation.y) * 0.08;
+        cake.position.y = Math.sin(t * 0.9) * 0.05;
+        let litCount = 0;
+        candles.forEach((c) => {
+          const target = c.lit ? 1 : 0;
+          const cur = c.flame.material.opacity;
+          const next = cur + (target - cur) * 0.12;
+          c.flame.material.opacity = next;
+          if (c.lit) {
+            litCount++;
+            const f = 1 + Math.sin(t * 13 + c.phase) * 0.1 + Math.sin(t * 29 + c.phase * 2) * 0.05;
+            c.flame.scale.set(0.62 * f, 0.95 * (2 - f) * 0.92 + 0.2, 1);
+          }
+        });
+        candleLight.intensity = litCount ? 1.25 + Math.sin(t * 17) * 0.22 : 0;
+        renderer.render(scene, camera);
+      }
+      animateCake();
+    })();
   </script>
 </body>
 </html>
