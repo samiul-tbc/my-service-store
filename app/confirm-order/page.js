@@ -32,7 +32,8 @@ export default function ConfirmPage() {
   const [coupon, setCoupon] = useState(null);
   const [vip, setVip] = useState(null);
   const [bName, setBName] = useState('');
-  const [bAge, setBAge] = useState('');
+  const [bBirth, setBBirth] = useState('');
+  const [bPhoto, setBPhoto] = useState('');
   const [bMsg, setBMsg] = useState('');
   const [bFrom, setBFrom] = useState('');
   const [bTheme, setBTheme] = useState('midnight');
@@ -118,7 +119,7 @@ export default function ConfirmPage() {
       discount: discount,
       couponCode: coupon ? coupon.code : '',
       vipApplied: !coupon && discount > 0,
-      birthday: isBirthday ? { name: bName.trim(), age: bAge.trim(), msg: bMsg.trim(), from: bFrom.trim(), theme: bTheme } : null,
+      birthday: isBirthday ? { name: bName.trim(), birth: bBirth, photo: bPhoto.trim(), msg: bMsg.trim(), from: bFrom.trim(), theme: bTheme } : null,
       customerName: name.trim(),
       whatsappNumber: fullPhoneNumber,
       telegramUsername: telegram.trim() || 'N/A',
@@ -197,7 +198,9 @@ export default function ConfirmPage() {
               <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '5px', fontWeight: '600' }}>{t.bday.forName} *</label>
               <input type="text" value={bName} onChange={(e) => setBName(e.target.value)} placeholder={t.bday.forNamePh} style={{ width: '100%', padding: '11px 12px', background: '#0b1220', border: '1px solid #26334d', borderRadius: '10px', color: '#f8fafc', fontSize: '14px', outline: 'none', boxSizing: 'border-box', marginBottom: '12px' }} />
               <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '5px', fontWeight: '600' }}>{t.bday.age}</label>
-              <input type="number" min="1" max="120" value={bAge} onChange={(e) => setBAge(e.target.value)} placeholder={t.bday.agePh} style={{ width: '100%', padding: '11px 12px', background: '#0b1220', border: '1px solid #26334d', borderRadius: '10px', color: '#f8fafc', fontSize: '14px', outline: 'none', boxSizing: 'border-box', marginBottom: '12px' }} />
+              <input type="date" value={bBirth} onChange={(e) => setBBirth(e.target.value)} style={{ width: '100%', padding: '11px 12px', background: '#0b1220', border: '1px solid #26334d', borderRadius: '10px', color: '#f8fafc', fontSize: '14px', outline: 'none', boxSizing: 'border-box', marginBottom: '12px', colorScheme: 'dark' }} />
+              <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '5px', fontWeight: '600' }}>{t.bday.photo}</label>
+              <input type="url" value={bPhoto} onChange={(e) => setBPhoto(e.target.value)} placeholder={t.bday.photoPh} style={{ width: '100%', padding: '11px 12px', background: '#0b1220', border: '1px solid #26334d', borderRadius: '10px', color: '#f8fafc', fontSize: '14px', outline: 'none', boxSizing: 'border-box', marginBottom: '12px' }} />
               <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '5px', fontWeight: '600' }}>{t.bday.msg}</label>
               <textarea value={bMsg} onChange={(e) => setBMsg(e.target.value)} placeholder={t.bday.msgPh} rows={3} maxLength={400} style={{ width: '100%', padding: '11px 12px', background: '#0b1220', border: '1px solid #26334d', borderRadius: '10px', color: '#f8fafc', fontSize: '14px', outline: 'none', boxSizing: 'border-box', marginBottom: '12px', resize: 'vertical' }} />
               <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '5px', fontWeight: '600' }}>{t.bday.from}</label>

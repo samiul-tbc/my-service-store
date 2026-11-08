@@ -102,13 +102,15 @@ export async function POST(req) {
       try {
         const clean = {
           name: String(birthday.name).slice(0, 60),
+          birth: /^\d{4}-\d{2}-\d{2}$/.test(birthday.birth || '') ? birthday.birth : '',
           age: birthday.age ? String(birthday.age).slice(0, 3) : '',
-          msg: birthday.msg ? String(birthday.msg).slice(0, 400) : '',
+          msg: birthday.msg ? String(birthday.msg).slice(0, 900) : '',
           from: birthday.from ? String(birthday.from).slice(0, 60) : '',
+          photo: /^https?:\/\//i.test(birthday.photo || '') ? String(birthday.photo).slice(0, 500) : '',
           theme: ['midnight', 'candy', 'ocean'].includes(birthday.theme) ? birthday.theme : 'midnight',
         };
         const { encodeBirthday, BIRTHDAY_SITE } = await import('../../../lib/birthday');
-        bdayLink = `${BIRTHDAY_SITE}/birthday?d=${encodeBirthday(clean)}`;
+        bdayLink = `${BIRTHDAY_SITE}/wish.html?d=${encodeBirthday(clean)}`;
         await insertSettingVersion(`bday_${orderId}`, JSON.stringify(clean));
       } catch (e) { console.error('Birthday save error:', e); }
     }
