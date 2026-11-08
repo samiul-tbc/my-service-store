@@ -450,6 +450,8 @@
       const y = new Date().getFullYear() - parseInt(DATA.age, 10);
       if (y > 1900) { const t = new Date(); DATA.birth = `${y}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`; }
 
+    }
+
     // ============ RELATION PACKS (caption tone by relationship) ============
     const PACKS = {
       friend: {
@@ -489,7 +491,6 @@
       },
     };
     const PACK = PACKS[DATA.rel] || PACKS.friend;
-    }
 
     const THEMES = {
       midnight: { primary: '#d4af37', light: '#fbeea4', deep: '#996515', border: 'rgba(212, 175, 55, 0.25)', knot: 0xd4af37, knot2: 0xe11d48, confetti: ['#d4af37', '#fbeea4', '#e11d48', '#38bdf8'] },
