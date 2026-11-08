@@ -20,6 +20,9 @@ export default function BottomNav() {
   const wrapRef = useRef(null);
   const itemRefs = useRef({});
   const [pill, setPill] = useState({ left: 0, width: 0, ready: false });
+  const [trans, setTrans] = useState('transform 0.45s cubic-bezier(0.34, 1.45, 0.44, 1), width 0.45s cubic-bezier(0.34, 1.45, 0.44, 1), opacity 0.2s ease');
+  const pillRef = useRef({ left: 0, width: 0, ready: false });
+  const timerRef = useRef(null);
 
   const hidden = pathname && HIDE_ON.some((pre) => pathname === pre || pathname.startsWith(pre));
 
@@ -38,7 +41,29 @@ export default function BottomNav() {
     if (el && wrap) {
       const wr = wrap.getBoundingClientRect();
       const br = el.getBoundingClientRect();
-      setPill({ left: br.left - wr.left, width: br.width, ready: true });
+      const target = { left: br.left - wr.left, width: br.width, ready: true };
+      const prev = pillRef.current;
+      const SPRING = 'transform 0.45s cubic-bezier(0.34, 1.45, 0.44, 1), width 0.45s cubic-bezier(0.34, 1.45, 0.44, 1), opacity 0.2s ease';
+      if (prev.ready && Math.abs(target.left - prev.left) > 24) {
+        // Fluid lens: first stretch to cover both the old and new positions,
+        // then spring-settle onto the target tab.
+        const l = Math.min(prev.left, target.left);
+        const r = Math.max(prev.left + prev.width, target.left + target.width);
+        setTrans('transform 0.18s ease-out, width 0.18s ease-out, opacity 0.2s ease');
+        const stretched = { left: l, width: r - l, ready: true };
+        pillRef.current = stretched;
+        setPill(stretched);
+        if (timerRef.current) clearTimeout(timerRef.current);
+        timerRef.current = setTimeout(() => {
+          setTrans(SPRING);
+          pillRef.current = target;
+          setPill(target);
+        }, 185);
+      } else {
+        setTrans(SPRING);
+        pillRef.current = target;
+        setPill(target);
+      }
     }
   };
 
@@ -47,6 +72,13 @@ export default function BottomNav() {
     window.addEventListener('resize', measure);
     return () => window.removeEventListener('resize', measure);
   }, [pathname, hidden]);
+
+  useEffect(() => {
+    if (hidden) {
+      pillRef.current = { left: 0, width: 0, ready: false };
+      if (timerRef.current) clearTimeout(timerRef.current);
+    }
+  }, [hidden]);
 
   if (hidden) return null;
 
@@ -87,7 +119,7 @@ export default function BottomNav() {
           background: 'linear-gradient(180deg, #c9ff8f 0%, #a6f36a 55%, #8fe34f 100%)',
           boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.65), inset 0 -2px 4px rgba(0,0,0,0.12), 0 4px 14px rgba(166, 243, 106, 0.4)',
           borderRadius: '999px',
-          transition: 'transform 0.5s cubic-bezier(0.34, 1.45, 0.44, 1), width 0.5s cubic-bezier(0.34, 1.45, 0.44, 1), opacity 0.2s ease',
+          transition: trans,
           willChange: 'transform',
         }}
       />
