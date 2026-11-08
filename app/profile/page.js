@@ -125,7 +125,7 @@ export default function ProfilePage() {
   const displayName = user.name || t.prof.customer;
 
   return (
-    <div style={{ maxWidth: '460px', margin: '14px auto', padding: '0 14px 90px' }}>
+    <div style={{ maxWidth: '460px', margin: '14px auto', padding: '0 14px 130px' }}>
       
       {/* ভিআইপি মেম্বার কার্ড */}
       <div style={{
