@@ -13,6 +13,7 @@ export default function ProfilePage() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [myOrders, setMyOrders] = useState([]);
+  const [catalog, setCatalog] = useState([]);
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState('');
   const [editTelegram, setEditTelegram] = useState('');
@@ -49,6 +50,16 @@ export default function ProfilePage() {
       } catch (e) { console.error(e); }
     })();
   }, [user?.phone]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('/api/products', { cache: 'no-store' });
+        const data = await res.json();
+        if (Array.isArray(data.products)) setCatalog(data.products);
+      } catch (e) { console.error(e); }
+    })();
+  }, []);
 
   const handleSaveProfile = () => {
     const updated = { ...user, name: editName.trim() || user.name, telegram: editTelegram.trim() };
@@ -212,18 +223,24 @@ export default function ProfilePage() {
       {myOrders.length > 0 && (
         <div style={{ background: 'rgba(15, 23, 42, 0.75)', borderRadius: '20px', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '16px 18px', marginBottom: '14px' }}>
           <h4 style={{ margin: '0 0 10px', fontSize: '13px', fontWeight: '900', color: '#f8fafc' }}>{t.prof.recentOrders}</h4>
-          {myOrders.slice(0, 3).map((o) => (
-            <Link key={o.id} href={`/track?id=${o.order_id}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', padding: '9px 0', borderTop: '1px solid rgba(255,255,255,0.05)', textDecoration: 'none' }}>
-              <span style={{ minWidth: 0 }}>
+          {myOrders.slice(0, 3).map((o) => {
+            const match = catalog.find((pr) => o.service_name && pr.title && o.service_name.includes(pr.title));
+            return (
+            <div key={o.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', padding: '9px 0', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+              <Link href={`/track?id=${o.order_id}`} style={{ minWidth: 0, flex: 1, textDecoration: 'none' }}>
                 <span style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#f1f5f9', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{o.service_name}</span>
                 <span style={{ fontSize: '10px', color: '#64748b' }}>#{o.order_id}</span>
-              </span>
+              </Link>
               <span style={{ textAlign: 'right', flexShrink: 0 }}>
                 <span style={{ display: 'block', fontSize: '12px', fontWeight: '900', color: '#a6f36a' }}>৳{o.price}</span>
                 <span style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'capitalize' }}><span style={{ display: 'inline-block', width: '7px', height: '7px', borderRadius: '50%', marginRight: '5px', verticalAlign: '1px', background: { pending: '#fbbf24', verifying: '#38bdf8', processing: '#a78bfa', completed: '#4ade80', cancelled: '#f87171' }[o.status] || '#94a3b8' }} />{o.status}</span>
+                {match && (
+                  <Link href={`/product/${match.id}`} style={{ display: 'inline-block', marginTop: '3px', fontSize: '10px', fontWeight: '800', color: '#a6f36a', textDecoration: 'none', border: '1px solid rgba(166,243,106,0.4)', padding: '2px 8px', borderRadius: '999px', background: 'rgba(166,243,106,0.08)' }}>{t.shop.buyAgain}</Link>
+                )}
               </span>
-            </Link>
-          ))}
+            </div>
+            );
+          })}
         </div>
       )}
 
@@ -246,6 +263,28 @@ export default function ProfilePage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <Icon name="box" size={17} color="#a6f36a" />
           <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#f8fafc' }}>{t.prof.myOrders}</span>
+        </div>
+        <span style={{ color: '#64748b', fontSize: '14px' }}>→</span>
+      </Link>
+
+      <Link
+        href="/wishlist"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          background: 'rgba(30, 41, 59, 0.7)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          borderRadius: '16px',
+          padding: '14px 18px',
+          textDecoration: 'none',
+          marginBottom: '14px',
+          color: '#ffffff'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <Icon name="heart" size={17} color="#f87171" />
+          <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#f8fafc' }}>{t.shop.wishlist}</span>
         </div>
         <span style={{ color: '#64748b', fontSize: '14px' }}>→</span>
       </Link>

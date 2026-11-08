@@ -58,6 +58,10 @@ export default function SecretAdminPage() {
  const [adMode, setAdMode] = useState('off');
  const [adText, setAdText] = useState('');
  const [savingAd, setSavingAd] = useState(false);
+ const [coupons, setCoupons] = useState([]);
+ const [newCoupon, setNewCoupon] = useState({ code: '', type: 'pct', value: '', min: '' });
+ const [savingOffers, setSavingOffers] = useState(false);
+ const [flashForm, setFlashForm] = useState({ active: false, title: '', endTime: '' });
  const [adDeliveryHint, setAdDeliveryHint] = useState('');
  const [adStockLine, setAdStockLine] = useState(null);
  const [adProductId, setAdProductId] = useState(null);
@@ -170,6 +174,7 @@ export default function SecretAdminPage() {
  fetchNotice(pin);
  fetchReviews(pin);
  fetchAutodelivery(pin);
+ fetchOffers(pin);
  };
 
  const fetchOrders = async (pin = pinInput, isSilent = false) => {
@@ -295,6 +300,55 @@ export default function SecretAdminPage() {
  const data = await res.json();
  if (data && data.configs) setAutodeliveryConfigs(data.configs);
  } catch (err) { console.error(err); }
+ };
+
+ const fetchOffers = async (pin = pinInput) => {
+ try {
+ const res = await fetch('/api/admin?type=offers', {
+ headers: { 'x-admin-pin': pin },
+ });
+ const data = await res.json();
+ if (data && Array.isArray(data.coupons)) setCoupons(data.coupons);
+ if (data && data.flashSale) setFlashForm({
+ active: !!data.flashSale.active,
+ title: data.flashSale.title || '',
+ endTime: data.flashSale.endTime ? String(data.flashSale.endTime).slice(0, 16) : '',
+ });
+ } catch (err) { console.error(err); }
+ };
+
+ const handleSaveCoupons = async (list) => {
+ setSavingOffers(true);
+ try {
+ const data = await postAdmin('save-coupons', list);
+ if (data && data.success) { setCoupons(data.coupons); alert('কুপন সেভ হয়েছে!'); }
+ else alert('কুপন সেভ হয়নি!');
+ } catch (e) { alert('নেটওয়ার্ক সমস্যা!'); }
+ finally { setSavingOffers(false); }
+ };
+
+ const handleAddCoupon = () => {
+ const code = newCoupon.code.trim().toUpperCase();
+ const value = Number(newCoupon.value);
+ if (!code || !value || value <= 0) { alert('কোড ও সঠিক মান দিন'); return; }
+ if (coupons.some((c) => c.code === code)) { alert('এই কোড আগেই আছে'); return; }
+ const list = [...coupons, { code, type: newCoupon.type, value, min: Number(newCoupon.min) || 0, active: true }];
+ setNewCoupon({ code: '', type: 'pct', value: '', min: '' });
+ handleSaveCoupons(list);
+ };
+
+ const handleSaveFlash = async () => {
+ setSavingOffers(true);
+ try {
+ const data = await postAdmin('save-flashsale', {
+ active: flashForm.active,
+ title: flashForm.title,
+ endTime: flashForm.endTime ? new Date(flashForm.endTime).toISOString() : '',
+ });
+ if (data && data.success) alert('ফ্ল্যাশ সেল সেভ হয়েছে!');
+ else alert('সেভ হয়নি!');
+ } catch (e) { alert('নেটওয়ার্ক সমস্যা!'); }
+ finally { setSavingOffers(false); }
  };
 
  const postAdmin = async (action, payload) => {
@@ -996,7 +1050,69 @@ export default function SecretAdminPage() {
  >
  রিভিউ ({totalReviewCount})
  </button>
+ <button
+ type="button"
+ onClick={() => setActiveTab('offers')}
+ style={{
+ flex: 1,
+ padding: '10px',
+ borderRadius: '12px',
+ border: 'none',
+ background: activeTab === 'offers' ? 'linear-gradient(135deg, #a6f36a, #d2ffad)' : 'transparent',
+ color: activeTab === 'offers' ? '#10170c' : '#94a3b8',
+ fontWeight: 'bold',
+ fontSize: '13px',
+ cursor: 'pointer',
+ }}
+ >
+ অফার / কুপন
+ </button>
  </div>
+
+ {/* অফার / কুপন ট্যাব */}
+ {activeTab === 'offers' && (
+ <div>
+ <div style={{ background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', padding: '16px', marginBottom: '14px' }}>
+ <h3 style={{ margin: '0 0 4px', fontSize: '15px', fontWeight: '900', color: '#f8fafc' }}>কুপন কোড</h3>
+ <p style={{ margin: '0 0 14px', fontSize: '12px', color: '#94a3b8' }}>কাস্টমার চেকআউটে কোড বসালে ছাড় পাবে। শতাংশ (%) বা সরাসরি টাকা — দুই ধরনেরই হয়।</p>
+ {coupons.length === 0 ? (
+ <p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 12px' }}>এখনো কোনো কুপন নেই।</p>
+ ) : coupons.map((c, i) => (
+ <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '9px 10px', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', marginBottom: '8px', background: 'rgba(30,41,59,0.5)', flexWrap: 'wrap' }}>
+ <span style={{ fontWeight: '900', color: '#a6f36a', letterSpacing: '1px', fontSize: '13px' }}>{c.code}</span>
+ <span style={{ fontSize: '12px', color: '#e2e8f0' }}>{c.type === 'pct' ? `${c.value}% ছাড়` : `৳${c.value} ছাড়`}</span>
+ {c.min > 0 && <span style={{ fontSize: '11px', color: '#94a3b8' }}>কমপক্ষে ৳{c.min} অর্ডারে</span>}
+ <button type="button" onClick={() => handleSaveCoupons(coupons.map((x, j) => j === i ? { ...x, active: !x.active } : x))} style={{ marginLeft: 'auto', padding: '5px 10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.12)', background: 'transparent', color: c.active ? '#4ade80' : '#f87171', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}>{c.active ? 'চালু' : 'বন্ধ'}</button>
+ <button type="button" onClick={() => { if (confirm(`"${c.code}" কুপন ডিলিট করবেন?`)) handleSaveCoupons(coupons.filter((_, j) => j !== i)); }} style={{ padding: '5px 10px', borderRadius: '8px', border: '1px solid rgba(239,68,68,0.35)', background: 'rgba(239,68,68,0.1)', color: '#f87171', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}>ডিলিট</button>
+ </div>
+ ))}
+ <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
+ <input type="text" placeholder="কোড (যেমন: EID20)" value={newCoupon.code} onChange={(e) => setNewCoupon({ ...newCoupon, code: e.target.value.toUpperCase() })} style={{ flex: '1 1 130px', padding: '10px 12px', borderRadius: '10px', background: 'rgba(30, 41, 59, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)', color: '#ffffff', fontSize: '13px', outline: 'none', textTransform: 'uppercase' }} />
+ <select value={newCoupon.type} onChange={(e) => setNewCoupon({ ...newCoupon, type: e.target.value })} style={{ padding: '10px', borderRadius: '10px', background: 'rgba(30, 41, 59, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)', color: '#ffffff', fontSize: '13px', outline: 'none' }}>
+ <option value="pct">% শতাংশ</option>
+ <option value="flat">৳ টাকা</option>
+ </select>
+ <input type="number" placeholder="মান" value={newCoupon.value} onChange={(e) => setNewCoupon({ ...newCoupon, value: e.target.value })} style={{ width: '84px', padding: '10px 12px', borderRadius: '10px', background: 'rgba(30, 41, 59, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)', color: '#ffffff', fontSize: '13px', outline: 'none' }} />
+ <input type="number" placeholder="মিনিমাম ৳ (ঐচ্ছিক)" value={newCoupon.min} onChange={(e) => setNewCoupon({ ...newCoupon, min: e.target.value })} style={{ width: '130px', padding: '10px 12px', borderRadius: '10px', background: 'rgba(30, 41, 59, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)', color: '#ffffff', fontSize: '13px', outline: 'none' }} />
+ <button type="button" onClick={handleAddCoupon} disabled={savingOffers} style={{ padding: '10px 16px', borderRadius: '10px', border: 'none', background: 'linear-gradient(135deg, #a6f36a, #d2ffad)', color: '#10170c', fontSize: '13px', fontWeight: '900', cursor: 'pointer' }}>{savingOffers ? 'সেভ হচ্ছে...' : 'কুপন যোগ করুন'}</button>
+ </div>
+ </div>
+
+ <div style={{ background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', padding: '16px' }}>
+ <h3 style={{ margin: '0 0 4px', fontSize: '15px', fontWeight: '900', color: '#f8fafc' }}>ফ্ল্যাশ সেল ব্যানার</h3>
+ <p style={{ margin: '0 0 14px', fontSize: '12px', color: '#94a3b8' }}>চালু করলে হোমপেজে কাউন্টডাউনসহ ব্যানার দেখাবে। নির্ধারিত সময় পেরিয়ে গেলে নিজে নিজে লুকিয়ে যাবে।</p>
+ <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#f1f5f9', fontWeight: 'bold', marginBottom: '12px', cursor: 'pointer' }}>
+ <input type="checkbox" checked={flashForm.active} onChange={(e) => setFlashForm({ ...flashForm, active: e.target.checked })} style={{ width: '17px', height: '17px', accentColor: '#a6f36a' }} />
+ ফ্ল্যাশ সেল চালু
+ </label>
+ <span style={{ display: 'block', fontSize: '11px', color: '#94a3b8', fontWeight: 'bold', marginBottom: '5px' }}>ব্যানারের লেখা</span>
+ <input type="text" placeholder="যেমন: ঈদ স্পেশাল — সব সার্ভিসে ধামাকা অফার!" value={flashForm.title} onChange={(e) => setFlashForm({ ...flashForm, title: e.target.value })} style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', borderRadius: '10px', background: 'rgba(30, 41, 59, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)', color: '#ffffff', fontSize: '13px', outline: 'none', marginBottom: '12px' }} />
+ <span style={{ display: 'block', fontSize: '11px', color: '#94a3b8', fontWeight: 'bold', marginBottom: '5px' }}>শেষ হওয়ার তারিখ ও সময়</span>
+ <input type="datetime-local" value={flashForm.endTime} onChange={(e) => setFlashForm({ ...flashForm, endTime: e.target.value })} style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', borderRadius: '10px', background: 'rgba(30, 41, 59, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)', color: '#ffffff', fontSize: '13px', outline: 'none', marginBottom: '14px', colorScheme: 'dark' }} />
+ <button type="button" onClick={handleSaveFlash} disabled={savingOffers} style={{ padding: '11px 18px', borderRadius: '10px', border: 'none', background: 'linear-gradient(135deg, #a6f36a, #d2ffad)', color: '#10170c', fontSize: '13px', fontWeight: '900', cursor: 'pointer' }}>{savingOffers ? 'সেভ হচ্ছে...' : 'ফ্ল্যাশ সেল সেভ করুন'}</button>
+ </div>
+ </div>
+ )}
 
  {/* লাইভ অর্ডার ট্যাব */}
  {activeTab === 'orders' && (

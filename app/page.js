@@ -20,6 +20,8 @@ import Link from 'next/link';
 import { useLanguage } from '../context/LanguageContext';
 import Icon from '../components/icons';
 import { productImageSrc } from '../lib/productImage';
+import WishHeart from '../components/WishHeart';
+import { getRecent } from '../lib/shop';
 
 const LOGO_HUB_CART = '/logo-icon.png';
 
@@ -28,6 +30,9 @@ export default function HomePage() {
   const [products, setProducts] = useState([]);
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(true);
+  const [flashSale, setFlashSale] = useState(null);
+  const [flashLeft, setFlashLeft] = useState('');
+  const [recent, setRecent] = useState([]);
 
   useEffect(() => {
     let active = true;
@@ -38,6 +43,7 @@ export default function HomePage() {
         if (!active) return;
         if (Array.isArray(data.products)) setProducts(data.products);
         if (data.notice) setNotice(data.notice);
+        if (data.flashSale && data.flashSale.active && data.flashSale.endTime) setFlashSale(data.flashSale);
       } catch (err) {
         console.error('Home load error:', err);
       } finally {
@@ -45,8 +51,27 @@ export default function HomePage() {
       }
     }
     loadHomeData();
+    setRecent(getRecent());
     return () => { active = false; };
   }, []);
+
+  // Flash sale countdown
+  useEffect(() => {
+    if (!flashSale) return;
+    const target = new Date(flashSale.endTime).getTime();
+    const fmt = () => {
+      const diff = target - Date.now();
+      if (diff <= 0) { setFlashSale(null); return; }
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const sec = Math.floor((diff % 60000) / 1000);
+      setFlashLeft(`${d > 0 ? d + 'd ' : ''}${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`);
+    };
+    fmt();
+    const iv = setInterval(fmt, 1000);
+    return () => clearInterval(iv);
+  }, [flashSale]);
 
   return (
     <main className="hc-shell">
@@ -322,6 +347,19 @@ export default function HomePage() {
         </div>
       )}
 
+      {/* ---------- Flash sale ---------- */}
+      {flashSale && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', padding: '13px 16px', borderRadius: '16px', marginBottom: '22px', background: 'linear-gradient(90deg, rgba(239, 68, 68, 0.16), rgba(166, 243, 106, 0.1))', border: '1px solid rgba(239, 68, 68, 0.4)', color: '#fecaca' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#ef4444', color: '#ffffff', fontSize: '11px', fontWeight: '900', padding: '4px 10px', borderRadius: '999px', letterSpacing: '0.5px' }}>
+            <Icon name="bolt" size={12} color="#ffffff" /> {t.shop.flashLabel}
+          </span>
+          <span style={{ fontSize: '13px', fontWeight: '700', color: '#f8fafc', flex: 1, minWidth: '180px' }}>{flashSale.title}</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#fca5a5', fontWeight: '700' }}>
+            <Icon name="clock" size={14} color="#fca5a5" /> {t.shop.flashEndsIn} <strong style={{ color: '#ffffff', fontVariantNumeric: 'tabular-nums' }}>{flashLeft}</strong>
+          </span>
+        </div>
+      )}
+
       {/* ---------- Hero ---------- */}
       <section className="hc-hero">
         <div className="hc-hero-content">
@@ -414,6 +452,7 @@ export default function HomePage() {
             {products.map((prod) => (
               <Link key={prod.id} href={`/product/${prod.id}`} className="hc-product">
                 <div className="hc-product-media">
+                  <WishHeart productId={prod.id} />
                   <img
                     src={productImageSrc(prod, LOGO_HUB_CART)}
                     alt={prod.title || 'Hub Cart product'}
@@ -453,6 +492,43 @@ export default function HomePage() {
           </div>
         )}
       </section>
+
+      {/* ---------- Recently viewed ---------- */}
+      {recent.length > 0 && (
+        <section aria-label={t.shop.recentTitle} style={{ marginTop: '48px' }}>
+          <div className="hc-section-head">
+            <div>
+              <div className="hc-kicker">{t.shop.recentTitle}</div>
+              <h2 style={{ fontFamily: 'Manrope,sans-serif', fontSize: 'clamp(20px,2.6vw,26px)', letterSpacing: '-0.8px', margin: 0, fontWeight: 800 }}>{t.shop.recentTitle}</h2>
+            </div>
+          </div>
+          <div className="hc-product-grid">
+            {recent.slice(0, 4).map((prod) => (
+              <Link key={prod.id} href={`/product/${prod.id}`} className="hc-product">
+                <div className="hc-product-media">
+                  <WishHeart productId={prod.id} />
+                  <img src={productImageSrc(prod, LOGO_HUB_CART)} alt={prod.title || 'Hub Cart product'} loading="lazy" onError={(e) => { e.currentTarget.src = LOGO_HUB_CART; }} />
+                  {prod.original_price && Number(prod.original_price) > Number(prod.price) && (
+                    <span className="hc-off-badge">-{Math.round((1 - Number(prod.price) / Number(prod.original_price)) * 100)}%</span>
+                  )}
+                </div>
+                <div className="hc-product-body">
+                  <h3 className="hc-product-title">{prod.title}</h3>
+                  <div className="hc-product-bottom">
+                    <span>
+                      <span className="hc-price">৳{prod.price}</span>
+                      {prod.original_price && Number(prod.original_price) > Number(prod.price) && (
+                        <span className="hc-old-price">৳{prod.original_price}</span>
+                      )}
+                    </span>
+                    <span className="hc-buy" aria-label="View product">↗</span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* ---------- Footer note ---------- */}
       <aside className="hc-footer-note">

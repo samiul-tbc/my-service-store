@@ -31,6 +31,7 @@ export async function GET() {
 
     let products = [];
     let notice = '';
+    let flashSale = null;
 
     if (prodRes.status === 'fulfilled' && prodRes.value.ok) {
       products = await prodRes.value.json();
@@ -40,6 +41,8 @@ export async function GET() {
       const noticeData = await noticeRes.value.json();
       if (Array.isArray(noticeData) && noticeData.length > 0) {
         notice = noticeData[0].value;
+        const fsRow = noticeData.find((r) => r.key === 'flash_sale');
+        if (fsRow && fsRow.value) { try { flashSale = JSON.parse(fsRow.value); } catch {} }
       }
     }
 
@@ -73,10 +76,10 @@ export async function GET() {
     });
 
     return NextResponse.json(
-      { products: slimProducts, notice },
+      { products: slimProducts, notice, flashSale },
       { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' } }
     );
   } catch (err) {
-    return NextResponse.json({ error: err.message, products: [], notice: '' }, { status: 500 });
+    return NextResponse.json({ error: err.message, products: [], notice: '', flashSale: null }, { status: 500 });
   }
 }

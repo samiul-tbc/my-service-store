@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { findCoupon, couponDiscount } from '../../../lib/coupons-server';
 
 const SUPABASE_URL = 'https://mieygzqgoekinxppdepb.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
@@ -6,10 +7,24 @@ const SUPABASE_KEY = 'sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
 export async function POST(req) {
   try {
     const body = await req.json();
-    const { serviceName, price, customerName, whatsappNumber, telegramUsername, paymentMethod, trxId } = body;
+    const { serviceName, price, customerName, whatsappNumber, telegramUsername, paymentMethod, trxId, couponCode, subtotal } = body;
 
     if (!serviceName || !customerName || !whatsappNumber) {
       return NextResponse.json({ error: 'প্রয়োজনীয় সকল তথ্য পূরণ করুন' }, { status: 400 });
+    }
+
+    // কুপন থাকলে সার্ভার সাইডে আবার যাচাই — ক্লায়েন্টের পাঠানো ছাড় বিশ্বাস করা হয় না
+    let finalPrice = Number(price) || 0;
+    let couponNote = '';
+    if (couponCode && Number(subtotal) > 0) {
+      try {
+        const coupon = await findCoupon(couponCode);
+        if (coupon && !(coupon.min && Number(subtotal) < Number(coupon.min))) {
+          const discount = couponDiscount(coupon, Number(subtotal));
+          finalPrice = Number(subtotal) - discount;
+          couponNote = `${String(coupon.code).toUpperCase()} (-৳${discount})`;
+        }
+      } catch (e) { console.error('Coupon re-validation error:', e); }
     }
 
     // ৪ ডিজিটের ইউনিক অর্ডার আইডি তৈরি (যেমন: HC-7391)
@@ -27,7 +42,7 @@ export async function POST(req) {
       body: JSON.stringify({
         order_id: orderId,
         service_name: serviceName,
-        price: Number(price),
+        price: finalPrice,
         customer_name: customerName,
         whatsapp_number: whatsappNumber,
         telegram_username: telegramUsername || 'দেওয়া হয়নি',
@@ -45,7 +60,7 @@ export async function POST(req) {
       const message = `🛒 <b>Hub Cart - নতুন অর্ডার এসেছে!</b>\n\n` +
         `🆔 <b>অর্ডার আইডি:</b> <code>${orderId}</code>\n` +
         `📦 <b>সার্ভিস / পণ্য:</b> ${serviceName}\n` +
-        `💰 <b>মূল্য:</b> ৳${price}\n\n` +
+        `💰 <b>মূল্য:</b> ৳${finalPrice}${couponNote ? ` (কুপন: ${couponNote})` : ''}\n\n` +
         `👤 <b>কাস্টমার:</b> ${customerName}\n` +
         `📞 <b>WhatsApp:</b> ${whatsappNumber}\n` +
         `✈️ <b>Telegram:</b> ${telegramUsername || 'দেওয়া হয়নি'}\n\n` +

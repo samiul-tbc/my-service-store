@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useLanguage } from '../../context/LanguageContext';
 import Icon from '../../components/icons';
+import CouponBox from '../../components/CouponBox';
+import { couponDiscount } from '../../lib/shop';
 
 const COUNTRY_CODES = [
   { code: '+880', name: 'BD', placeholder: '1XXXXXXXXX' },
@@ -25,6 +27,7 @@ export default function CartCheckoutPage() {
   const [selectedCountry, setSelectedCountry] = useState(COUNTRY_CODES[0]);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [telegram, setTelegram] = useState('');
+  const [coupon, setCoupon] = useState(null);
 
   useEffect(() => {
     try {
@@ -59,6 +62,8 @@ export default function CartCheckoutPage() {
   }, []);
 
   const total = items.reduce((acc, item) => acc + Number(item.price || 0) * (item.quantity || 1), 0);
+  const discount = coupon ? couponDiscount(coupon, total) : 0;
+  const finalTotal = total - discount;
 
   const handleOrderSubmit = (e) => {
     e.preventDefault();
@@ -90,7 +95,10 @@ export default function CartCheckoutPage() {
       orderId: generatedOrderId,
       title: serviceName,
       serviceName: serviceName,
-      price: total,
+      price: finalTotal,
+      subtotal: total,
+      discount: discount,
+      couponCode: coupon ? coupon.code : '',
       customerName: name.trim(),
       whatsappNumber: fullPhoneNumber,
       telegramUsername: telegram.trim() || 'N/A',
@@ -187,12 +195,28 @@ export default function CartCheckoutPage() {
             <span style={{ fontSize: '14px', fontWeight: '700', color: '#f8fafc' }}>{t.cart.total}</span>
             <span style={{ fontSize: '16px', fontWeight: '800', color: '#a6f36a' }}>৳{total}</span>
           </div>
+          {discount > 0 && (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
+                <span style={{ fontSize: '13px', color: '#94a3b8' }}>{t.shop.discount} ({coupon.code})</span>
+                <span style={{ fontSize: '13px', fontWeight: '800', color: '#f87171' }}>−৳{discount}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
+                <span style={{ fontSize: '14px', fontWeight: '700', color: '#f8fafc' }}>{t.confirm.totalDue}</span>
+                <span style={{ fontSize: '16px', fontWeight: '800', color: '#a6f36a' }}>৳{finalTotal}</span>
+              </div>
+            </>
+          )}
+        </div>
+
+        <div style={{ marginBottom: '20px' }}>
+          <CouponBox subtotal={total} applied={coupon} onApply={setCoupon} />
         </div>
 
         <div style={{ backgroundColor: '#0b1220', border: '1px dashed #334155', borderRadius: '12px', padding: '12px 16px', marginBottom: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', marginBottom: '8px', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '13px', color: '#f8fafc', fontWeight: '700' }}><span style={{ display: "inline-flex", verticalAlign: "-3px", marginRight: "5px" }}><Icon name="card" size={15} color="#a6f36a" /></span>{t.confirm.payPreviewTitle}</span>
-            <span style={{ fontSize: '13px', color: '#a6f36a', fontWeight: '800' }}>{t.confirm.totalDue}: ৳{total}</span>
+            <span style={{ fontSize: '13px', color: '#a6f36a', fontWeight: '800' }}>{t.confirm.totalDue}: ৳{finalTotal}</span>
           </div>
           <p style={{ fontSize: '12px', color: '#94a3b8', margin: '0 0 6px', lineHeight: 1.6 }}>{t.confirm.payPreviewNote}</p>
           <div style={{ fontSize: '13px', color: '#f8fafc', fontWeight: '700' }}>bKash • Nagad • Rocket • Upay • Crypto</div>

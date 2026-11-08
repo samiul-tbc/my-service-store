@@ -71,6 +71,8 @@ export default function ProcessedOrderPage() {
             telegramUsername: orderData.telegramUsername || t.success.none,
             paymentMethod: 'TBC Pay (Manual)',
             trxId: 'Manual Contact',
+            couponCode: orderData.couponCode || '',
+            subtotal: orderData.subtotal || orderAmount,
           }),
         });
 
@@ -241,6 +243,18 @@ export default function ProcessedOrderPage() {
 
       {/* Product Price Summary */}
       <div style={{ background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', padding: '16px', marginBottom: '20px' }}>
+        {Number(orderData.discount) > 0 && (
+          <>
+            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1', fontSize: '13px', marginBottom: '8px' }}>
+              <span>{t.shop.subtotalLabel}</span>
+              <span style={{ fontWeight: 'bold', color: '#f8fafc' }}>৳ {orderData.subtotal}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1', fontSize: '13px', marginBottom: '8px' }}>
+              <span>{t.shop.discount}{orderData.couponCode ? ` (${orderData.couponCode})` : ''}</span>
+              <span style={{ fontWeight: 'bold', color: '#f87171' }}>−৳ {orderData.discount}</span>
+            </div>
+          </>
+        )}
         <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1', fontSize: '13px' }}>
           <span>ℹ {t.success.productPrice}</span>
           <span style={{ fontWeight: 'bold', color: '#f8fafc' }}>

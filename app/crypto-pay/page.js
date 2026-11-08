@@ -63,6 +63,8 @@ export default function CryptoPayPage() {
         body: JSON.stringify({
           serviceName: productName,
           price: orderAmount,
+          couponCode: orderData.couponCode || '',
+          subtotal: orderData.subtotal || orderAmount,
           customerName: orderData.customerName || 'International Customer',
           whatsappNumber: orderData.whatsappNumber || '',
           telegramUsername: orderData.telegramUsername || 'N/A',

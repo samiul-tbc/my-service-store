@@ -21,12 +21,23 @@ function TrackContent() {
   const [orders, setOrders] = useState([]);
   const [searched, setSearched] = useState(false);
   const [deliveredMap, setDeliveredMap] = useState({});
+  const [catalog, setCatalog] = useState([]);
 
   useEffect(() => {
     if (initialId) {
       handleSearch(initialId);
     }
   }, [initialId]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('/api/products', { cache: 'no-store' });
+        const data = await res.json();
+        if (Array.isArray(data.products)) setCatalog(data.products);
+      } catch (e) { console.error(e); }
+    })();
+  }, []);
 
   const handleSearch = async (queryToSearch) => {
     const query = (queryToSearch || searchQuery).trim();
@@ -295,7 +306,23 @@ function TrackContent() {
                 )}
 
                 {/* ক্যাশ মেমো / ইনভয়েস লিংক বাটন */}
-                <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
+                <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
+                  {(() => {
+                    const match = catalog.find((pr) => ord.service_name && pr.title && ord.service_name.includes(pr.title));
+                    return match ? (
+                      <Link
+                        href={`/product/${match.id}`}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '6px',
+                          background: 'rgba(166, 243, 106, 0.12)', border: '1px solid rgba(166, 243, 106, 0.4)',
+                          color: '#a6f36a', padding: '8px 14px', borderRadius: '10px',
+                          textDecoration: 'none', fontSize: '12px', fontWeight: 'bold',
+                        }}
+                      >
+                        <Icon name="refresh" size={14} />{t.shop.buyAgain}
+                      </Link>
+                    ) : <span />;
+                  })()}
                   <Link
                     href={`/invoice/${ord.order_id}`}
                     style={{

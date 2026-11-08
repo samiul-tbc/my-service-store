@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useLanguage } from '../../../context/LanguageContext';
 import Icon from '../../../components/icons';
 import { productImageSrc } from '../../../lib/productImage';
+import WishHeart from '../../../components/WishHeart';
+import { pushRecent } from '../../../lib/shop';
 
 const LOGO_HUB_CART = '/logo-icon.png';
 const LOGO_WHATSAPP = 'https://download.logo.wine/logo/WhatsApp/WhatsApp-Logo.wine.png';
@@ -31,6 +33,7 @@ export default function ProductDetailPage() {
   const [revText, setRevText] = useState('');
   const [revBusy, setRevBusy] = useState(false);
   const [revDone, setRevDone] = useState(false);
+  const [related, setRelated] = useState([]);
 
   async function loadReviews(pid) {
     try {
@@ -75,6 +78,14 @@ export default function ProductDetailPage() {
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
           setProduct(data[0]);
+          pushRecent(data[0]);
+          try {
+            const r2 = await fetch('/api/products', { cache: 'no-store' });
+            const d2 = await r2.json();
+            if (Array.isArray(d2.products)) {
+              setRelated(d2.products.filter((x) => x.category === data[0].category && Number(x.id) !== Number(data[0].id)).slice(0, 6));
+            }
+          } catch {}
         }
       } catch (err) {
         console.error(err);
@@ -165,7 +176,8 @@ export default function ProductDetailPage() {
         overflow: 'hidden',
         boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
       }}>
-        <div style={{ width: '100%', height: '240px', background: '#0b0f19', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: '100%', height: '240px', background: '#0b0f19', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+          <WishHeart productId={product.id} style={{ top: '12px', right: '12px', width: '38px', height: '38px' }} />
           <img
             src={productImageSrc(product, LOGO_HUB_CART)}
             alt={product.title}
@@ -244,6 +256,26 @@ export default function ProductDetailPage() {
           </button>
         </form>
       </div>
+
+      {/* সম্পর্কিত সার্ভিস */}
+      {related.length > 0 && (
+        <div style={{ marginTop: '16px', marginBottom: '70px' }}>
+          <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#f8fafc', margin: '0 0 12px' }}>{t.shop.related}</h3>
+          <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '6px' }}>
+            {related.map((rp) => (
+              <Link key={rp.id} href={`/product/${rp.id}`} style={{ flex: '0 0 150px', textDecoration: 'none', background: 'rgba(15, 23, 42, 0.75)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', overflow: 'hidden', color: 'inherit' }}>
+                <div style={{ height: '96px', background: '#0b0f19', position: 'relative' }}>
+                  <img src={productImageSrc(rp, LOGO_HUB_CART)} alt={rp.title} loading="lazy" onError={(e) => { e.currentTarget.src = LOGO_HUB_CART; }} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
+                <div style={{ padding: '9px 10px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: '700', color: '#f1f5f9', lineHeight: 1.35, minHeight: '30px' }}>{rp.title}</div>
+                  <div style={{ fontSize: '13px', fontWeight: '900', color: '#a6f36a', marginTop: '4px' }}>৳{rp.price}</div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* নিচের ফিক্সড অর্ডার বার */}
       <div style={{

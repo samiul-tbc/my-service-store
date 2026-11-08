@@ -4,6 +4,7 @@ import BottomNav from './BottomNav';
 import Footer from './Footer';
 import { LanguageProvider } from '../context/LanguageContext';
 import SwRegister from '../components/SwRegister';
+import PwaBanner from '../components/PwaBanner';
 
 export const metadata = {
   title: 'Hub Cart - Shop Smart • Live Better',
@@ -36,6 +37,7 @@ export default function RootLayout({ children }) {
           {/* বটম ফ্লোটিং ডক (ডায়নামিক ভাষা ও অ্যাক্টিভ কালার সহ) */}
           <BottomNav />
           <SwRegister />
+          <PwaBanner />
         </LanguageProvider>
       </body>
     </html>

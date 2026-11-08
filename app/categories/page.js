@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '../../context/LanguageContext';
+import WishHeart from '../../components/WishHeart';
 import { productImageSrc } from '../../lib/productImage';
 
 const LOGO_HUB_CART = '/logo-icon.png';
@@ -213,6 +214,7 @@ export default function CategoriesPage() {
                 }}
               >
                 <div style={{ width: '100%', height: '150px', background: '#0b0f19', position: 'relative' }}>
+                  <WishHeart productId={prod.id} />
                   {prod.original_price && Number(prod.original_price) > Number(prod.price) && (
                     <span style={{ position: 'absolute', top: '8px', left: '8px', zIndex: 2, fontSize: '10px', fontWeight: '900', background: '#ef4444', color: '#ffffff', padding: '3px 7px', borderRadius: '999px' }}>-{Math.round((1 - Number(prod.price) / Number(prod.original_price)) * 100)}%</span>
                   )}

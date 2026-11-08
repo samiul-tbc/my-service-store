@@ -13,6 +13,29 @@ export default function Navbar() {
   const [user, setUser] = useState(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [catalog, setCatalog] = useState([]);
+
+  useEffect(() => {
+    if (!searchOpen || catalog.length) return;
+    (async () => {
+      try {
+        const res = await fetch('/api/products', { cache: 'no-store' });
+        const data = await res.json();
+        if (Array.isArray(data.products)) setCatalog(data.products);
+      } catch (e) { console.error(e); }
+    })();
+  }, [searchOpen, catalog.length]);
+
+  const q = searchQuery.trim().toLowerCase();
+  const suggestions = q
+    ? catalog.filter((p) => (p.title || '').toLowerCase().includes(q) || (p.category || '').toLowerCase().includes(q)).slice(0, 6)
+    : catalog.slice(0, 4);
+
+  const goProduct = (id) => {
+    setSearchOpen(false);
+    setSearchQuery('');
+    router.push(`/product/${id}`);
+  };
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -167,19 +190,33 @@ export default function Navbar() {
       </div>
     
       {searchOpen && (
-        <form onSubmit={handleSearchSubmit} style={{ maxWidth: '1240px', margin: '10px auto 2px', display: 'flex', gap: '8px' }}>
-          <input
-            autoFocus
-            type="search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={t.nav.searchPlaceholder}
-            style={{ flex: 1, padding: '10px 14px', borderRadius: '12px', background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(166, 243, 106, 0.35)', color: '#fff', fontSize: '13px', outline: 'none' }}
-          />
-          <button type="submit" style={{ padding: '10px 16px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #a6f36a, #d2ffad)', color: '#10170c', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>
-            {t.nav.search}
-          </button>
-        </form>
+        <div style={{ position: 'relative', maxWidth: '1240px', margin: '0 auto' }}>
+          <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+            <input
+              autoFocus
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={t.nav.searchPlaceholder}
+              style={{ flex: 1, padding: '10px 14px', borderRadius: '12px', background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(166, 243, 106, 0.35)', color: '#fff', fontSize: '13px', outline: 'none' }}
+            />
+            <button type="submit" style={{ padding: '10px 16px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #a6f36a, #d2ffad)', color: '#10170c', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>
+              {t.nav.search}
+            </button>
+          </form>
+          {suggestions.length > 0 && (
+            <div style={{ marginTop: '8px', background: 'rgba(13, 18, 28, 0.92)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '14px', padding: '6px', boxShadow: '0 18px 40px rgba(0,0,0,0.45)' }}>
+              {!q && <div style={{ fontSize: '10px', fontWeight: '800', letterSpacing: '1.2px', textTransform: 'uppercase', color: '#64748b', padding: '6px 10px 2px' }}>{t.shop.popularSearches}</div>}
+              {suggestions.map((p) => (
+                <button key={p.id} type="button" onClick={() => goProduct(p.id)} style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', textAlign: 'left', background: 'none', border: 'none', padding: '8px 10px', borderRadius: '10px', cursor: 'pointer', color: '#e2e8f0' }}>
+                  <img src={`/api/img/${p.id}`} alt="" style={{ width: '34px', height: '34px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                  <span style={{ flex: 1, minWidth: 0, fontSize: '13px', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.title}</span>
+                  <span style={{ fontSize: '12px', fontWeight: '900', color: '#a6f36a', flexShrink: 0 }}>৳{p.price}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       )}
     </header>
   );

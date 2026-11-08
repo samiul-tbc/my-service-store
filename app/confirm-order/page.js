@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLanguage } from '../../context/LanguageContext';
 import Icon from '../../components/icons';
+import CouponBox from '../../components/CouponBox';
+import { couponDiscount } from '../../lib/shop';
 
 const COUNTRY_CODES = [
   { code: '+880', name: 'BD', placeholder: '1XXXXXXXXX' },
@@ -27,6 +29,7 @@ export default function ConfirmPage() {
   const [selectedCountry, setSelectedCountry] = useState(COUNTRY_CODES[0]);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [telegram, setTelegram] = useState('');
+  const [coupon, setCoupon] = useState(null);
 
   useEffect(() => {
     try {
@@ -78,13 +81,17 @@ export default function ConfirmPage() {
 
     const productName = productData.title || productData.serviceName || 'Product Order';
     const productPrice = Number(productData.price) || 10;
+    const discount = coupon ? couponDiscount(coupon, productPrice) : 0;
 
     const fullOrder = {
       id: generatedOrderId,
       orderId: generatedOrderId,
       title: productName,
       serviceName: productName,
-      price: productPrice,
+      price: productPrice - discount,
+      subtotal: productPrice,
+      discount: discount,
+      couponCode: coupon ? coupon.code : '',
       customerName: name.trim(),
       whatsappNumber: fullPhoneNumber,
       telegramUsername: telegram.trim() || 'N/A',
@@ -134,10 +141,14 @@ export default function ConfirmPage() {
         <div style={{ backgroundColor: '#0b1220', border: '1px dashed #334155', borderRadius: '12px', padding: '12px 16px', marginBottom: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', marginBottom: '8px', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '13px', color: '#f8fafc', fontWeight: '700' }}><span style={{ display: "inline-flex", verticalAlign: "-3px", marginRight: "5px" }}><Icon name="card" size={15} color="#a6f36a" /></span>{t.confirm.payPreviewTitle}</span>
-            <span style={{ fontSize: '13px', color: '#a6f36a', fontWeight: '800' }}>{t.confirm.totalDue}: ৳{productData.price}</span>
+            <span style={{ fontSize: '13px', color: '#a6f36a', fontWeight: '800' }}>{t.confirm.totalDue}: ৳{Number(productData.price) - (coupon ? couponDiscount(coupon, Number(productData.price) || 0) : 0)}</span>
           </div>
           <p style={{ fontSize: '12px', color: '#94a3b8', margin: '0 0 6px', lineHeight: 1.6 }}>{t.confirm.payPreviewNote}</p>
           <div style={{ fontSize: '13px', color: '#f8fafc', fontWeight: '700' }}>bKash • Nagad • Rocket • Upay • Crypto</div>
+        </div>
+
+        <div style={{ marginBottom: '20px' }}>
+          <CouponBox subtotal={Number(productData.price) || 0} applied={coupon} onApply={setCoupon} />
         </div>
 
         <form onSubmit={handleOrderSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
