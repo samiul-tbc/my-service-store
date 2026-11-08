@@ -39,7 +39,20 @@ export default function ConfirmPage() {
   const [bTheme, setBTheme] = useState('midnight');
   const [bRel, setBRel] = useState('friend');
   const [bThemeTouched, setBThemeTouched] = useState(false);
-  const isBirthday = productData?.category === 'birthday';
+  const [infoForm, setInfoForm] = useState(false);
+  const isBirthday = infoForm;
+  useEffect(() => {
+    const pid = productData?.id;
+    if (!pid || String(pid).startsWith('HC-')) return;
+    fetch('/api/products')
+      .then((r) => r.json())
+      .then((list) => {
+        const arr = Array.isArray(list) ? list : list.products || [];
+        const found = arr.find((x) => String(x.id) === String(pid));
+        if (found) setInfoForm(!!found.infoForm);
+      })
+      .catch(() => {});
+  }, [productData?.id]);
 
   useEffect(() => {
     try {

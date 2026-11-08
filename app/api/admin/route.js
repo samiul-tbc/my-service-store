@@ -254,7 +254,7 @@ export async function POST(req) {
     // প্রোডাক্ট Published / Featured টগল (versioned flags — INSERT-only storage)
     if (action === 'set-product-flag') {
       const productId = String((payload && payload.productId) || '');
-      const flag = payload && payload.flag === 'featured' ? 'featured' : 'published';
+      const flag = payload && payload.flag === 'featured' ? 'featured' : payload && payload.flag === 'infoForm' ? 'infoForm' : 'published';
       if (!productId) {
         return NextResponse.json({ error: 'productId required' }, { status: 400 });
       }
@@ -263,6 +263,7 @@ export async function POST(req) {
       flags[productId] = {
         published: current.published !== false,
         featured: !!current.featured,
+        infoForm: !!current.infoForm,
         [flag]: !!(payload && payload.value),
       };
       const ok = await writeProductFlags(flags);

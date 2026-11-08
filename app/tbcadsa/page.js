@@ -347,8 +347,8 @@ export default function SecretAdminPage() {
 
  const handleToggleFlag = async (prod, flag) => {
  const current = productFlags[prod.id] || {};
- const currentValue = flag === 'published' ? current.published !== false : !!current.featured;
- const next = { ...current, published: current.published !== false, featured: !!current.featured, [flag]: !currentValue };
+ const currentValue = flag === 'published' ? current.published !== false : !!current[flag];
+ const next = { ...current, published: current.published !== false, featured: !!current.featured, infoForm: !!current.infoForm, [flag]: !currentValue };
  setProductFlags((prev) => ({ ...prev, [prod.id]: next }));
  try {
  const data = await postAdmin('set-product-flag', { productId: prod.id, flag, value: !currentValue });
@@ -1562,7 +1562,7 @@ export default function SecretAdminPage() {
  </div> ); })()}
  </div>
  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
- {(() => { const f = productFlags[prod.id] || {}; const pub = f.published !== false; const feat = !!f.featured; return (<>
+ {(() => { const f = productFlags[prod.id] || {}; const pub = f.published !== false; const feat = !!f.featured; const info = !!f.infoForm; return (<>
  <button
  onClick={() => handleToggleFlag(prod, 'published')}
  title="সাইটে দেখাবে কিনা"
@@ -1576,6 +1576,13 @@ export default function SecretAdminPage() {
  style={{ background: feat ? 'rgba(250, 204, 21, 0.15)' : 'rgba(100, 116, 139, 0.15)', border: `1px solid ${feat ? 'rgba(250, 204, 21, 0.5)' : 'rgba(100, 116, 139, 0.4)'}`, color: feat ? '#facc15' : '#94a3b8', padding: '6px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
  >
  {feat ? 'Featured: ON' : 'Featured'}
+ </button>
+ <button
+ onClick={() => handleToggleFlag(prod, 'infoForm')}
+ title="অর্ডারের সময় তথ্য ফর্ম (নাম/জন্মতারিখ/সম্পর্ক) দেখাবে কিনা"
+ style={{ background: info ? 'rgba(244, 114, 182, 0.15)' : 'rgba(100, 116, 139, 0.15)', border: `1px solid ${info ? 'rgba(244, 114, 182, 0.5)' : 'rgba(100, 116, 139, 0.4)'}`, color: info ? '#f472b6' : '#94a3b8', padding: '6px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+ >
+ {info ? 'তথ্য ফর্ম: ON' : 'তথ্য ফর্ম'}
  </button>
  </>); })()}
  <button

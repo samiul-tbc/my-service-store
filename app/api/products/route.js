@@ -86,7 +86,7 @@ export async function GET() {
         ? { ...p, image: `/api/img/${p.id}` }
         : p;
       const r = ratings[String(base.id)] || { rating: 0, reviewCount: 0 };
-      return { ...base, rating: r.rating, reviewCount: r.reviewCount, featured: !!((productFlags[String(base.id)] || {}).featured) };
+      return { ...base, rating: r.rating, reviewCount: r.reviewCount, featured: !!((productFlags[String(base.id)] || {}).featured), infoForm: !!((productFlags[String(base.id)] || {}).infoForm) };
     });
 
     const visibleProducts = slimProducts
