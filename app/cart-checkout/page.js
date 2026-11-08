@@ -115,6 +115,7 @@ export default function CartCheckoutPage() {
       discount: discount,
       couponCode: coupon ? coupon.code : '',
       vipApplied: vipDiscount > 0,
+      category: items.length > 0 && items.every((i) => i.category === 'e-service') ? 'e-service' : '',
       customerName: name.trim(),
       whatsappNumber: fullPhoneNumber,
       telegramUsername: telegram.trim() || 'N/A',

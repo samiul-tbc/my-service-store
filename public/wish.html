@@ -791,15 +791,19 @@
       const now = new Date();
       const birth = new Date(DATA.birth + 'T00:00:00');
       const bDay = birth.getDate(), bMonth = birth.getMonth(), bYear = birth.getFullYear();
-      let pYear = now.getFullYear();
-      let pastDate = new Date(pYear, bMonth, bDay);
-      if (pastDate > now) { pYear--; pastDate = new Date(pYear, bMonth, bDay); }
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const thisYearBday = new Date(now.getFullYear(), bMonth, bDay);
+      // Previous birthday: strictly before today (on the birthday itself, last year's)
+      let pYear, pastDate;
+      if (thisYearBday < today) { pYear = now.getFullYear(); pastDate = thisYearBday; }
+      else { pYear = now.getFullYear() - 1; pastDate = new Date(pYear, bMonth, bDay); }
       const pastAge = pYear - bYear;
-      let nYear = now.getFullYear();
-      let nextDate = new Date(nYear, bMonth, bDay);
-      if (nextDate <= now && !isTodayBirthday) { nYear++; nextDate = new Date(nYear, bMonth, bDay); }
-      if (isTodayBirthday) nextDate = new Date(nYear, bMonth, bDay, 23, 59, 59);
+      // Next birthday: strictly after today (on the birthday itself, next year's)
+      let nYear, nextDate;
+      if (thisYearBday > today) { nYear = now.getFullYear(); nextDate = thisYearBday; }
+      else { nYear = now.getFullYear() + 1; nextDate = new Date(nYear, bMonth, bDay); }
       const nextAge = nYear - bYear;
+      const currentAge = now.getFullYear() - bYear;
       const formatBn = (d) => `${d.getDate()} ${bnMonths[d.getMonth()]} ${d.getFullYear()}`;
       document.getElementById('valPastDate').textContent = formatBn(pastDate);
       document.getElementById('valPastDay').textContent = bnDays[pastDate.getDay()];
@@ -807,7 +811,11 @@
       document.getElementById('valNextDate').textContent = formatBn(nextDate);
       document.getElementById('valNextDay').textContent = bnDays[nextDate.getDay()];
       document.getElementById('valNextAge').textContent = `বয়স হবে: ${nextAge} বছর`;
-      if (isTodayBirthday) document.getElementById('todayStatus').textContent = `আজ ${nextAge}তম জন্মদিন!`;
+      if (isTodayBirthday) {
+        document.getElementById('todayStatus').textContent = `আজ ${currentAge}তম জন্মদিন!`;
+        ['dDays', 'dHours', 'dMinutes', 'dSeconds'].forEach((id) => setCd(id, '00'));
+        return;
+      }
       const diff = nextDate - now;
       if (diff <= 0) { ['dDays', 'dHours', 'dMinutes', 'dSeconds'].forEach((id) => setCd(id, '00')); return; }
       setCd('dDays', String(Math.floor(diff / 86400000)).padStart(2, '0'));

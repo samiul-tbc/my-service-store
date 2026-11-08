@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { birthdayPath } from '../../lib/birthday';
 import { useRouter } from 'next/navigation';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -17,7 +16,7 @@ const DOLLAR_RATE = 120;
 export default function ProcessedOrderPage() {
   const router = useRouter();
   const { t } = useLanguage();
-  const [orderData, setOrderData] = useState(null);  const [bdayCopied, setBdayCopied] = useState(false);
+  const [orderData, setOrderData] = useState(null);
 
   const [checked, setChecked] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState('manual_mfs');
@@ -143,6 +142,8 @@ export default function ProcessedOrderPage() {
     );
   }
 
+  const isEService = orderData.category === 'e-service';
+
   const usdtAmount = calculateUSDT(orderData.price);
 
   return (
@@ -218,7 +219,8 @@ export default function ProcessedOrderPage() {
           </div>
         </div>
 
-        {/* ৩. TBC Pay */}
+        {/* ৩. TBC Pay (e-service অর্ডারে দেখানো হয় না) */}
+        {!isEService && (
         <div
           onClick={() => setSelectedMethod('tbc')}
           style={{
@@ -242,6 +244,7 @@ export default function ProcessedOrderPage() {
           </div>
         </div>
 
+        )}
       </div>
 
       {/* Product Price Summary */}
@@ -269,13 +272,8 @@ export default function ProcessedOrderPage() {
 
       {orderData.birthday && orderData.birthday.name && (
         <div style={{ background: 'linear-gradient(150deg, rgba(244, 114, 182, 0.14), rgba(147, 51, 234, 0.12))', border: '1px solid rgba(244, 114, 182, 0.45)', borderRadius: '16px', padding: '16px', marginBottom: '20px' }}>
-          <div style={{ fontSize: '14px', fontWeight: '900', color: '#f9a8d4', marginBottom: '4px' }}>{t.bday.linkTitle}</div>
-          <div style={{ fontSize: '12px', color: '#cbd5e1', marginBottom: '12px', lineHeight: 1.6 }}>{t.bday.linkNote}</div>
-          <div style={{ fontSize: '11.5px', color: '#fda4af', background: 'rgba(2, 6, 23, 0.55)', borderRadius: '10px', padding: '9px 11px', wordBreak: 'break-all', marginBottom: '12px' }}>{typeof window !== 'undefined' ? window.location.origin + birthdayPath(orderData.birthday) : birthdayPath(orderData.birthday)}</div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button type="button" onClick={async () => { try { await navigator.clipboard.writeText(window.location.origin + birthdayPath(orderData.birthday)); setBdayCopied(true); setTimeout(() => setBdayCopied(false), 1800); } catch {} }} style={{ flex: 1, padding: '11px', borderRadius: '10px', border: '1px solid rgba(244, 114, 182, 0.5)', background: 'rgba(244, 114, 182, 0.15)', color: '#f9a8d4', fontWeight: '800', fontSize: '13px', cursor: 'pointer' }}>{bdayCopied ? t.bday.copied : t.bday.copy}</button>
-            <a href={birthdayPath(orderData.birthday)} target="_blank" rel="noreferrer" style={{ flex: 1, padding: '11px', borderRadius: '10px', background: 'linear-gradient(135deg, #f472b6, #a855f7)', color: '#fff', fontWeight: '900', fontSize: '13px', textAlign: 'center', textDecoration: 'none' }}>{t.bday.open}</a>
-          </div>
+          <div style={{ fontSize: '14px', fontWeight: '900', color: '#f9a8d4', marginBottom: '4px' }}>{t.bday.linkSoon}</div>
+          <div style={{ fontSize: '12px', color: '#cbd5e1', lineHeight: 1.6 }}>{t.bday.linkSoonNote}</div>
         </div>
       )}
 

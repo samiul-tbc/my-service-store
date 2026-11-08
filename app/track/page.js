@@ -342,7 +342,7 @@ function TrackContent() {
                   </div>
                 )}
 
-                {bdayMap[ord.order_id] && (
+                {bdayMap[ord.order_id] && (ord.status || '').toLowerCase() === 'completed' && (
                   <div style={{ marginTop: '16px', background: 'linear-gradient(150deg, rgba(244, 114, 182, 0.13), rgba(147, 51, 234, 0.1))', border: '1px solid rgba(244, 114, 182, 0.45)', borderRadius: '14px', padding: '14px' }}>
                     <div style={{ fontSize: '13px', fontWeight: '900', color: '#f9a8d4', marginBottom: '8px' }}>{t.bday.linkTitle}</div>
                     <a href={birthdayPath(bdayMap[ord.order_id])} target="_blank" rel="noreferrer" style={{ display: 'inline-block', background: 'linear-gradient(135deg, #f472b6, #a855f7)', color: '#fff', fontWeight: '900', fontSize: '13px', padding: '10px 18px', borderRadius: '10px', textDecoration: 'none' }}>{t.bday.open}</a>

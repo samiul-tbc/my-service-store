@@ -121,6 +121,7 @@ export default function ConfirmPage() {
       discount: discount,
       couponCode: coupon ? coupon.code : '',
       vipApplied: !coupon && discount > 0,
+      category: productData?.category || '',
       birthday: isBirthday ? { name: bName.trim(), birth: bBirth, photo: bPhoto.trim(), msg: bMsg.trim(), from: bFrom.trim(), theme: bTheme, rel: bRel } : null,
       customerName: name.trim(),
       whatsappNumber: fullPhoneNumber,
