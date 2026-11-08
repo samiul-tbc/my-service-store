@@ -231,11 +231,11 @@ export default function ProfilePage() {
                 <span style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#f1f5f9', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{o.service_name}</span>
                 <span style={{ fontSize: '10px', color: '#64748b' }}>#{o.order_id}</span>
               </Link>
-              <span style={{ textAlign: 'right', flexShrink: 0 }}>
-                <span style={{ display: 'block', fontSize: '12px', fontWeight: '900', color: '#a6f36a' }}>৳{o.price}</span>
-                <span style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'capitalize' }}><span style={{ display: 'inline-block', width: '7px', height: '7px', borderRadius: '50%', marginRight: '5px', verticalAlign: '1px', background: { pending: '#fbbf24', verifying: '#38bdf8', processing: '#a78bfa', completed: '#4ade80', cancelled: '#f87171' }[o.status] || '#94a3b8' }} />{o.status}</span>
+              <span style={{ textAlign: 'right', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px' }}>
+                <span style={{ fontSize: '12px', fontWeight: '900', color: '#a6f36a' }}>৳{o.price}</span>
+                <span style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'capitalize', display: 'inline-flex', alignItems: 'center' }}><span style={{ display: 'inline-block', width: '7px', height: '7px', borderRadius: '50%', marginRight: '5px', background: { pending: '#fbbf24', verifying: '#38bdf8', processing: '#a78bfa', completed: '#4ade80', cancelled: '#f87171' }[o.status] || '#94a3b8' }} />{o.status}</span>
                 {match && (
-                  <Link href={`/product/${match.id}`} style={{ display: 'inline-block', marginTop: '3px', fontSize: '10px', fontWeight: '800', color: '#a6f36a', textDecoration: 'none', border: '1px solid rgba(166,243,106,0.4)', padding: '2px 8px', borderRadius: '999px', background: 'rgba(166,243,106,0.08)' }}>{t.shop.buyAgain}</Link>
+                  <Link href={`/product/${match.id}`} style={{ display: 'inline-block', marginTop: '2px', fontSize: '10px', fontWeight: '800', color: '#a6f36a', textDecoration: 'none', border: '1px solid rgba(166,243,106,0.4)', padding: '3px 10px', borderRadius: '999px', background: 'rgba(166,243,106,0.08)' }}>{t.shop.buyAgain}</Link>
                 )}
               </span>
             </div>
