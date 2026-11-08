@@ -59,6 +59,9 @@ export default function SecretAdminPage() {
  const [adText, setAdText] = useState('');
  const [savingAd, setSavingAd] = useState(false);
  const [coupons, setCoupons] = useState([]);
+ const [statusNotify, setStatusNotify] = useState(null);
+ const [tgTestState, setTgTestState] = useState('');
+ const [custSearch, setCustSearch] = useState('');
  const [newCoupon, setNewCoupon] = useState({ code: '', type: 'pct', value: '', min: '' });
  const [savingOffers, setSavingOffers] = useState(false);
 
@@ -322,6 +325,16 @@ export default function SecretAdminPage() {
  finally { setSavingOffers(false); }
  };
 
+ const handleTestTelegram = async () => {
+ setTgTestState('loading');
+ try {
+ const data = await postAdmin('test-telegram', {});
+ if (data && data.ok) setTgTestState('ok');
+ else if (data && data.error === 'env_missing') setTgTestState('env');
+ else setTgTestState('fail');
+ } catch { setTgTestState('fail'); }
+ };
+
  const handleAddCoupon = () => {
  const code = newCoupon.code.trim().toUpperCase();
  const value = Number(newCoupon.value);
@@ -441,6 +454,8 @@ export default function SecretAdminPage() {
  setOrders((prev) =>
  prev.map((ord) => (ord.id === orderDbId ? { ...ord, status: newStatus } : ord))
  );
+ const changed = orders.find((o) => o.id === orderDbId);
+ if (changed) setStatusNotify({ ord: changed, status: newStatus });
  } else {
  alert('স্ট্যাটাস আপডেট করা যায়নি!');
  }
@@ -540,7 +555,8 @@ export default function SecretAdminPage() {
  canvas.height = height;
  const ctx = canvas.getContext('2d');
  ctx.drawImage(img, 0, 0, width, height);
- resolve(canvas.toDataURL('image/jpeg', 0.78));
+ const webp = canvas.toDataURL('image/webp', 0.82);
+ resolve(webp.startsWith('data:image/webp') ? webp : canvas.toDataURL('image/jpeg', 0.78));
  } catch (e) {
  reject(new Error('ছবি প্রসেস করা যায়নি'));
  }
@@ -1049,6 +1065,21 @@ export default function SecretAdminPage() {
  >
  অফার / কুপন
  </button>
+ <button
+ onClick={() => setActiveTab('customers')}
+ style={{
+ padding: '10px',
+ borderRadius: '12px',
+ border: 'none',
+ background: activeTab === 'customers' ? 'linear-gradient(135deg, #a6f36a, #d2ffad)' : 'transparent',
+ color: activeTab === 'customers' ? '#10170c' : '#94a3b8',
+ fontWeight: 'bold',
+ fontSize: '13px',
+ cursor: 'pointer',
+ }}
+ >
+ কাস্টমার
+ </button>
  </div>
 
  {/* অফার / কুপন ট্যাব */}
@@ -1083,9 +1114,71 @@ export default function SecretAdminPage() {
  </div>
  )}
 
+ {/* কাস্টমার ট্যাব */}
+ {activeTab === 'customers' && (
+ <div>
+ <input type="text" placeholder="নাম বা নম্বর দিয়ে খুঁজুন..." value={custSearch} onChange={(e) => setCustSearch(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '11px 14px', borderRadius: '12px', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)', color: '#ffffff', fontSize: '13px', outline: 'none', marginBottom: '12px' }} />
+ {(() => {
+ const norm = (v) => String(v || '').replace(/\D/g, '').slice(-11);
+ const map = new Map();
+ for (const o of orders) {
+ const key = norm(o.whatsapp_number);
+ if (!key) continue;
+ const cur = map.get(key) || { phone: key, name: o.customer_name || '', count: 0, spent: 0, last: '' };
+ cur.count += 1;
+ if (o.status === 'completed') cur.spent += Number(o.price) || 0;
+ if (!cur.last || String(o.created_at || '') > cur.last) { cur.last = String(o.created_at || ''); cur.name = o.customer_name || cur.name; }
+ map.set(key, cur);
+ }
+ const q = custSearch.trim().toLowerCase();
+ const list = [...map.values()]
+ .filter((c) => !q || c.name.toLowerCase().includes(q) || c.phone.includes(q))
+ .sort((a, b) => b.spent - a.spent || b.count - a.count);
+ if (list.length === 0) return <p style={{ fontSize: '13px', color: '#64748b' }}>কোনো কাস্টমার পাওয়া যায়নি।</p>;
+ return list.map((c) => (
+ <div key={c.phone} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '11px 12px', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '12px', marginBottom: '8px', background: 'rgba(15, 23, 42, 0.7)', flexWrap: 'wrap' }}>
+ <div style={{ flex: 1, minWidth: '170px' }}>
+ <div style={{ fontSize: '13px', fontWeight: '800', color: '#f8fafc' }}>{c.name || 'নাম নেই'}</div>
+ <div style={{ fontSize: '11px', color: '#94a3b8' }}>{c.phone} • শেষ অর্ডার: {c.last ? c.last.slice(0, 10) : '—'}</div>
+ </div>
+ <span style={{ fontSize: '12px', color: '#e2e8f0' }}>{c.count}টি অর্ডার</span>
+ <span style={{ fontSize: '12px', fontWeight: '900', color: '#a6f36a' }}>৳{c.spent} খরচ (completed)</span>
+ <a href={`https://wa.me/88${c.phone}`} target="_blank" rel="noreferrer" style={{ padding: '6px 12px', borderRadius: '9px', background: 'rgba(37, 211, 102, 0.15)', border: '1px solid rgba(37, 211, 102, 0.4)', color: '#4ade80', fontSize: '11px', fontWeight: '900', textDecoration: 'none' }}>WhatsApp</a>
+ </div>
+ ));
+ })()}
+ </div>
+ )}
+
  {/* লাইভ অর্ডার ট্যাব */}
  {activeTab === 'orders' && (
  <div>
+ {statusNotify && (() => {
+ const o = statusNotify.ord;
+ const digits = String(o.whatsapp_number || '').replace(/\D/g, '');
+ const waNum = digits.startsWith('01') ? '88' + digits : digits.replace(/^\+/, '');
+ const first = String(o.customer_name || '').split(' ')[0] || 'আপনি';
+ const msgs = {
+ confirmed: `আসসালামু আলাইকুম ${first}, আপনার Hub Cart অর্ডার (${o.service_name}, ৳${o.price}) কনফার্ম হয়েছে। শীঘ্রই ডেলিভারি পেয়ে যাবেন। ধন্যবাদ!`,
+ completed: `আসসালামু আলাইকুম ${first}, আপনার Hub Cart অর্ডার (${o.service_name}) ডেলিভারি সম্পন্ন হয়েছে। কোনো সমস্যা হলে এখানেই জানাবেন। ধন্যবাদ!`,
+ cancelled: `আসসালামু আলাইকুম ${first}, দুঃখিত — আপনার Hub Cart অর্ডার (${o.service_name}) বাতিল করা হয়েছে। বিস্তারিত জানতে রিপ্লাই করুন।`,
+ };
+ const msg = msgs[statusNotify.status] || `আসসালামু আলাইকুম ${first}, আপনার Hub Cart অর্ডারের (${o.service_name}) স্ট্যাটাস এখন: ${statusNotify.status}।`;
+ return (
+ <div style={{ background: 'rgba(37, 211, 102, 0.1)', border: '1px solid rgba(37, 211, 102, 0.4)', borderRadius: '14px', padding: '12px 14px', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+ <span style={{ fontSize: '13px', color: '#e2e8f0', flex: 1, minWidth: '200px' }}>স্ট্যাটাস <strong style={{ color: '#4ade80' }}>{statusNotify.status}</strong> হয়েছে — কাস্টমারকে WhatsApp-এ জানাবেন?</span>
+ <a href={`https://wa.me/${waNum}?text=${encodeURIComponent(msg)}`} target="_blank" rel="noreferrer" style={{ padding: '8px 14px', borderRadius: '10px', background: '#25d366', color: '#06281a', fontSize: '12px', fontWeight: '900', textDecoration: 'none' }}>WhatsApp-এ পাঠান</a>
+ <button type="button" onClick={() => setStatusNotify(null)} style={{ padding: '8px 12px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.15)', background: 'transparent', color: '#94a3b8', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>বাদ দিন</button>
+ </div>
+ );
+ })()}
+ <div style={{ background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', padding: '12px 14px', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+ <span style={{ fontSize: '13px', color: '#e2e8f0', flex: 1, minWidth: '210px' }}><strong style={{ color: '#f8fafc' }}>Telegram Order Alert</strong> — নতুন অর্ডার এলে Telegram-এ মেসেজ যায় (Vercel env দিয়ে সেট করা)।</span>
+ <button type="button" onClick={handleTestTelegram} disabled={tgTestState === 'loading'} style={{ padding: '8px 14px', borderRadius: '10px', border: 'none', background: 'linear-gradient(135deg, #38bdf8, #818cf8)', color: '#0b1220', fontSize: '12px', fontWeight: '900', cursor: 'pointer' }}>{tgTestState === 'loading' ? 'পাঠানো হচ্ছে...' : 'Test Alert পাঠান'}</button>
+ {tgTestState === 'ok' && <span style={{ fontSize: '12px', color: '#4ade80', fontWeight: 'bold' }}>পৌঁছেছে! Telegram চেক করুন।</span>}
+ {tgTestState === 'env' && <span style={{ fontSize: '12px', color: '#fbbf24', fontWeight: 'bold' }}>Env সেট করা নেই — Vercel-এ TELEGRAM_BOT_TOKEN ও TELEGRAM_CHAT_ID যোগ করুন।</span>}
+ {tgTestState === 'fail' && <span style={{ fontSize: '12px', color: '#f87171', fontWeight: 'bold' }}>পাঠানো যায়নি — token/chat id যাচাই করুন।</span>}
+ </div>
  <div style={{ background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', padding: '12px', marginBottom: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
  <input
  type="text"

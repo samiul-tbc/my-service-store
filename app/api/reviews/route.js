@@ -45,7 +45,28 @@ export async function GET(request) {
     const reviews = await readReviews(productId);
     const count = reviews.length;
     const avg = count ? reviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0) / count : 0;
-    return NextResponse.json({ reviews, count, avg: Math.round(avg * 10) / 10 });
+    // Verified Buyer: the reviewer's phone matches a completed order for this product.
+    const norm = (v) => String(v || '').replace(/\D/g, '').slice(-10);
+    let verifiedPhones = new Set();
+    try {
+      const [prodRes, ordRes] = await Promise.all([
+        fetch(`${SUPABASE_URL}/rest/v1/products?id=eq.${productId}&select=title`, { cache: 'no-store', headers }),
+        fetch(`${SUPABASE_URL}/rest/v1/orders?status=eq.completed&select=whatsapp_number,service_name&limit=1000`, { cache: 'no-store', headers }),
+      ]);
+      const prods = prodRes.ok ? await prodRes.json() : [];
+      const title = Array.isArray(prods) && prods[0] ? String(prods[0].title || '').toLowerCase() : '';
+      const ords = ordRes.ok ? await ordRes.json() : [];
+      if (title && Array.isArray(ords)) {
+        for (const o of ords) {
+          if (String(o.service_name || '').toLowerCase().includes(title)) verifiedPhones.add(norm(o.whatsapp_number));
+        }
+      }
+    } catch {}
+    const safe = reviews.map((r) => ({
+      name: r.name, rating: r.rating, text: r.text, date: r.date,
+      verified: r.phone ? verifiedPhones.has(norm(r.phone)) : false,
+    }));
+    return NextResponse.json({ reviews: safe, count, avg: Math.round(avg * 10) / 10 });
   } catch (err) {
     return NextResponse.json({ error: err.message, reviews: [], count: 0, avg: 0 }, { status: 500 });
   }
@@ -63,8 +84,9 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Missing or invalid fields' }, { status: 400 });
     }
 
+    const phone = String(body.phone || '').replace(/[^\d+]/g, '').slice(0, 20);
     const existing = await readReviews(productId);
-    const review = { name, rating, text, date: new Date().toISOString() };
+    const review = { name, rating, text, date: new Date().toISOString(), ...(phone ? { phone } : {}) };
     const updated = [review, ...existing].slice(0, 50);
 
     const res = await fetch(`${SUPABASE_URL}/rest/v1/site_settings?on_conflict=key`, {

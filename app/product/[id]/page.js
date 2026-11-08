@@ -52,7 +52,7 @@ export default function ProductDetailPage() {
     try {
       const r = await fetch('/api/reviews', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId: Number(id), name: revName.trim(), rating: revRating, text: revText.trim() }),
+        body: JSON.stringify({ productId: Number(id), name: revName.trim(), rating: revRating, text: revText.trim(), phone: (() => { try { const u = JSON.parse(localStorage.getItem('hubcart_user') || 'null'); return (u && (u.phone || u.whatsapp_number || u.whatsapp)) || ''; } catch { return ''; } })() }),
       });
       const d = await r.json();
       if (r.ok && d.ok) {
@@ -229,7 +229,14 @@ export default function ProductDetailPage() {
         {reviews.map((r, i) => (
           <div key={i} style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '12px 0' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-              <strong style={{ fontSize: '13px', color: '#f8fafc' }}>{r.name}</strong>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '7px' }}>
+                <strong style={{ fontSize: '13px', color: '#f8fafc' }}>{r.name}</strong>
+                {r.verified && (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '10px', fontWeight: '800', color: '#a6f36a', background: 'rgba(166, 243, 106, 0.12)', border: '1px solid rgba(166, 243, 106, 0.35)', padding: '2px 7px', borderRadius: '999px' }}>
+                    <Icon name="check" size={10} color="#a6f36a" /> {t.shop.verifiedBuyer}
+                  </span>
+                )}
+              </span>
               <span style={{ color: '#facc15', fontSize: '13px' }}>{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}</span>
             </div>
             <p style={{ fontSize: '13px', color: '#cbd5e1', lineHeight: 1.6, margin: '4px 0 0', whiteSpace: 'pre-line' }}>{r.text}</p>

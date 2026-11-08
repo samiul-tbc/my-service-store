@@ -210,6 +210,29 @@ export async function POST(req) {
       return NextResponse.json({ success: true });
     }
 
+    // Telegram order alert — test message (env: TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID)
+    if (action === 'test-telegram') {
+      const token = process.env.TELEGRAM_BOT_TOKEN;
+      const chatId = process.env.TELEGRAM_CHAT_ID;
+      if (!token || !chatId) {
+        return NextResponse.json({ error: 'env_missing' }, { status: 400 });
+      }
+      try {
+        const tg = await fetch('https://api.telegram.org/bot' + token + '/sendMessage', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: chatId, text: 'Hub Cart: Telegram order alert test — kaj korche! Notun order ele ekhane message ashbe.', parse_mode: 'HTML' }),
+        });
+        const data = await tg.json().catch(() => null);
+        if (!tg.ok || !data || !data.ok) {
+          return NextResponse.json({ error: 'telegram_failed', detail: (data && data.description) || '' }, { status: 502 });
+        }
+        return NextResponse.json({ ok: true });
+      } catch (e) {
+        return NextResponse.json({ error: e.message }, { status: 500 });
+      }
+    }
+
     // কুপন তালিকা সেভ (Offers ট্যাব)
     if (action === 'save-coupons') {
       const list = Array.isArray(payload) ? payload : [];

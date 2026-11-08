@@ -5,6 +5,7 @@ import Footer from './Footer';
 import { LanguageProvider } from '../context/LanguageContext';
 import SwRegister from '../components/SwRegister';
 import PwaBanner from '../components/PwaBanner';
+import WhatsFloat from '../components/WhatsFloat';
 
 export const metadata = {
   title: 'Hub Cart - Shop Smart • Live Better',
@@ -38,6 +39,7 @@ export default function RootLayout({ children }) {
           <BottomNav />
           <SwRegister />
           <PwaBanner />
+          <WhatsFloat />
         </LanguageProvider>
       </body>
     </html>

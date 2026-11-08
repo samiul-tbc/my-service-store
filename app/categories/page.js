@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '../../context/LanguageContext';
 import WishHeart from '../../components/WishHeart';
@@ -74,6 +74,7 @@ export default function CategoriesPage() {
   const [selectedCat, setSelectedCat] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [products, setProducts] = useState([]);
+  const [sortBy, setSortBy] = useState('default');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -108,6 +109,16 @@ export default function CategoriesPage() {
     const inSearch = !q || (p.title || '').toLowerCase().includes(q) || (p.category || '').toLowerCase().includes(q);
     return inCategory && inSearch;
   });
+
+  const sorted = useMemo(() => {
+    const arr = [...filtered];
+    const disc = (p) => (p.oldPrice && p.oldPrice > p.price ? (p.oldPrice - p.price) / p.oldPrice : 0);
+    if (sortBy === 'priceAsc') arr.sort((a, b) => (a.price || 0) - (b.price || 0));
+    else if (sortBy === 'priceDesc') arr.sort((a, b) => (b.price || 0) - (a.price || 0));
+    else if (sortBy === 'rating') arr.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+    else if (sortBy === 'discount') arr.sort((a, b) => disc(b) - disc(a));
+    return arr;
+  }, [filtered, sortBy]);
 
   // Hide categories that have no products (e.g. an empty "Social Boost (0)"),
   // but keep everything visible while products are still loading.
@@ -183,13 +194,24 @@ export default function CategoriesPage() {
       <div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 'bold', margin: 0, color: '#f8fafc' }}>
-            {searchQuery.trim() ? t.cat.searchLabel.replace('{query}', searchQuery.trim()) : t.cat.names[selectedCat]} ({filtered.length})
+            {searchQuery.trim() ? t.cat.searchLabel.replace('{query}', searchQuery.trim()) : t.cat.names[selectedCat]} ({sorted.length})
           </h2>
+        </div>
+
+        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '6px', marginBottom: '10px', scrollbarWidth: 'none' }}>
+          {[
+            ['default', t.cat.sortDefault], ['priceAsc', t.cat.sortPriceLow], ['priceDesc', t.cat.sortPriceHigh], ['rating', t.cat.sortRating], ['discount', t.cat.sortDiscount],
+          ].map(([key, label]) => (
+            <button key={key} type="button" onClick={() => setSortBy(key)}
+              style={{ flexShrink: 0, padding: '7px 13px', borderRadius: '999px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', border: sortBy === key ? '1px solid rgba(166, 243, 106, 0.6)' : '1px solid rgba(255,255,255,0.1)', background: sortBy === key ? 'rgba(166, 243, 106, 0.16)' : 'rgba(15, 23, 42, 0.6)', color: sortBy === key ? '#a6f36a' : '#94a3b8' }}>
+              {label}
+            </button>
+          ))}
         </div>
 
         {loading ? (
           <div style={{ textAlign: 'center', padding: '40px 0', color: '#64748b', fontSize: '12px' }}>{t.cat.loading}</div>
-        ) : filtered.length === 0 ? (
+        ) : sorted.length === 0 ? (
           <div style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255, 255, 255, 0.06)', borderRadius: '16px', padding: '30px', textAlign: 'center', color: '#64748b', fontSize: '12px' }}>
             {searchQuery.trim()
               ? t.cat.noResults.replace('{query}', searchQuery.trim())
@@ -197,7 +219,7 @@ export default function CategoriesPage() {
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '14px' }}>
-            {filtered.map((prod) => (
+            {sorted.map((prod) => (
               <Link
                 key={prod.id}
                 href={`/product/${prod.id}`}
