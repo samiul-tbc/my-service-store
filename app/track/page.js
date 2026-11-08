@@ -67,8 +67,8 @@ function TrackContent() {
         try {
           const completed = data.filter((o) => (o.status || '').toLowerCase() === 'completed');
           if (completed.length) {
-            const inList = completed.map((o) => `"delivered_${o.order_id}"`).join(',');
-            const r2 = await fetch(`${SUPABASE_URL}/rest/v1/site_settings?key=in.(${inList})&select=key,value`, {
+            const ors = completed.map((o) => `key.eq.delivered_${o.order_id},key.like.delivered_${o.order_id}_*`).join(',');
+            const r2 = await fetch(`${SUPABASE_URL}/rest/v1/site_settings?or=(${ors})&select=key,value`, {
               cache: 'no-store',
               headers: {
                 apikey: SUPABASE_KEY,
@@ -78,7 +78,16 @@ function TrackContent() {
             const rows = await r2.json();
             if (Array.isArray(rows)) {
               const map = {};
-              rows.forEach((r) => { if (r.value) map[r.key.replace('delivered_', '')] = r.value; });
+              completed.forEach((o) => {
+                const base = `delivered_${o.order_id}`;
+                let best = null;
+                rows.forEach((r) => {
+                  if (!r.value) return;
+                  if (r.key === base) { if (!best) best = r; return; }
+                  if (r.key.startsWith(base + '_') && /^\d+$/.test(r.key.slice(base.length + 1)) && (!best || r.key > best.key)) best = r;
+                });
+                if (best) map[o.order_id] = best.value;
+              });
               setDeliveredMap(map);
             }
           }

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { readProductFlags, writeProductFlags } from '../../../lib/product-flags-server';
+import { fetchLatestSetting, insertSettingVersion, pickLatestSetting } from '../../../lib/settings-store';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://mieygzqgoekinxppdepb.supabase.co';
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
@@ -32,15 +33,20 @@ export async function GET(req) {
         },
       });
       const rows = await res.json();
-      const groups = [];
+      const latest = {};
       if (Array.isArray(rows)) {
         for (const row of rows) {
-          if (!row.key || !row.key.startsWith('reviews_')) continue;
-          let reviews = [];
-          try { const p = JSON.parse(row.value); if (Array.isArray(p)) reviews = p; } catch {}
-          groups.push({ productId: Number(row.key.replace('reviews_', '')), reviews });
+          const m = row.key && row.key.match(/^reviews_(\d+)(?:_(\d+))?$/);
+          if (!m) continue;
+          const ver = m[2] || '';
+          if (!latest[m[1]] || ver > latest[m[1]].ver) latest[m[1]] = { ver, value: row.value };
         }
       }
+      const groups = Object.entries(latest).map(([pid, entry]) => {
+        let reviews = [];
+        try { const p = JSON.parse(entry.value); if (Array.isArray(p)) reviews = p; } catch {}
+        return { productId: Number(pid), reviews };
+      });
       return NextResponse.json({ groups });
     }
 
@@ -53,18 +59,24 @@ export async function GET(req) {
         },
       });
       const rows = await res.json();
-      const configs = {};
+      const latestCfg = {};
       if (Array.isArray(rows)) {
         for (const row of rows) {
-          if (!row.key || !row.key.startsWith('autodelivery_')) continue;
-          try { configs[row.key.replace('autodelivery_', '')] = JSON.parse(row.value); } catch {}
+          const m = row.key && row.key.match(/^autodelivery_(\d+)(?:_(\d+))?$/);
+          if (!m) continue;
+          const ver = m[2] || '';
+          if (!latestCfg[m[1]] || ver > latestCfg[m[1]].ver) latestCfg[m[1]] = { ver, value: row.value };
         }
+      }
+      const configs = {};
+      for (const [pid, entry] of Object.entries(latestCfg)) {
+        try { configs[pid] = JSON.parse(entry.value); } catch {}
       }
       return NextResponse.json({ configs });
     }
 
     if (type === 'offers') {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/site_settings?key=eq.coupons&select=key,value`, {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/site_settings?key=like.coupons*&select=key,value`, {
         cache: 'no-store',
         headers: {
           apikey: SUPABASE_KEY,
@@ -73,11 +85,8 @@ export async function GET(req) {
       });
       const rows = await res.json();
       let coupons = [];
-      if (Array.isArray(rows)) {
-        for (const row of rows) {
-          if (row.key === 'coupons') { try { const v = JSON.parse(row.value); if (Array.isArray(v)) coupons = v; } catch {} }
-        }
-      }
+      const rawCoupons = pickLatestSetting(rows, 'coupons');
+      if (rawCoupons) { try { const v = JSON.parse(rawCoupons); if (Array.isArray(v)) coupons = v; } catch {} }
       return NextResponse.json({ coupons });
     }
 
@@ -86,10 +95,14 @@ export async function GET(req) {
       return NextResponse.json({ flags });
     }
 
+    if (type === 'notice') {
+      const value = await fetchLatestSetting('announcement');
+      return NextResponse.json([{ value: value || '' }]);
+    }
+
     let endpoint = '';
     if (type === 'orders') endpoint = `${SUPABASE_URL}/rest/v1/orders?select=*&order=id.desc`;
     else if (type === 'products') endpoint = `${SUPABASE_URL}/rest/v1/products?select=*&order=id.desc`;
-    else if (type === 'notice') endpoint = `${SUPABASE_URL}/rest/v1/site_settings?key=eq.announcement&select=value`;
     else return NextResponse.json({ error: 'ভুল টাইপ' }, { status: 400 });
 
     const res = await fetch(endpoint, {
@@ -165,54 +178,30 @@ export async function POST(req) {
 
     // হোমপেজ নোটিশ আপডেট
     if (action === 'update-notice') {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/site_settings`, {
-        method: 'POST',
-        headers: {
-          apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`,
-          'Content-Type': 'application/json',
-          Prefer: 'resolution=merge-duplicates',
-        },
-        body: JSON.stringify({ key: 'announcement', value: payload }),
-      });
-
-      if (!res.ok) throw new Error(await res.text());
+      const ok = await insertSettingVersion('announcement', String(payload || ''));
+      if (!ok) throw new Error('notice save failed');
       return NextResponse.json({ success: true });
     }
 
     // অটো-ডেলিভারি সেটিংস সেভ (প্রোডাক্ট অনুযায়ী)
     if (action === 'save-autodelivery') {
       const { productId, config } = payload || {};
-      if (!productId) return NextResponse.json({ error: 'productId প্রয়োজন' }, { status: 400 });
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/site_settings`, {
-        method: 'POST',
-        headers: {
-          apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`,
-          'Content-Type': 'application/json',
-          Prefer: 'resolution=merge-duplicates',
-        },
-        body: JSON.stringify({ key: `autodelivery_${productId}`, value: JSON.stringify(config || {}) }),
-      });
-      if (!res.ok) throw new Error(await res.text());
+      if (!productId) {
+        return NextResponse.json({ error: 'productId required' }, { status: 400 });
+      }
+      const ok = await insertSettingVersion(`autodelivery_${productId}`, JSON.stringify(config || {}));
+      if (!ok) throw new Error('autodelivery save failed');
       return NextResponse.json({ success: true });
     }
 
     // ডেলিভারি করা কন্টেন্ট সেভ (অর্ডার অনুযায়ী — কাস্টমার ট্র্যাক পেজে দেখবে)
     if (action === 'save-delivered') {
       const { orderId, content } = payload || {};
-      if (!orderId) return NextResponse.json({ error: 'orderId প্রয়োজন' }, { status: 400 });
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/site_settings`, {
-        method: 'POST',
-        headers: {
-          apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`,
-          'Content-Type': 'application/json',
-          Prefer: 'resolution=merge-duplicates',
-        },
-        body: JSON.stringify({ key: `delivered_${orderId}`, value: String(content || '') }),
-      });
-      if (!res.ok) throw new Error(await res.text());
+      if (!orderId) {
+        return NextResponse.json({ error: 'orderId required' }, { status: 400 });
+      }
+      const ok = await insertSettingVersion(`delivered_${orderId}`, String(content || ''));
+      if (!ok) throw new Error('delivered save failed');
       return NextResponse.json({ success: true });
     }
 
@@ -270,17 +259,8 @@ export async function POST(req) {
         min: Math.max(0, Number(c.min) || 0),
         active: c.active !== false,
       })).filter((c) => c.code && c.value > 0);
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/site_settings`, {
-        method: 'POST',
-        headers: {
-          apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`,
-          'Content-Type': 'application/json',
-          Prefer: 'resolution=merge-duplicates',
-        },
-        body: JSON.stringify({ key: 'coupons', value: JSON.stringify(clean) }),
-      });
-      if (!res.ok) throw new Error(await res.text());
+      const ok = await insertSettingVersion('coupons', JSON.stringify(clean));
+      if (!ok) throw new Error('coupons save failed');
       return NextResponse.json({ success: true, coupons: clean });
     }
 
@@ -337,33 +317,17 @@ export async function DELETE(req) {
         return NextResponse.json({ error: 'productId/index মিসিং' }, { status: 400 });
       }
       const key = `reviews_${productId}`;
-      const getRes = await fetch(`${SUPABASE_URL}/rest/v1/site_settings?key=eq.${encodeURIComponent(key)}&select=value`, {
-        cache: 'no-store',
-        headers: {
-          apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`,
-        },
-      });
-      const rows = await getRes.json();
+      const rawReview = await fetchLatestSetting(key);
       let reviews = [];
-      if (Array.isArray(rows) && rows.length && rows[0].value) {
-        try { const p = JSON.parse(rows[0].value); if (Array.isArray(p)) reviews = p; } catch {}
+      if (rawReview) {
+        try { const p = JSON.parse(rawReview); if (Array.isArray(p)) reviews = p; } catch {}
       }
       if (index < 0 || index >= reviews.length) {
         return NextResponse.json({ error: 'রিভিউ পাওয়া যায়নি' }, { status: 404 });
       }
       reviews.splice(index, 1);
-      const upRes = await fetch(`${SUPABASE_URL}/rest/v1/site_settings?on_conflict=key`, {
-        method: 'POST',
-        headers: {
-          apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`,
-          'Content-Type': 'application/json',
-          Prefer: 'resolution=merge-duplicates',
-        },
-        body: JSON.stringify([{ key, value: JSON.stringify(reviews) }]),
-      });
-      if (!upRes.ok) throw new Error(await upRes.text());
+      const okDel = await insertSettingVersion(key, JSON.stringify(reviews));
+      if (!okDel) throw new Error('review delete save failed');
       return NextResponse.json({ success: true, count: reviews.length });
     }
 

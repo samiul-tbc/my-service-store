@@ -12,17 +12,13 @@ const headers = {
 };
 
 const keyFor = (productId) => `reviews_${productId}`;
+import { fetchLatestSetting, insertSettingVersion } from '../../../lib/settings-store';
 
 async function readReviews(productId) {
-  const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/site_settings?key=eq.${encodeURIComponent(keyFor(productId))}&select=value`,
-    { cache: 'no-store', headers }
-  );
-  if (!res.ok) return [];
-  const data = await res.json();
-  if (!Array.isArray(data) || data.length === 0 || !data[0].value) return [];
+  const raw = await fetchLatestSetting(keyFor(productId));
+  if (!raw) return [];
   try {
-    const parsed = JSON.parse(data[0].value);
+    const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
@@ -89,15 +85,9 @@ export async function POST(request) {
     const review = { name, rating, text, date: new Date().toISOString(), ...(phone ? { phone } : {}) };
     const updated = [review, ...existing].slice(0, 50);
 
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/site_settings?on_conflict=key`, {
-      method: 'POST',
-      headers: { ...headers, Prefer: 'resolution=merge-duplicates' },
-      body: JSON.stringify([{ key: keyFor(productId), value: JSON.stringify(updated) }]),
-    });
-
-    if (!res.ok) {
-      const detail = await res.text();
-      return NextResponse.json({ error: 'Could not save review', detail: detail.slice(0, 200) }, { status: 502 });
+    const okSave = await insertSettingVersion(keyFor(productId), JSON.stringify(updated));
+    if (!okSave) {
+      return NextResponse.json({ error: 'Could not save review' }, { status: 502 });
     }
 
     return NextResponse.json({ ok: true, review, count: updated.length });
