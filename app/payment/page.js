@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLanguage } from '../../context/LanguageContext';
+import Icon from '../../components/icons';
 
 const LOGO_HUB_CART = '/logo-icon.png';
 const LOGO_BKASH = 'https://1000logos.net/wp-content/uploads/2021/02/Bkash-logo.png';
@@ -43,7 +44,7 @@ export default function PaymentGatewayPage() {
       {/* টপ হেডার বার */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
         <button onClick={() => router.push('/')} style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer' }}>
-          🏠
+          <Icon name="home" size={18} />
         </button>
         <button onClick={() => router.back()} style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#64748b' }}>
           ✕

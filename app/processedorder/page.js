@@ -173,7 +173,7 @@ export default function ProcessedOrderPage() {
           }}
         >
           <div style={{ background: '#16a34a', color: '#ffffff', fontSize: '9px', fontWeight: '900', textAlign: 'center', padding: '4px 0' }}>
-            ⭐ RECOMMENDED
+            RECOMMENDED
           </div>
           <div style={{ padding: '14px 8px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
@@ -242,7 +242,7 @@ export default function ProcessedOrderPage() {
       {/* Product Price Summary */}
       <div style={{ background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', padding: '16px', marginBottom: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1', fontSize: '13px' }}>
-          <span>ℹ️ {t.success.productPrice}</span>
+          <span>ℹ {t.success.productPrice}</span>
           <span style={{ fontWeight: 'bold', color: '#f8fafc' }}>
             ৳ {orderData.price}
             {selectedMethod === 'crypto' && ` (≈ $${usdtAmount} USDT)`}

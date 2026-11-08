@@ -39,9 +39,11 @@ export default function Navbar() {
       position: 'sticky',
       top: 0,
       zIndex: 90,
-      background: 'rgba(8, 11, 16, 0.86)',
-      backdropFilter: 'blur(16px)',
-      borderBottom: '1px solid rgba(255, 255, 255, 0.075)',
+      background: 'linear-gradient(180deg, rgba(16, 22, 34, 0.72), rgba(8, 11, 16, 0.62))',
+      backdropFilter: 'blur(20px) saturate(170%)',
+      WebkitBackdropFilter: 'blur(20px) saturate(170%)',
+      borderBottom: '1px solid rgba(255, 255, 255, 0.09)',
+      boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 10px 32px rgba(0, 0, 0, 0.28)',
       padding: '13px 20px',
     }}>
       <div style={{

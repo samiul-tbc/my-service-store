@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useLanguage } from '../../../context/LanguageContext';
+import Icon from '../../../components/icons';
 import { productImageSrc } from '../../../lib/productImage';
 
 const LOGO_HUB_CART = '/logo-icon.png';
@@ -203,7 +204,7 @@ export default function ProductDetailPage() {
 
       {/* কাস্টমার রিভিউ */}
       <div style={{ background: 'rgba(15, 23, 42, 0.75)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '24px', padding: '20px', marginTop: '16px', marginBottom: '70px' }}>
-        <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#f8fafc', margin: '0 0 6px' }}>⭐ {t.rev.title}</h3>
+        <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#f8fafc', margin: '0 0 6px' }}><span style={{ display: "inline-flex", verticalAlign: "-2px", marginRight: "6px" }}><Icon name="star" size={15} color="#facc15" /></span>{t.rev.title}</h3>
         {revCount > 0 ? (
           <p style={{ fontSize: '13px', color: '#94a3b8', margin: '0 0 14px' }}>
             <span style={{ color: '#facc15', fontSize: '15px' }}>{'★'.repeat(Math.round(revAvg))}{'☆'.repeat(5 - Math.round(revAvg))}</span>{' '}
@@ -322,7 +323,7 @@ export default function ProductDetailPage() {
             boxShadow: '0 4px 14px rgba(166, 243, 106, 0.4)',
           }}
         >
-          <span>⚡</span>
+          <Icon name="bolt" size={16} color="#10170c" />
           <span>{t.prod.buyNow}</span>
         </button>
       </div>

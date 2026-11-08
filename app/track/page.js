@@ -3,6 +3,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useLanguage } from '../../context/LanguageContext';
+import Icon from '../../components/icons';
 
 const LOGO_HUB_CART = '/logo-icon.png';
 
@@ -174,7 +175,7 @@ function TrackContent() {
           textAlign: 'center',
           color: '#94a3b8',
         }}>
-          <div style={{ fontSize: '32px', marginBottom: '8px' }}>🔍</div>
+          <div style={{ marginBottom: '10px', display: 'flex', justifyContent: 'center' }}><Icon name="search" size={38} color="#64748b" /></div>
           <h3 style={{ fontSize: '15px', color: '#f8fafc', margin: '0 0 4px' }}>{t.track.noneTitle}</h3>
           <p style={{ fontSize: '12px', margin: 0, color: '#64748b' }}>{t.track.noneSub}</p>
         </div>
@@ -311,7 +312,7 @@ function TrackContent() {
                       fontWeight: 'bold',
                     }}
                   >
-                    <span>📄</span> {t.track.viewInvoice}
+                    <span style={{ display: "inline-flex", verticalAlign: "-3px", marginRight: "5px" }}><Icon name="doc" size={15} /></span>{t.track.viewInvoice}
                   </Link>
                 </div>
 

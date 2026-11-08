@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '../../context/LanguageContext';
+import Icon from '../../components/icons';
 
 const LOGO_HUB_CART = '/logo-icon.png';
 
@@ -162,7 +163,7 @@ export default function OrderHistoryPage() {
           style={{ background: 'rgba(30, 41, 59, 0.6)', border: '1px solid rgba(255, 255, 255, 0.08)', color: '#a6f36a', padding: '6px 10px', borderRadius: '10px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
           title={t.orders.refresh}
         >
-          🔄
+          <Icon name="refresh" size={16} />
         </button>
       </div>
 
@@ -227,7 +228,7 @@ export default function OrderHistoryPage() {
           padding: '50px 20px',
           textAlign: 'center',
         }}>
-          <div style={{ fontSize: '36px', marginBottom: '10px' }}>📦</div>
+          <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}><Icon name="box" size={40} color="#64748b" /></div>
           <h3 style={{ fontSize: '16px', color: '#f8fafc', margin: '0 0 4px' }}>{t.orders.noneTitle}</h3>
           <p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 20px' }}>
             {searched ? t.orders.noneSearched : t.orders.noneYet}

@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLanguage } from '../../context/LanguageContext';
+import Icon from '../../components/icons';
 
 const COUNTRY_CODES = [
-  { code: '+880', flag: '🇧🇩', name: 'BD', placeholder: '1XXXXXXXXX' },
-  { code: '+977', flag: '🇳🇵', name: 'NP', placeholder: '98XXXXXXXX' },
-  { code: '+91',  flag: '🇮🇳', name: 'IN', placeholder: '9XXXXXXXXX' },
-  { code: '+1',   flag: '🇺🇸', name: 'US', placeholder: 'XXXXXXXXXX' },
-  { code: '+44',  flag: '🇬🇧', name: 'UK', placeholder: 'XXXXXXXXXX' },
+  { code: '+880', name: 'BD', placeholder: '1XXXXXXXXX' },
+  { code: '+977', name: 'NP', placeholder: '98XXXXXXXX' },
+  { code: '+91',  name: 'IN', placeholder: '9XXXXXXXXX' },
+  { code: '+1',   name: 'US', placeholder: 'XXXXXXXXXX' },
+  { code: '+44',  name: 'UK', placeholder: 'XXXXXXXXXX' },
 ];
 
 export default function ConfirmPage() {
@@ -132,7 +133,7 @@ export default function ConfirmPage() {
 
         <div style={{ backgroundColor: '#0b1220', border: '1px dashed #334155', borderRadius: '12px', padding: '12px 16px', marginBottom: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', marginBottom: '8px', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '13px', color: '#f8fafc', fontWeight: '700' }}>💳 {t.confirm.payPreviewTitle}</span>
+            <span style={{ fontSize: '13px', color: '#f8fafc', fontWeight: '700' }}><span style={{ display: "inline-flex", verticalAlign: "-3px", marginRight: "5px" }}><Icon name="card" size={15} color="#a6f36a" /></span>{t.confirm.payPreviewTitle}</span>
             <span style={{ fontSize: '13px', color: '#a6f36a', fontWeight: '800' }}>{t.confirm.totalDue}: ৳{productData.price}</span>
           </div>
           <p style={{ fontSize: '12px', color: '#94a3b8', margin: '0 0 6px', lineHeight: 1.6 }}>{t.confirm.payPreviewNote}</p>

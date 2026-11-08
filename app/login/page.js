@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useLanguage } from '../../context/LanguageContext';
+import Icon from '../../components/icons';
+import LiquidSeg from '../../components/LiquidSeg';
 
 const LOGO_HUB_CART = '/logo-icon.png';
 
@@ -11,11 +13,11 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://mieygzqgoe
 const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
 
 const COUNTRY_CODES = [
-  { code: '+880', flag: '🇧🇩', name: 'BD', placeholder: '1XXXXXXXXX' },
-  { code: '+977', flag: '🇳🇵', name: 'NP', placeholder: '98XXXXXXXX' },
-  { code: '+91',  flag: '🇮🇳', name: 'IN', placeholder: '9XXXXXXXXX' },
-  { code: '+1',   flag: '🇺🇸', name: 'US', placeholder: 'XXXXXXXXXX' },
-  { code: '+44',  flag: '🇬🇧', name: 'UK', placeholder: 'XXXXXXXXXX' },
+  { code: '+880', name: 'BD', placeholder: '1XXXXXXXXX' },
+  { code: '+977', name: 'NP', placeholder: '98XXXXXXXX' },
+  { code: '+91',  name: 'IN', placeholder: '9XXXXXXXXX' },
+  { code: '+1',   name: 'US', placeholder: 'XXXXXXXXXX' },
+  { code: '+44',  name: 'UK', placeholder: 'XXXXXXXXXX' },
 ];
 
 export default function LoginPage() {
@@ -151,22 +153,15 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* ট্যাব সুইচ */}
-        <div style={{ display: 'flex', background: 'rgba(30, 41, 59, 0.6)', padding: '4px', borderRadius: '12px', marginBottom: '18px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
-          <button
-            type="button"
-            onClick={() => { setIsLoginMode(true); setErrorMsg(''); setSuccessMsg(''); }}
-            style={{ flex: 1, padding: '8px', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', background: isLoginMode ? 'linear-gradient(135deg, #a6f36a, #d2ffad)' : 'transparent', color: isLoginMode ? '#10170c' : '#64748b' }}
-          >
-            {t.auth.loginTab}
-          </button>
-          <button
-            type="button"
-            onClick={() => { setIsLoginMode(false); setErrorMsg(''); setSuccessMsg(''); }}
-            style={{ flex: 1, padding: '8px', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', background: !isLoginMode ? 'linear-gradient(135deg, #a6f36a, #d2ffad)' : 'transparent', color: !isLoginMode ? '#10170c' : '#64748b' }}
-          >
-            {t.auth.signupTab}
-          </button>
+        {/* ট্যাব সুইচ — liquid */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '18px' }}>
+          <LiquidSeg
+            options={[{ value: 'login', label: t.auth.loginTab }, { value: 'signup', label: t.auth.signupTab }]}
+            value={isLoginMode ? 'login' : 'signup'}
+            onChange={(v) => { setIsLoginMode(v === 'login'); setErrorMsg(''); setSuccessMsg(''); }}
+            height={38}
+            fontSize={12.5}
+          />
         </div>
 
         {successMsg && (
@@ -242,7 +237,7 @@ export default function LoginPage() {
             <div style={{ position: 'relative' }}>
               <input required type={showPw ? 'text' : 'password'} minLength={6} autoComplete={isLoginMode ? 'current-password' : 'new-password'} placeholder={t.auth.passwordPlaceholder} value={password} onChange={(e) => setPassword(e.target.value)} style={{ ...inputStyle, paddingRight: '42px' }} />
               <button type="button" onClick={() => setShowPw((v) => !v)} aria-label="Toggle password visibility" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '15px', padding: '4px' }}>
-                {showPw ? '🙈' : '👁️'}
+                {showPw ? <Icon name="eyeOff" size={18} color="#94a3b8" /> : <Icon name="eye" size={18} color="#94a3b8" />}
               </button>
             </div>
             {!isLoginMode && password && (() => {

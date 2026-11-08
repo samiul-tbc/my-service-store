@@ -141,7 +141,7 @@ function OrderSuccessContent() {
           color: '#bae6fd',
           textAlign: 'left',
         }}>
-          💬 {smsStatus === 'sent' && t.success.smsSent}
+          {smsStatus === 'sent' && t.success.smsSent}
           {smsStatus === 'sending' && t.success.smsSending}
           {smsStatus === 'failed' && t.success.smsFallback}
         </div>

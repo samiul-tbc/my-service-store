@@ -18,6 +18,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '../context/LanguageContext';
+import Icon from '../components/icons';
 import { productImageSrc } from '../lib/productImage';
 
 const LOGO_HUB_CART = '/logo-icon.png';
@@ -316,7 +317,7 @@ export default function HomePage() {
       {/* ---------- Notice bar (API থেকে আসলে দেখাবে) ---------- */}
       {notice && (
         <div className="hc-notice">
-          <span className="hc-notice-mark">✦</span>
+          <span className="hc-notice-mark" style={{ display: "inline-flex", verticalAlign: "-2px" }}><Icon name="spark" size={13} color="#a6f36a" /></span>
           <span>{notice}</span>
         </div>
       )}
@@ -343,12 +344,12 @@ export default function HomePage() {
               {products.length > 0 && (
           <div className="hc-hero-visual" aria-hidden="true">
             <div className="hc-hero-card main">
-              <img src={products[0].image} alt="" />
+              <img decoding="async" src={products[0].image} alt="" />
               <span>৳{products[0].price}</span>
             </div>
             {products[1] && (
               <div className="hc-hero-card sub">
-                <img src={products[1].image} alt="" />
+                <img decoding="async" src={products[1].image} alt="" />
                 <span>৳{products[1].price}</span>
               </div>
             )}

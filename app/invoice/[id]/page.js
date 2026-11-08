@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useLanguage } from '../../../context/LanguageContext';
+import Icon from '../../../components/icons';
 
 const LOGO_HUB_CART = '/logo-icon.png';
 
@@ -108,7 +109,7 @@ export default function InvoicePage() {
             boxShadow: '0 4px 14px rgba(166, 243, 106, 0.4)'
           }}
         >
-          <span>🖨️</span> {t.invoice.print}
+          <span style={{ display: "inline-flex", verticalAlign: "-3px", marginRight: "5px" }}><Icon name="printer" size={15} /></span>{t.invoice.print}
         </button>
       </div>
 
@@ -164,8 +165,8 @@ export default function InvoicePage() {
           <div>
             <div style={{ color: '#64748b', fontSize: '10px', fontWeight: 'bold' }}>{t.invoice.customer}</div>
             <div style={{ color: '#f8fafc', fontWeight: 'bold' }}>{order.customer_name}</div>
-            <div style={{ color: '#cbd5e1' }}>📞 {order.whatsapp_number}</div>
-            {order.telegram_username && <div style={{ color: '#cbd5e1' }}>✈️ {order.telegram_username}</div>}
+            <div style={{ color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '6px' }}><Icon name="phone" size={13} color="#94a3b8" /> {order.whatsapp_number}</div>
+            {order.telegram_username && <div style={{ color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '6px' }}><Icon name="send" size={13} color="#94a3b8" /> {order.telegram_username}</div>}
           </div>
 
           <div style={{ textAlign: 'right' }}>

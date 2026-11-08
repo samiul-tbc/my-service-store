@@ -11,11 +11,11 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://mieygzqgoe
 const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_niGVYwUfliF0u39aH2vOHQ_LEhuh6xP';
 
 const COUNTRY_CODES = [
-  { code: '+880', flag: '🇧🇩', name: 'BD', placeholder: '1XXXXXXXXX' },
-  { code: '+977', flag: '🇳🇵', name: 'NP', placeholder: '98XXXXXXXX' },
-  { code: '+91',  flag: '🇮🇳', name: 'IN', placeholder: '9XXXXXXXXX' },
-  { code: '+1',   flag: '🇺🇸', name: 'US', placeholder: 'XXXXXXXXXX' },
-  { code: '+44',  flag: '🇬🇧', name: 'UK', placeholder: 'XXXXXXXXXX' },
+  { code: '+880', name: 'BD', placeholder: '1XXXXXXXXX' },
+  { code: '+977', name: 'NP', placeholder: '98XXXXXXXX' },
+  { code: '+91',  name: 'IN', placeholder: '9XXXXXXXXX' },
+  { code: '+1',   name: 'US', placeholder: 'XXXXXXXXXX' },
+  { code: '+44',  name: 'UK', placeholder: 'XXXXXXXXXX' },
 ];
 
 export default function SignUpPage() {

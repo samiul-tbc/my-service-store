@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '../../context/LanguageContext';
+import Icon from '../../components/icons';
 
 const LOGO_HUB_CART = '/logo-icon.png';
 
@@ -219,7 +220,7 @@ export default function ProfilePage() {
               </span>
               <span style={{ textAlign: 'right', flexShrink: 0 }}>
                 <span style={{ display: 'block', fontSize: '12px', fontWeight: '900', color: '#a6f36a' }}>৳{o.price}</span>
-                <span style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'capitalize' }}>{ { pending: '⏳', verifying: '🔍', processing: '⚡', completed: '✅', cancelled: '❌' }[o.status] || '' } {o.status}</span>
+                <span style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'capitalize' }}><span style={{ display: 'inline-block', width: '7px', height: '7px', borderRadius: '50%', marginRight: '5px', verticalAlign: '1px', background: { pending: '#fbbf24', verifying: '#38bdf8', processing: '#a78bfa', completed: '#4ade80', cancelled: '#f87171' }[o.status] || '#94a3b8' }} />{o.status}</span>
               </span>
             </Link>
           ))}
@@ -243,7 +244,7 @@ export default function ProfilePage() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '16px' }}>📦</span>
+          <Icon name="box" size={17} color="#a6f36a" />
           <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#f8fafc' }}>{t.prof.myOrders}</span>
         </div>
         <span style={{ color: '#64748b', fontSize: '14px' }}>→</span>
@@ -251,10 +252,10 @@ export default function ProfilePage() {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
         <Link href="/track" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', borderRadius: '14px', background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255, 255, 255, 0.08)', color: '#f8fafc', fontSize: '12px', fontWeight: 'bold', textDecoration: 'none' }}>
-          🔍 {t.footer.trackOrder}
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}><Icon name="search" size={15} /> {t.footer.trackOrder}</span>
         </Link>
         <a href="https://wa.me/8801319760720" target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', borderRadius: '14px', background: 'rgba(34, 197, 94, 0.12)', border: '1px solid rgba(34, 197, 94, 0.35)', color: '#4ade80', fontSize: '12px', fontWeight: 'bold', textDecoration: 'none' }}>
-          💬 {t.prof.support}
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}><Icon name="message" size={15} /> {t.prof.support}</span>
         </a>
       </div>
 
