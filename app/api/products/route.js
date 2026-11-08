@@ -5,7 +5,7 @@ const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_P
 
 export async function GET() {
   try {
-    const [prodRes, noticeRes, settingsRes] = await Promise.allSettled([
+    const [prodRes, settingsRes, noticeRes] = await Promise.allSettled([
       fetch(`${SUPABASE_URL}/rest/v1/products?select=*&order=id.desc`, {
         cache: 'no-store',
         headers: {
@@ -88,7 +88,7 @@ export async function GET() {
 
     return NextResponse.json(
       { products: visibleProducts, notice },
-      { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' } }
+      { headers: { 'Cache-Control': 'public, s-maxage=20, stale-while-revalidate=40' } }
     );
   } catch (err) {
     return NextResponse.json({ error: err.message, products: [], notice: '' }, { status: 500 });
